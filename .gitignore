@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+.next/
+out/
+build/
+dist/
+
+# Env — NEVER COMMIT
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Firebase
+firebase-debug.log
+.firebase/
+*-service-account*.json
+
+# Vercel
+.vercel
+
+# Data — PDFs fetched separately
+data/skola2030/*.pdf
+
+# ChromaDB local data
+chroma_data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+
+# TypeScript
+*.tsbuildinfo
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+
+# Misc
+*.pem
