@@ -33,7 +33,7 @@ export function SubjectGradeSelector({
       <select
         value={subject}
         onChange={(e) => onSubjectChange(e.target.value)}
-        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
       >
         {SUBJECTS.map((s) => (
           <option key={s.value} value={s.value}>
@@ -50,7 +50,7 @@ export function SubjectGradeSelector({
             className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               grade === g
                 ? "bg-brand-600 text-white"
-                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-600"
             }`}
           >
             {g}.

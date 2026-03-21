@@ -4,13 +4,24 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { ChatMessage, TypingIndicator, type Message } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 import { SubjectGradeSelector } from "./SubjectGradeSelector";
+import { SettingsPanel } from "@/components/settings/SettingsPanel";
+import { useSettings } from "@/lib/context/settings-context";
+
+const WIDTH_CLASS: Record<string, string> = {
+  compact: "max-w-2xl",
+  normal: "max-w-3xl",
+  wide: "max-w-5xl",
+};
 
 export function ChatContainer() {
+  const { settings } = useSettings();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [subject, setSubject] = useState("math");
-  const [grade, setGrade] = useState(9);
+  const [subject, setSubject] = useState(settings.defaultSubject);
+  const [grade, setGrade] = useState(settings.defaultGrade);
+  const [showSettings, setShowSettings] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const maxW = WIDTH_CLASS[settings.chatWidth] ?? "max-w-3xl";
 
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
@@ -146,12 +157,21 @@ export function ChatContainer() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="shrink-0 border-b border-gray-200 bg-white px-4 py-3">
-        <div className="mx-auto max-w-3xl">
+      <header className="shrink-0 border-b border-gray-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
+        <div className={`mx-auto ${maxW}`}>
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-lg font-semibold text-gray-900">
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
               Skolnieks<span className="text-brand-600">AI</span>
             </h1>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
+              aria-label="Iestatījumi"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .206 1.25l-1.18 2.045a1 1 0 0 1-1.187.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.206-1.25l1.18-2.045a1 1 0 0 1 1.187-.447l1.598.54A6.993 6.993 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
           <SubjectGradeSelector
             subject={subject}
@@ -167,7 +187,7 @@ export function ChatContainer() {
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-4 py-4 hide-scrollbar"
       >
-        <div className="mx-auto max-w-3xl space-y-4">
+        <div className={`mx-auto ${maxW} space-y-4`}>
           {messages.length === 0 && (
             <EmptyState subject={subject} onSend={handleSend} />
           )}
@@ -186,6 +206,9 @@ export function ChatContainer() {
 
       {/* Input */}
       <ChatInput onSend={handleSend} disabled={isLoading} />
+
+      {/* Settings drawer */}
+      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
@@ -229,10 +252,10 @@ function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div className="mb-2 text-4xl">&#x1F393;</div>
-      <h2 className="text-xl font-semibold text-gray-800 mb-1">
+      <h2 className="text-xl font-semibold text-gray-800 mb-1 dark:text-slate-200">
         Sveiki! Es esmu Skolnieks<span className="text-brand-600">AI</span>
       </h2>
-      <p className="text-sm text-gray-500 mb-6 max-w-md">
+      <p className="text-sm text-gray-500 mb-6 max-w-md dark:text-slate-400">
         Tavs m&#x0101;c&#x012B;bu pal&#x012B;gs, kas balst&#x012B;ts uz Skola2030 programmu.
         Uzdod jaut&#x0101;jumu, un es pal&#x012B;dz&#x0113;&#x0161;u saprast!
       </p>
@@ -241,7 +264,7 @@ function EmptyState({
           <button
             key={q}
             onClick={() => onSend(q)}
-            className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 transition-colors hover:border-brand-300 hover:bg-brand-50"
+            className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 transition-colors hover:border-brand-300 hover:bg-brand-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-brand-700 dark:hover:bg-slate-700"
           >
             {q}
           </button>

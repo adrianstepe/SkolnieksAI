@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { SettingsProvider } from "@/lib/context/settings-context";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -28,8 +29,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="lv" className={`${inter.variable} h-full antialiased`}>
-      <body className="h-full bg-gray-50 font-sans text-gray-900">
-        {children}
+      <body className="h-full bg-gray-50 font-sans text-gray-900 dark:bg-slate-900 dark:text-slate-100">
+        <SettingsProvider>{children}</SettingsProvider>
       </body>
     </html>
   );

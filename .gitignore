@@ -42,6 +42,21 @@ next-env.d.ts
 
 # source PDFs — do not commit (large + licensing)
 /data/skola2030/*.pdf
+/Skola2030/
+
+# chromadb vector database — do not commit (large, rebuilt by ingest)
+/SkolnieksAI_DB/
+
+# Python venv
+/skolnieksai-env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
 
 # chromadb model cache
 .cache/
+
+# local Claude Code settings
+.claude/settings.local.json
