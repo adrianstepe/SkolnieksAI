@@ -1,9 +1,7 @@
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 
-// Toggle: true = Claude Sonnet (paid tier testing), false = DeepSeek V3 (free tier)
-// TODO: replace with subscription check (isPaidUser) once Stripe is wired up
-const USE_CLAUDE = true;
+export type AiModelChoice = "deepseek" | "claude";
 
 // DeepSeek exposes an OpenAI-compatible API
 const deepseekClient = new OpenAI({
@@ -39,8 +37,9 @@ export interface DeepSeekResponse {
 export async function chat(
   messages: ChatMessage[],
   temperature = 0.3,
+  model: AiModelChoice = "deepseek",
 ): Promise<DeepSeekResponse> {
-  if (USE_CLAUDE) {
+  if (model === "claude") {
     const systemMsg = messages.find((m) => m.role === "system")?.content;
     const userMessages = messages
       .filter((m) => m.role !== "system")
@@ -84,49 +83,79 @@ export async function chat(
   };
 }
 
+export interface StreamUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+export interface ChatStreamResult {
+  stream: AsyncGenerator<string>;
+  getUsage: () => StreamUsage;
+}
+
 /**
- * Streaming chat completion. Yields text delta chunks.
- * Used by the /api/chat route to stream responses to the browser.
+ * Streaming chat completion. Returns a stream of text deltas and a
+ * getUsage() function that returns actual token counts after the stream ends.
  */
-export async function* chatStream(
+export function chatStream(
   messages: ChatMessage[],
   temperature = 0.3,
-): AsyncGenerator<string> {
-  if (USE_CLAUDE) {
-    const systemMsg = messages.find((m) => m.role === "system")?.content;
-    const userMessages = messages
-      .filter((m) => m.role !== "system")
-      .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+  model: AiModelChoice = "deepseek",
+): ChatStreamResult {
+  const usage: StreamUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
-    const stream = anthropicClient.messages.stream({
-      model: CLAUDE_MODEL,
-      max_tokens: 600,
+  async function* generate(): AsyncGenerator<string> {
+    if (model === "claude") {
+      const systemMsg = messages.find((m) => m.role === "system")?.content;
+      const userMessages = messages
+        .filter((m) => m.role !== "system")
+        .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+
+      const stream = anthropicClient.messages.stream({
+        model: CLAUDE_MODEL,
+        max_tokens: 600,
+        temperature,
+        ...(systemMsg ? { system: systemMsg } : {}),
+        messages: userMessages,
+      });
+
+      for await (const event of stream) {
+        if (
+          event.type === "content_block_delta" &&
+          event.delta.type === "text_delta"
+        ) {
+          yield event.delta.text;
+        }
+      }
+
+      const finalMessage = await stream.finalMessage();
+      usage.prompt_tokens = finalMessage.usage.input_tokens;
+      usage.completion_tokens = finalMessage.usage.output_tokens;
+      usage.total_tokens = finalMessage.usage.input_tokens + finalMessage.usage.output_tokens;
+      return;
+    }
+
+    const stream = await deepseekClient.chat.completions.create({
+      model: DEEPSEEK_MODEL,
+      messages,
       temperature,
-      ...(systemMsg ? { system: systemMsg } : {}),
-      messages: userMessages,
+      max_tokens: 600,
+      stream: true,
+      stream_options: { include_usage: true },
     });
 
-    for await (const event of stream) {
-      if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "text_delta"
-      ) {
-        yield event.delta.text;
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content;
+      if (delta) yield delta;
+
+      if (chunk.usage) {
+        usage.prompt_tokens = chunk.usage.prompt_tokens ?? 0;
+        usage.completion_tokens = chunk.usage.completion_tokens ?? 0;
+        usage.total_tokens = chunk.usage.total_tokens ?? 0;
       }
     }
-    return;
   }
 
-  const stream = await deepseekClient.chat.completions.create({
-    model: DEEPSEEK_MODEL,
-    messages,
-    temperature,
-    max_tokens: 600,
-    stream: true,
-  });
-
-  for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta?.content;
-    if (delta) yield delta;
-  }
+  return { stream: generate(), getUsage: () => usage };
 }

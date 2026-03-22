@@ -5,6 +5,7 @@ import {
   type Theme,
   type FontSize,
   type ChatWidth,
+  type AiModel,
 } from "@/lib/context/settings-context";
 import { SUBJECTS, GRADES } from "@/components/chat/SubjectGradeSelector";
 
@@ -172,6 +173,28 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 />
               </Row>
             </div>
+          </section>
+
+          {/* ── AI modelis ── */}
+          <section>
+            <SectionTitle>AI modelis</SectionTitle>
+            <div className="divide-y divide-gray-100 dark:divide-slate-700">
+              <Row label="Modelis">
+                <SegmentedControl<AiModel>
+                  value={settings.aiModel}
+                  onChange={(v) => update("aiModel", v)}
+                  options={[
+                    { value: "deepseek", label: "DeepSeek" },
+                    { value: "claude", label: "Claude" },
+                  ]}
+                />
+              </Row>
+            </div>
+            <p className="mt-2 text-xs text-gray-400 dark:text-slate-500">
+              {settings.aiModel === "claude"
+                ? "Claude Sonnet — augstāka kvalitāte (maksas)"
+                : "DeepSeek V3 — bezmaksas līmenis"}
+            </p>
           </section>
 
           {/* ── Noklusējums ── */}

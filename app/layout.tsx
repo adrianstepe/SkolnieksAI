@@ -1,7 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+// KaTeX CSS for math rendering. No MathJax is configured in this project.
+// Latvian decimal comma is handled at the prompt level via {,} syntax in LaTeX
+// (e.g. $3{,}14$) — no global comma-spacing overrides needed.
+import "katex/dist/katex.min.css";
 import { SettingsProvider } from "@/lib/context/settings-context";
+import { AuthProvider } from "@/lib/context/auth-context";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -30,7 +35,9 @@ export default function RootLayout({
   return (
     <html lang="lv" className={`${inter.variable} h-full antialiased`}>
       <body className="h-full bg-gray-50 font-sans text-gray-900 dark:bg-slate-900 dark:text-slate-100">
-        <SettingsProvider>{children}</SettingsProvider>
+        <AuthProvider>
+          <SettingsProvider>{children}</SettingsProvider>
+        </AuthProvider>
       </body>
     </html>
   );

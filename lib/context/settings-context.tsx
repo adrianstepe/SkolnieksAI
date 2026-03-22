@@ -11,11 +11,13 @@ import {
 export type Theme = "light" | "dark" | "system";
 export type FontSize = "sm" | "md" | "lg";
 export type ChatWidth = "compact" | "normal" | "wide";
+export type AiModel = "deepseek" | "claude";
 
 export interface Settings {
   theme: Theme;
   fontSize: FontSize;
   chatWidth: ChatWidth;
+  aiModel: AiModel;
   defaultSubject: string;
   defaultGrade: number;
   showSources: boolean;
@@ -26,6 +28,7 @@ const DEFAULTS: Settings = {
   theme: "system",
   fontSize: "md",
   chatWidth: "normal",
+  aiModel: "deepseek",
   defaultSubject: "math",
   defaultGrade: 9,
   showSources: true,

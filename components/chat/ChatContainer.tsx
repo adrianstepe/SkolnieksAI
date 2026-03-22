@@ -6,6 +6,7 @@ import { ChatInput } from "./ChatInput";
 import { SubjectGradeSelector } from "./SubjectGradeSelector";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { useSettings } from "@/lib/context/settings-context";
+import { useAuth } from "@/lib/context/auth-context";
 
 const WIDTH_CLASS: Record<string, string> = {
   compact: "max-w-2xl",
@@ -15,6 +16,7 @@ const WIDTH_CLASS: Record<string, string> = {
 
 export function ChatContainer() {
   const { settings } = useSettings();
+  const { user, usage, signOut, getIdToken, refreshProfile } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [subject, setSubject] = useState(settings.defaultSubject);
@@ -60,22 +62,28 @@ export function ChatContainer() {
           content: m.content,
         }));
 
+        const token = await getIdToken();
         const response = await fetch("/api/chat", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({
             message: text,
             subject,
             grade,
+            model: settings.aiModel,
             conversationHistory: history,
           }),
         });
 
         if (!response.ok) {
-          const error = await response.json().catch(() => ({}));
-          throw new Error(
-            (error as Record<string, string>).error || `HTTP ${response.status}`,
-          );
+          const error = await response.json().catch(() => ({})) as Record<string, string>;
+          if (error.error === "token_budget_exceeded") {
+            throw new Error("BUDGET_EXCEEDED");
+          }
+          throw new Error(error.error || `HTTP ${response.status}`);
         }
 
         const reader = response.body?.getReader();
@@ -136,14 +144,17 @@ export function ChatContainer() {
             }
           }
         }
+        // Refresh usage after successful response
+        refreshProfile();
       } catch (err) {
+        const errorMessage =
+          err instanceof Error && err.message === "BUDGET_EXCEEDED"
+            ? "Tavs mēneša limits ir sasniegts. Uzlabo plānu, lai turpinātu!"
+            : `Kļūda: ${err instanceof Error ? err.message : "Nevarēja izveidot savienojumu"}`;
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
-              ? {
-                  ...m,
-                  content: `K\u013C\u016Bda: ${err instanceof Error ? err.message : "Nevar\u0113ja izveidot savienojumu"}`,
-                }
+              ? { ...m, content: errorMessage }
               : m,
           ),
         );
@@ -151,7 +162,7 @@ export function ChatContainer() {
         setIsLoading(false);
       }
     },
-    [messages, subject, grade],
+    [messages, subject, grade, settings.aiModel, getIdToken, refreshProfile],
   );
 
   return (
@@ -163,15 +174,31 @@ export function ChatContainer() {
             <h1 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
               Skolnieks<span className="text-brand-600">AI</span>
             </h1>
-            <button
-              onClick={() => setShowSettings(true)}
-              className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
-              aria-label="Iestatījumi"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
-                <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .206 1.25l-1.18 2.045a1 1 0 0 1-1.187.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.206-1.25l1.18-2.045a1 1 0 0 1 1.187-.447l1.598.54A6.993 6.993 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-2">
+              {usage && (
+                <UsageMeter percent={usage.budgetPercentUsed} />
+              )}
+              <button
+                onClick={() => setShowSettings(true)}
+                className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
+                aria-label="Iestatījumi"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                  <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .206 1.25l-1.18 2.045a1 1 0 0 1-1.187.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.206-1.25l1.18-2.045a1 1 0 0 1 1.187-.447l1.598.54A6.993 6.993 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
+                </svg>
+              </button>
+              <button
+                onClick={() => signOut()}
+                className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
+                aria-label="Iziet"
+                title="Iziet"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                  <path fillRule="evenodd" d="M3 4.25A2.25 2.25 0 0 1 5.25 2h5.5A2.25 2.25 0 0 1 13 4.25v2a.75.75 0 0 1-1.5 0v-2a.75.75 0 0 0-.75-.75h-5.5a.75.75 0 0 0-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 0 0 .75-.75v-2a.75.75 0 0 1 1.5 0v2A2.25 2.25 0 0 1 10.75 18h-5.5A2.25 2.25 0 0 1 3 15.75V4.25Z" clipRule="evenodd" />
+                  <path fillRule="evenodd" d="M19 10a.75.75 0 0 0-.75-.75H8.704l1.048-.943a.75.75 0 1 0-1.004-1.114l-2.5 2.25a.75.75 0 0 0 0 1.114l2.5 2.25a.75.75 0 1 0 1.004-1.114l-1.048-.943h9.546A.75.75 0 0 0 19 10Z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
           </div>
           <SubjectGradeSelector
             subject={subject}
@@ -270,6 +297,36 @@ function EmptyState({
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function UsageMeter({ percent }: { percent: number }) {
+  const color =
+    percent >= 90
+      ? "bg-red-500"
+      : percent >= 70
+        ? "bg-amber-500"
+        : "bg-brand-500";
+
+  const label =
+    percent >= 100
+      ? "Limits sasniegts"
+      : percent >= 80
+        ? "Gandrīz pilns"
+        : "Lietojums";
+
+  return (
+    <div className="flex items-center gap-2" title={`${label}: ${percent}%`}>
+      <div className="h-2 w-16 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
+        <div
+          className={`h-full rounded-full transition-all ${color}`}
+          style={{ width: `${Math.min(100, percent)}%` }}
+        />
+      </div>
+      <span className="text-xs text-gray-500 dark:text-slate-400">
+        {percent}%
+      </span>
     </div>
   );
 }
