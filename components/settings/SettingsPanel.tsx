@@ -19,7 +19,7 @@ interface SettingsPanelProps {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500">
+    <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-text-muted">
       {children}
     </h3>
   );
@@ -34,7 +34,7 @@ function Row({
 }) {
   return (
     <div className="flex items-center justify-between gap-4 py-2.5">
-      <span className="text-sm text-gray-700 dark:text-slate-300">{label}</span>
+      <span className="text-sm text-text-secondary">{label}</span>
       {children}
     </div>
   );
@@ -53,7 +53,7 @@ function Toggle({
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-        checked ? "bg-brand-600" : "bg-gray-200 dark:bg-slate-600"
+        checked ? "bg-primary" : "bg-surface-hover"
       }`}
     >
       <span
@@ -75,15 +75,15 @@ function SegmentedControl<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex overflow-hidden rounded-lg border border-gray-200 dark:border-slate-600">
+    <div className="flex overflow-hidden rounded-lg border border-border">
       {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={`flex-1 px-3 py-1.5 text-sm font-medium transition-colors ${
             value === opt.value
-              ? "bg-brand-600 text-white"
-              : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+              ? "bg-primary text-white"
+              : "bg-surface text-text-secondary hover:bg-surface-hover hover:text-text-primary"
           }`}
         >
           {opt.label}
@@ -104,21 +104,21 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/30"
+        className="fixed inset-0 z-40 bg-black/50"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Drawer */}
-      <aside className="fixed inset-y-0 right-0 z-50 flex w-80 flex-col bg-white shadow-xl dark:bg-slate-800">
+      <aside className="fixed inset-y-0 right-0 z-50 flex w-80 flex-col bg-base shadow-2xl border-l border-border">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-slate-700">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h2 className="text-base font-semibold text-text-primary">
             Iestatījumi
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
+            className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface hover:text-text-secondary"
             aria-label="Aizvērt"
           >
             <svg
@@ -133,12 +133,11 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
-
+        <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5 thin-scrollbar">
           {/* ── Izskats ── */}
           <section>
             <SectionTitle>Izskats</SectionTitle>
-            <div className="divide-y divide-gray-100 dark:divide-slate-700">
+            <div className="divide-y divide-border">
               <Row label="Krāsu tema">
                 <SegmentedControl<Theme>
                   value={settings.theme}
@@ -178,7 +177,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
           {/* ── AI modelis ── */}
           <section>
             <SectionTitle>AI modelis</SectionTitle>
-            <div className="divide-y divide-gray-100 dark:divide-slate-700">
+            <div className="divide-y divide-border">
               <Row label="Modelis">
                 <SegmentedControl<AiModel>
                   value={settings.aiModel}
@@ -190,7 +189,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 />
               </Row>
             </div>
-            <p className="mt-2 text-xs text-gray-400 dark:text-slate-500">
+            <p className="mt-2 text-xs text-text-muted">
               {settings.aiModel === "claude"
                 ? "Claude Sonnet — augstāka kvalitāte (maksas)"
                 : "DeepSeek V3 — bezmaksas līmenis"}
@@ -202,13 +201,13 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             <SectionTitle>Noklusējuma iestatījumi</SectionTitle>
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm text-gray-700 dark:text-slate-300">
+                <label className="mb-1.5 block text-sm text-text-secondary">
                   Priekšmets
                 </label>
                 <select
                   value={settings.defaultSubject}
                   onChange={(e) => update("defaultSubject", e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
                 >
                   {SUBJECTS.map((s) => (
                     <option key={s.value} value={s.value}>
@@ -218,7 +217,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm text-gray-700 dark:text-slate-300">
+                <label className="mb-1.5 block text-sm text-text-secondary">
                   Klase
                 </label>
                 <div className="flex flex-wrap gap-1">
@@ -228,8 +227,8 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                       onClick={() => update("defaultGrade", g)}
                       className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                         settings.defaultGrade === g
-                          ? "bg-brand-600 text-white"
-                          : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+                          ? "bg-primary text-white"
+                          : "border border-border bg-surface text-text-secondary hover:bg-surface-hover hover:text-text-primary"
                       }`}
                     >
                       {g}.
@@ -243,7 +242,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
           {/* ── Vēlmes ── */}
           <section>
             <SectionTitle>Vēlmes</SectionTitle>
-            <div className="divide-y divide-gray-100 dark:divide-slate-700">
+            <div className="divide-y divide-border">
               <Row label="Rādīt avotus">
                 <Toggle
                   checked={settings.showSources}
@@ -261,8 +260,8 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 px-5 py-3 dark:border-slate-700">
-          <p className="text-center text-xs text-gray-400 dark:text-slate-500">
+        <div className="border-t border-border px-5 py-3">
+          <p className="text-center text-xs text-text-muted">
             SkolnieksAI · Skola2030
           </p>
         </div>

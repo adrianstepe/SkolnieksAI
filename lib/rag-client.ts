@@ -20,13 +20,13 @@ export interface RetrieveResult {
  * Query the local Python RAG API and return chunk texts + labelled sources.
  * Returns empty arrays if the RAG service is unavailable or returns an error.
  */
-export async function retrieveContext(question: string): Promise<RetrieveResult> {
+export async function retrieveContext(question: string, topK = 3): Promise<RetrieveResult> {
   const empty: RetrieveResult = { texts: [], sources: [] };
   try {
     const res = await fetch(`${RAG_API_URL}/query`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, top_k: topK }),
       // Abort quickly so a dead RAG service doesn't block the chat response
       signal: AbortSignal.timeout(5_000),
     });

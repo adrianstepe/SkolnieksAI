@@ -1,16 +1,35 @@
 "use client";
 
-export const SUBJECTS = [
-  { value: "math", label: "Matem\u0101tika" },
-  { value: "latvian", label: "Latvie\u0161u valoda" },
-  { value: "english", label: "Ang\u013Cu valoda" },
-  { value: "science", label: "Dabaszin\u012Bbas" },
-  { value: "history", label: "V\u0113sture" },
-  { value: "social_studies", label: "Soci\u0101l\u0101s zin\u012Bbas" },
-  { value: "physics", label: "Fizika" },
-  { value: "chemistry", label: "\u0136\u012Bmija" },
-  { value: "biology", label: "Biolo\u0123ija" },
-  { value: "informatics", label: "Inform\u0101tika" },
+import {
+  Calculator,
+  FlaskConical,
+  FlaskRound,
+  BookOpen,
+  History,
+  Globe,
+  Languages,
+  ALargeSmall,
+  Code2,
+  Palette,
+  type LucideIcon,
+} from "lucide-react";
+
+export const SUBJECTS: {
+  value: string;
+  label: string;
+  shortLabel: string;
+  icon: LucideIcon;
+}[] = [
+  { value: "math", label: "Matemātika", shortLabel: "Matemātika", icon: Calculator },
+  { value: "physics", label: "Fizika", shortLabel: "Fizika", icon: FlaskConical },
+  { value: "chemistry", label: "Ķīmija", shortLabel: "Ķīmija", icon: FlaskRound },
+  { value: "biology", label: "Bioloģija", shortLabel: "Bioloģija", icon: BookOpen },
+  { value: "history", label: "Vēsture", shortLabel: "Vēsture", icon: History },
+  { value: "geography", label: "Ģeogrāfija", shortLabel: "Ģeogrāfija", icon: Globe },
+  { value: "latvian", label: "Latviešu valoda", shortLabel: "Latviešu val.", icon: Languages },
+  { value: "english", label: "Angļu valoda", shortLabel: "Angļu val.", icon: ALargeSmall },
+  { value: "informatics", label: "Datorzinātne", shortLabel: "Datorzinātne", icon: Code2 },
+  { value: "art", label: "Vizuālā māksla", shortLabel: "Vizuālā māksla", icon: Palette },
 ] as const;
 
 export const GRADES = [6, 7, 8, 9, 10, 11, 12] as const;

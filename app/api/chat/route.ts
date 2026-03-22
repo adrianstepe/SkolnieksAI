@@ -11,15 +11,41 @@ const FREE_TOKEN_BUDGET = 150_000;
 const PREMIUM_TOKEN_BUDGET = 1_500_000;
 const EXAM_PREP_TOKEN_BUDGET = 3_000_000;
 
+/** Daily hard limits (queries per calendar day UTC) */
+const FREE_DAILY_LIMIT = 30;
+const PREMIUM_DAILY_LIMIT = 80;
+const EXAM_PREP_DAILY_LIMIT = 140;
+
+/** Rate window: max queries per 3-hour rolling window */
+const FREE_RATE_LIMIT = 10;
+const PREMIUM_RATE_LIMIT = 25;
+const EXAM_PREP_RATE_LIMIT = 40;
+const RATE_WINDOW_MS = 3 * 60 * 60 * 1000; // 3 hours in ms
+
 function getBudgetForTier(tier: string): number {
   switch (tier) {
-    case "premium":
-      return PREMIUM_TOKEN_BUDGET;
+    case "premium": return PREMIUM_TOKEN_BUDGET;
     case "exam_prep":
-    case "school_pro":
-      return EXAM_PREP_TOKEN_BUDGET;
-    default:
-      return FREE_TOKEN_BUDGET;
+    case "school_pro": return EXAM_PREP_TOKEN_BUDGET;
+    default: return FREE_TOKEN_BUDGET;
+  }
+}
+
+function getDailyLimitForTier(tier: string): number {
+  switch (tier) {
+    case "premium": return PREMIUM_DAILY_LIMIT;
+    case "exam_prep":
+    case "school_pro": return EXAM_PREP_DAILY_LIMIT;
+    default: return FREE_DAILY_LIMIT;
+  }
+}
+
+function getRateLimitForTier(tier: string): number {
+  switch (tier) {
+    case "premium": return PREMIUM_RATE_LIMIT;
+    case "exam_prep":
+    case "school_pro": return EXAM_PREP_RATE_LIMIT;
+    default: return FREE_RATE_LIMIT;
   }
 }
 
@@ -28,6 +54,7 @@ const ChatRequestSchema = z.object({
   subject: z.string().min(1),
   grade: z.number().int().min(1).max(12),
   model: z.enum(["deepseek", "claude"]).optional().default("deepseek"),
+  conversationId: z.string().optional(),
   conversationHistory: z
     .array(
       z.object({
@@ -63,17 +90,45 @@ export async function POST(request: NextRequest) {
   const usageDoc = await usageRef.get();
 
   const usageData = usageDoc.exists
-    ? (usageDoc.data() as Record<string, number>)
-    : { inputTokens: 0, outputTokens: 0, queryCount: 0 };
+    ? (usageDoc.data() as Record<string, unknown>)
+    : { inputTokens: 0, outputTokens: 0, queryCount: 0 } as Record<string, unknown>;
 
   const tokensUsed =
-    (usageData.inputTokens ?? 0) + (usageData.outputTokens ?? 0);
+    ((usageData.inputTokens as number) ?? 0) + ((usageData.outputTokens as number) ?? 0);
   const tokenBudget = getBudgetForTier(tier);
 
-  // --- Usage gate ---
+  // --- Monthly token budget gate ---
   if (tokensUsed >= tokenBudget) {
     return NextResponse.json(
       { error: "token_budget_exceeded", upgrade_url: "/pricing" },
+      { status: 429 },
+    );
+  }
+
+  // --- Daily hard limit gate ---
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const storedDailyDate = usageData.dailyDate as string | undefined;
+  const dailyCount = storedDailyDate === today ? ((usageData.dailyCount as number) ?? 0) : 0;
+  const dailyLimit = getDailyLimitForTier(tier);
+
+  if (dailyCount >= dailyLimit) {
+    return NextResponse.json(
+      { error: "daily_limit_exceeded", limit: dailyLimit },
+      { status: 429 },
+    );
+  }
+
+  // --- 3-hour rate window gate ---
+  const rateWindowStart = usageData.rateWindowStart as number | undefined;
+  const windowActive = rateWindowStart !== undefined && now.getTime() - rateWindowStart < RATE_WINDOW_MS;
+  const rateWindowCount = windowActive ? ((usageData.rateWindowCount as number) ?? 0) : 0;
+  const rateLimit = getRateLimitForTier(tier);
+
+  if (rateWindowCount >= rateLimit) {
+    const msRemaining = RATE_WINDOW_MS - (now.getTime() - (rateWindowStart ?? 0));
+    const minutesRemaining = Math.ceil(msRemaining / 60_000);
+    return NextResponse.json(
+      { error: "rate_limit_exceeded", minutesRemaining },
       { status: 429 },
     );
   }
@@ -97,33 +152,83 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { message, subject, grade, model, conversationHistory } = parsed.data;
+  const { message, subject, grade, model, conversationHistory, conversationId } = parsed.data;
 
   // Tier-based model routing: free users always get DeepSeek
   const effectiveModel = tier === "free" ? "deepseek" : model;
 
-  // Recency reinforcement payload — appended to the user's latest message
-  // to combat attention degradation over long conversations.
-  const REINFORCEMENT_SUFFIX =
-    "\n\n[SIST\u0112MAS ATG\u0100DIN\u0100JUMS: Pirms atbildes OBLIG\u0100TI atver <thinking> bloku. Izmanto TIKAI latvie\u0161u valodu. Decim\u0101lda\u013Cskait\u013Ci LaTeX iekav\u0101s: $3{,}14$. Debit\u012Bvs oblig\u0101ti. Nekad neraksti \u201Enav datub\u0101z\u0113\u201C.]";
+  // Max output tokens: 800 for free, 1500 for paid tiers
+  const maxTokens = tier === "free" ? 800 : 1500;
 
-  const reinforcedMessage = message + REINFORCEMENT_SUFFIX;
+  // --- Conversation persistence ---
+  const SUBJECT_LABELS: Record<string, string> = {
+    math: "Matemātika", latvian: "Latviešu val.", english: "Angļu val.",
+    science: "Dabaszinības", history: "Vēsture", social_studies: "Soc. zinības",
+    physics: "Fizika", chemistry: "Ķīmija", biology: "Bioloģija",
+    informatics: "Informātika",
+  };
+
+  let activeConversationId = conversationId ?? "";
+  const convCollection = adminDb.collection("conversations");
+
+  if (activeConversationId) {
+    // Update existing conversation timestamp
+    await convCollection.doc(activeConversationId).update({
+      updatedAt: now.toISOString(),
+    });
+  } else {
+    // Create new conversation — title from first ~40 chars of message
+    const title =
+      message.length > 40 ? message.slice(0, 37) + "..." : message;
+    const convRef = await convCollection.add({
+      userId: decoded.uid,
+      title,
+      subject,
+      grade,
+      subjectLabel: SUBJECT_LABELS[subject] ?? subject,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    });
+    activeConversationId = convRef.id;
+  }
+
+  // Save user message
+  const messagesCollection = convCollection
+    .doc(activeConversationId)
+    .collection("messages");
+
+  await messagesCollection.add({
+    role: "user",
+    content: message,
+    createdAt: now.toISOString(),
+  });
 
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
+      // Emit conversationId so the client can track it
+      const convIdData = JSON.stringify({
+        type: "conversationId",
+        conversationId: activeConversationId,
+      });
+      controller.enqueue(encoder.encode(`data: ${convIdData}\n\n`));
+
+      let fullAssistantContent = "";
+
       try {
         const ragStream = runRagChainStream({
-          query: reinforcedMessage,
+          query: message,
           subject,
           grade,
           model: effectiveModel,
+          maxTokens,
           conversationHistory: (conversationHistory ?? []) as ChatMessage[],
         });
 
         for await (const event of ragStream) {
           if (event.type === "delta") {
+            fullAssistantContent += event.text;
             const data = JSON.stringify({
               type: "chunk",
               content: event.text,
@@ -155,15 +260,37 @@ export async function POST(request: NextRequest) {
             const inputTokens = event.usage.prompt_tokens ?? 0;
             const outputTokens = event.usage.completion_tokens ?? 0;
 
+            // Daily count: reset if new day
+            const newDailyCount = storedDailyDate === today ? dailyCount + 1 : 1;
+
+            // Rate window: start fresh if previous window expired
+            const isNewWindow = !rateWindowStart || now.getTime() - rateWindowStart >= RATE_WINDOW_MS;
+            const newRateWindowStart = isNewWindow ? now.getTime() : rateWindowStart;
+            const newRateWindowCount = isNewWindow ? 1 : rateWindowCount + 1;
+
             await usageRef.set(
               {
                 inputTokens: FieldValue.increment(inputTokens),
                 outputTokens: FieldValue.increment(outputTokens),
                 queryCount: FieldValue.increment(1),
                 lastQueryAt: now.toISOString(),
+                dailyDate: today,
+                dailyCount: newDailyCount,
+                rateWindowStart: newRateWindowStart,
+                rateWindowCount: newRateWindowCount,
               },
               { merge: true },
             );
+
+            // --- Save assistant message to Firestore ---
+            if (fullAssistantContent) {
+              await messagesCollection.add({
+                role: "assistant",
+                content: fullAssistantContent,
+                tokens: { input: inputTokens, output: outputTokens },
+                createdAt: new Date().toISOString(),
+              });
+            }
           }
         }
       } catch (err) {

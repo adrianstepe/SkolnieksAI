@@ -71,19 +71,25 @@ export default function SignupPage() {
     }
   };
 
+  const inputClass =
+    "mt-1 block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20";
+
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
-          Skolnieks<span className="text-brand-600">AI</span>
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="white" className="h-6 w-6">
+            <path d="M10.362 1.093a.75.75 0 0 0-.724 0L2.523 5.018 10 9.143l7.477-4.125-7.115-3.925ZM18 6.443l-7.25 4v8.25l6.862-3.786A.75.75 0 0 0 18 14.25V6.443ZM9.25 18.693v-8.25l-7.25-4v7.807a.75.75 0 0 0 .388.657l6.862 3.786Z" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-text-primary">
+          Skolnieks<span className="text-primary">AI</span>
         </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-          Izveido jaunu kontu
-        </p>
+        <p className="mt-1 text-sm text-text-secondary">Izveido jaunu kontu</p>
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+        <div className="rounded-lg bg-red-900/20 px-4 py-3 text-sm text-red-400 border border-red-900/30">
           {error}
         </div>
       )}
@@ -92,7 +98,7 @@ export default function SignupPage() {
         <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            className="block text-sm font-medium text-text-secondary"
           >
             E-pasts
           </label>
@@ -103,7 +109,7 @@ export default function SignupPage() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className={inputClass}
             placeholder="tavs@epasts.lv"
           />
         </div>
@@ -111,7 +117,7 @@ export default function SignupPage() {
         <div>
           <label
             htmlFor="password"
-            className="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            className="block text-sm font-medium text-text-secondary"
           >
             Parole
           </label>
@@ -123,7 +129,7 @@ export default function SignupPage() {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className={inputClass}
             placeholder="Vismaz 6 simboli"
           />
         </div>
@@ -131,7 +137,7 @@ export default function SignupPage() {
         <div>
           <label
             htmlFor="password-confirm"
-            className="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            className="block text-sm font-medium text-text-secondary"
           >
             Apstiprini paroli
           </label>
@@ -142,7 +148,7 @@ export default function SignupPage() {
             autoComplete="new-password"
             value={passwordConfirm}
             onChange={(e) => setPasswordConfirm(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className={inputClass}
             placeholder="••••••••"
           />
         </div>
@@ -150,10 +156,10 @@ export default function SignupPage() {
         <div>
           <label
             htmlFor="invite"
-            className="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            className="block text-sm font-medium text-text-secondary"
           >
             Uzaicinājuma kods{" "}
-            <span className="font-normal text-gray-400">(neobligāts)</span>
+            <span className="font-normal text-text-muted">(neobligāts)</span>
           </label>
           <input
             id="invite"
@@ -161,7 +167,7 @@ export default function SignupPage() {
             maxLength={20}
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className={inputClass}
             placeholder="Piemēram, AB12CD34"
           />
         </div>
@@ -169,7 +175,7 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 dark:focus:ring-offset-slate-900"
+          className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-base disabled:opacity-50"
         >
           {submitting ? "Reģistrē..." : "Reģistrēties"}
         </button>
@@ -177,19 +183,17 @@ export default function SignupPage() {
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200 dark:border-slate-700" />
+          <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-gray-50 px-2 text-gray-500 dark:bg-slate-900 dark:text-slate-400">
-            vai
-          </span>
+          <span className="bg-base px-2 text-text-muted">vai</span>
         </div>
       </div>
 
       <button
         onClick={handleGoogleSignup}
         disabled={submitting}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:focus:ring-offset-slate-900"
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-base disabled:opacity-50"
       >
         <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
           <path
@@ -212,11 +216,11 @@ export default function SignupPage() {
         Reģistrēties ar Google
       </button>
 
-      <p className="text-center text-sm text-gray-500 dark:text-slate-400">
+      <p className="text-center text-sm text-text-secondary">
         Jau ir konts?{" "}
         <Link
           href="/login"
-          className="font-medium text-brand-600 hover:text-brand-500"
+          className="font-medium text-primary hover:text-primary-hover"
         >
           Ienākt
         </Link>

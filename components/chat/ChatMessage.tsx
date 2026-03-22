@@ -6,20 +6,19 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 
 // ---------------------------------------------------------------------------
-// Thinking block parser — handles both mid-stream and completed states
+// Thinking block parser
 // ---------------------------------------------------------------------------
 
 interface ParsedContent {
   thinking: string | null;
   answer: string;
-  isThinking: boolean; // true = <thinking> opened but not yet closed (streaming)
+  isThinking: boolean;
 }
 
 function parseThinking(content: string): ParsedContent {
   const openIdx = content.indexOf("<thinking>");
   const closeIdx = content.indexOf("</thinking>");
 
-  // Currently streaming inside a thinking block — open tag but no close tag yet
   if (openIdx !== -1 && closeIdx === -1) {
     return {
       thinking: content.slice(openIdx + "<thinking>".length).trim(),
@@ -28,7 +27,6 @@ function parseThinking(content: string): ParsedContent {
     };
   }
 
-  // Extract completed thinking blocks
   const thinkingParts: string[] = [];
   const regex = /<thinking>([\s\S]*?)<\/thinking>/g;
   let match: RegExpExecArray | null;
@@ -36,7 +34,9 @@ function parseThinking(content: string): ParsedContent {
     thinkingParts.push(match[1].trim());
   }
 
-  const answer = content.replace(/<thinking>[\s\S]*?<\/thinking>\s*/g, "").trim();
+  const answer = content
+    .replace(/<thinking>[\s\S]*?<\/thinking>\s*/g, "")
+    .trim();
 
   return {
     thinking: thinkingParts.length > 0 ? thinkingParts.join("\n\n") : null,
@@ -46,7 +46,7 @@ function parseThinking(content: string): ParsedContent {
 }
 
 // ---------------------------------------------------------------------------
-// LaTeX normalizer — remark-math only understands $...$ and $$...$$
+// LaTeX normalizer
 // ---------------------------------------------------------------------------
 
 function normalizeLatex(content: string): string {
@@ -58,7 +58,7 @@ function normalizeLatex(content: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Thinking block UI — collapsible like Claude / ChatGPT
+// Thinking block UI
 // ---------------------------------------------------------------------------
 
 function ThinkingBlock({
@@ -74,9 +74,8 @@ function ThinkingBlock({
     <div className="mb-3">
       <button
         onClick={() => !isThinking && setOpen((o) => !o)}
-        className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-gray-500 dark:text-slate-500 dark:hover:text-slate-400 transition-colors"
+        className="flex items-center gap-1.5 text-xs font-medium text-muted-custom hover:text-primary-custom transition-colors"
       >
-        {/* Sparkle icon */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 16 16"
@@ -92,14 +91,16 @@ function ThinkingBlock({
 
         {isThinking ? (
           <span className="italic">
-            {"Dom\u0101ju"}
+            Domāju
             <span className="inline-flex w-5">
-              <span className="animate-[ellipsis_1.5s_steps(3,end)_infinite]">...</span>
+              <span className="animate-[ellipsis_1.5s_steps(3,end)_infinite]">
+                ...
+              </span>
             </span>
           </span>
         ) : (
           <span>
-            {"Dom\u0101\u0161anas process"}
+            Domāšanas process
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 16 16"
@@ -116,9 +117,8 @@ function ThinkingBlock({
         )}
       </button>
 
-      {/* Expanded thinking content */}
       {(isThinking || open) && thinking && (
-        <div className="mt-2 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
+        <div className="mt-2 rounded-lg border border-subtle bg-base px-3 py-2 text-xs leading-relaxed text-muted-custom">
           <div className="whitespace-pre-wrap">{thinking}</div>
         </div>
       )}
@@ -148,56 +148,76 @@ export function ChatMessage({ message }: { message: Message }) {
 
   return (
     <div
-      className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
+      className={`flex gap-3 ${isUser ? "justify-end animate-slide-in-right" : "justify-start animate-slide-in-left"}`}
     >
-      <div
-        className={`max-w-[85%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed sm:max-w-[75%] ${
-          isUser
-            ? "bg-brand-600 text-white rounded-br-md"
-            : "bg-white text-gray-800 shadow-sm border border-gray-100 rounded-bl-md dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
-        }`}
-      >
-        {isUser ? (
-          <div className="whitespace-pre-wrap break-words">{message.content}</div>
-        ) : (
-          <>
-            {/* Thinking block — shown during and after streaming */}
-            {parsed && (parsed.isThinking || parsed.thinking) && (
-              <ThinkingBlock
-                thinking={parsed.thinking}
-                isThinking={parsed.isThinking}
-              />
-            )}
+      {/* AI avatar — gradient sparkle */}
+      {!isUser && (
+        <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shrink-0 mt-1">
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+            <path
+              d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+              fill="white"
+            />
+          </svg>
+        </div>
+      )}
 
-            {/* Answer content */}
-            {parsed && parsed.answer && (
-              <div className="break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_p]:mb-2 [&_p:last-child]:mb-0">
-                <ReactMarkdown
-                  remarkPlugins={[remarkMath]}
-                  rehypePlugins={[rehypeKatex]}
-                >
-                  {normalizeLatex(parsed.answer)}
-                </ReactMarkdown>
-              </div>
-            )}
-          </>
-        )}
-
-        {!isUser && message.sources && message.sources.length > 0 && (
-          <div className="mt-3 border-t border-gray-100 pt-2 dark:border-slate-700">
-            <p className="text-xs font-medium text-gray-400 mb-1 dark:text-slate-500">
-              Avoti:
+      <div className={`max-w-[75%] space-y-2 ${isUser ? "order-first" : ""}`}>
+        <div
+          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+            isUser
+              ? "bg-primary text-white rounded-br-md"
+              : "bg-surface text-primary-custom rounded-bl-md"
+          }`}
+        >
+          {isUser ? (
+            <p className="whitespace-pre-wrap break-words">
+              {message.content}
             </p>
-            <div className="flex flex-wrap gap-1">
-              {message.sources.map((source, i) => (
-                <span
-                  key={`${source.id}-${i}`}
-                  className="inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700 dark:bg-slate-700 dark:text-brand-300"
-                >
-                  {source.section || source.subject} lpp. {source.page}
-                </span>
-              ))}
-            </div>
+          ) : (
+            <>
+              {parsed && (parsed.isThinking || parsed.thinking) && (
+                <ThinkingBlock
+                  thinking={parsed.thinking}
+                  isThinking={parsed.isThinking}
+                />
+              )}
+
+              {parsed && parsed.answer && (
+                <div className="break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_p]:mb-2 [&_p:last-child]:mb-0 [&_code]:font-mono [&_code]:text-sm [&_code]:bg-base [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                  >
+                    {normalizeLatex(parsed.answer)}
+                  </ReactMarkdown>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Source citation — design studio style */}
+        {!isUser && message.sources && message.sources.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {message.sources.map((source, i) => (
+              <div
+                key={`${source.id}-${i}`}
+                className="flex items-start gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-subtle"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0">
+                  <path d="M10.75 16.82A7.462 7.462 0 0 1 15 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0 0 18 15.06V3.44a.75.75 0 0 0-.525-.72A8.963 8.963 0 0 0 15 2.25a8.963 8.963 0 0 0-4.25 1.063v13.507ZM9.25 4.313A8.963 8.963 0 0 0 5 2.25c-.862 0-1.7.121-2.475.345a.75.75 0 0 0-.525.72v11.62a.75.75 0 0 0 .954.721A7.506 7.506 0 0 1 5 15.5c1.579 0 3.042.487 4.25 1.32V4.313Z" />
+                </svg>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-primary">
+                    {source.subject} — {source.section}
+                  </p>
+                  <p className="text-[10px] text-muted-custom mt-0.5">
+                    Skola2030 · lpp. {source.page}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -207,13 +227,24 @@ export function ChatMessage({ message }: { message: Message }) {
 
 export function TypingIndicator() {
   return (
-    <div className="flex justify-start">
-      <div className="rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow-sm border border-gray-100 dark:bg-slate-800 dark:border-slate-700">
-        <div className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-gray-300 animate-bounce [animation-delay:0ms] dark:bg-slate-500" />
-          <span className="h-2 w-2 rounded-full bg-gray-300 animate-bounce [animation-delay:150ms] dark:bg-slate-500" />
-          <span className="h-2 w-2 rounded-full bg-gray-300 animate-bounce [animation-delay:300ms] dark:bg-slate-500" />
-        </div>
+    <div className="flex gap-3 animate-slide-in-left">
+      {/* AI avatar */}
+      <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shrink-0">
+        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+          <path
+            d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+            fill="white"
+          />
+        </svg>
+      </div>
+      <div className="bg-surface rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="w-2 h-2 rounded-full bg-primary/60 animate-typing-dot"
+            style={{ animationDelay: `${i * 0.2}s` }}
+          />
+        ))}
       </div>
     </div>
   );

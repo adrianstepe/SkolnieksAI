@@ -49,7 +49,7 @@ export interface RetrievedChunk {
 export async function retrieve(
   query: string,
   filters?: RetrievalFilter,
-  nResults = 5,
+  nResults = 3,
 ): Promise<RetrievedChunk[]> {
   const collection = await getCollection();
   const queryEmbedding = await embedText(query);

@@ -1,23 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-// KaTeX CSS for math rendering. No MathJax is configured in this project.
-// Latvian decimal comma is handled at the prompt level via {,} syntax in LaTeX
-// (e.g. $3{,}14$) — no global comma-spacing overrides needed.
 import "katex/dist/katex.min.css";
 import { SettingsProvider } from "@/lib/context/settings-context";
 import { AuthProvider } from "@/lib/context/auth-context";
 
-const inter = Inter({
-  variable: "--font-inter",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500"],
 });
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#1e40af",
+  themeColor: "#0F1117",
 };
 
 export const metadata: Metadata = {
@@ -33,8 +37,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="lv" className={`${inter.variable} h-full antialiased`}>
-      <body className="h-full bg-gray-50 font-sans text-gray-900 dark:bg-slate-900 dark:text-slate-100">
+    <html
+      lang="lv"
+      className={`${dmSans.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
+    >
+      <body className="h-full bg-base font-sans text-text-primary">
         <AuthProvider>
           <SettingsProvider>{children}</SettingsProvider>
         </AuthProvider>

@@ -1,31 +1,85 @@
 @import "tailwindcss";
 
-/* Enable class-based dark mode: add class="dark" to <html> */
+/* ── Design System: SkolnieksAI Dark Theme ── */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-200: #bfdbfe;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
-  --color-brand-800: #1e40af;
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Primary palette */
+  --color-primary: #4F8EF7;
+  --color-primary-hover: #3D7CE5;
+  --color-accent: #7B5CF7;
+  --color-accent-hover: #6A4BE6;
+
+  /* Surfaces */
+  --color-base: #0F1117;
+  --color-chat-bg: #0B0E14;
+  --color-surface: #1A2033;
+  --color-surface-hover: #222940;
+  --color-sidebar: #0D1117;
+  --color-topbar: #0F1117;
+  --color-input-bg: #151926;
+  --color-muted: #1A2033;
+
+  /* Borders */
+  --color-border: rgba(255, 255, 255, 0.07);
+  --color-border-light: rgba(255, 255, 255, 0.04);
+
+  /* Text */
+  --color-text-primary: #E8ECF4;
+  --color-text-secondary: #8B95A8;
+  --color-text-muted: #5A6478;
+  --color-text-accent: #4F8EF7;
+
+  /* Subject colors */
+  --color-subj-math: #4F8EF7;
+  --color-subj-chemistry: #E85D75;
+  --color-subj-latvian: #4ADE80;
+  --color-subj-history: #F59E0B;
+  --color-subj-physics: #EF4444;
+  --color-subj-english: #A78BFA;
+  --color-subj-science: #2DD4BF;
+  --color-subj-social: #FB923C;
+  --color-subj-biology: #34D399;
+  --color-subj-informatics: #38BDF8;
+  --color-subj-geography: #2DD4BF;
+  --color-subj-art: #F472B6;
+
+  /* Status colors */
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+
+  /* Legacy brand aliases */
+  --color-brand-500: #4F8EF7;
+  --color-brand-600: #4F8EF7;
+  --color-brand-700: #3D7CE5;
+
+  /* Fonts */
+  --font-sans: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
 }
 
-/* Smooth scroll on mobile */
+/* ── Base ── */
 html {
   scroll-behavior: smooth;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Font size scale — applied via data-font attribute on <html> */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Font size scale */
 html[data-font="sm"] { font-size: 14px; }
 html[data-font="md"] { font-size: 16px; }
 html[data-font="lg"] { font-size: 18px; }
 
-/* Hide scrollbar but keep scrollable */
+/* ── Borders — default subtle ── */
+* {
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+/* ── Scrollbar ── */
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -33,3 +87,230 @@ html[data-font="lg"] { font-size: 18px; }
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Thin dark scrollbar for sidebar/chat */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+}
+
+/* ── Utility classes (matching design studio) ── */
+.text-muted-custom {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.text-primary-custom {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.bg-chat {
+  background-color: var(--color-chat-bg);
+}
+
+.border-subtle {
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+}
+
+.glow-primary {
+  box-shadow: 0 0 20px rgba(79, 142, 247, 0.3), 0 0 60px rgba(79, 142, 247, 0.1);
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px rgba(123, 92, 247, 0.3), 0 0 40px rgba(123, 92, 247, 0.1);
+}
+
+/* ── Animations (design-studio parity) ── */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dot-pulse {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes typing-dot {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.animate-fade-up {
+  animation: fade-up 200ms ease-out both;
+}
+
+.animate-fade-in {
+  animation: fade-in 300ms ease-out both;
+}
+
+.animate-slide-up {
+  animation: slide-up 300ms ease-out both;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 300ms ease-out both;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 300ms ease-out both;
+}
+
+.animate-scale-in {
+  animation: scale-in 200ms ease-out both;
+}
+
+.animate-dot-pulse {
+  animation: dot-pulse 1.4s ease-in-out infinite;
+}
+
+.animate-typing-dot {
+  animation: typing-dot 1.4s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--color-surface) 25%, var(--color-surface-hover) 50%, var(--color-surface) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── Source citation pills ── */
+.citation-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  transition: background 150ms, border-color 150ms;
+}
+.citation-pill:hover {
+  background: var(--color-surface-hover);
+  border-color: rgba(255,255,255,0.12);
+}
+.citation-pill svg {
+  width: 12px;
+  height: 12px;
+  color: var(--color-primary);
+}
+
+/* ── Math/code rendering ── */
+.katex { font-family: var(--font-mono); }
+code, pre { font-family: var(--font-mono); }

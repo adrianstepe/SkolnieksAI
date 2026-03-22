@@ -38,6 +38,7 @@ export async function chat(
   messages: ChatMessage[],
   temperature = 0.3,
   model: AiModelChoice = "deepseek",
+  maxTokens = 800,
 ): Promise<DeepSeekResponse> {
   if (model === "claude") {
     const systemMsg = messages.find((m) => m.role === "system")?.content;
@@ -47,7 +48,7 @@ export async function chat(
 
     const response = await anthropicClient.messages.create({
       model: CLAUDE_MODEL,
-      max_tokens: 600,
+      max_tokens: maxTokens,
       temperature,
       ...(systemMsg ? { system: systemMsg } : {}),
       messages: userMessages,
@@ -68,7 +69,7 @@ export async function chat(
     model: DEEPSEEK_MODEL,
     messages,
     temperature,
-    max_tokens: 600,
+    max_tokens: maxTokens,
     stream: false,
   });
 
@@ -102,6 +103,7 @@ export function chatStream(
   messages: ChatMessage[],
   temperature = 0.3,
   model: AiModelChoice = "deepseek",
+  maxTokens = 800,
 ): ChatStreamResult {
   const usage: StreamUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
@@ -114,7 +116,7 @@ export function chatStream(
 
       const stream = anthropicClient.messages.stream({
         model: CLAUDE_MODEL,
-        max_tokens: 600,
+        max_tokens: maxTokens,
         temperature,
         ...(systemMsg ? { system: systemMsg } : {}),
         messages: userMessages,
@@ -140,7 +142,7 @@ export function chatStream(
       model: DEEPSEEK_MODEL,
       messages,
       temperature,
-      max_tokens: 600,
+      max_tokens: maxTokens,
       stream: true,
       stream_options: { include_usage: true },
     });

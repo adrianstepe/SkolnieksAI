@@ -56,12 +56,20 @@ app.add_middleware(
 
 class QueryRequest(BaseModel):
     question: str
-    top_k: int = Field(default=5, ge=1, le=20)
+    top_k: int = Field(default=3, ge=1, le=10)
 
 
 class QueryResponse(BaseModel):
     chunks: list[str]
     sources: list[str]
+
+
+class EmbedRequest(BaseModel):
+    text: str
+
+
+class EmbedResponse(BaseModel):
+    embedding: list[float]
 
 
 # ---------------------------------------------------------------------------
@@ -93,6 +101,13 @@ def query_endpoint(req: QueryRequest) -> QueryResponse:
         sources.append(f"{pdf}#p{page}" if page is not None else pdf)
 
     return QueryResponse(chunks=chunks, sources=sources)
+
+
+@app.post("/embed", response_model=EmbedResponse)
+def embed_endpoint(req: EmbedRequest) -> EmbedResponse:
+    assert _model is not None, "Server not initialised"
+    embedding = _model.encode([req.text], show_progress_bar=False).tolist()[0]
+    return EmbedResponse(embedding=embedding)
 
 
 @app.get("/health")
