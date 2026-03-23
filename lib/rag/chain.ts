@@ -80,11 +80,12 @@ interface CacheEntry {
   hitCount: number;
 }
 
+// TODO: Migrate to ChromaDB skola2030_cache collection
 async function lookupCache(embedding: number[]): Promise<CacheEntry | null> {
   const snapshot = await adminDb
     .collection("questionCache")
     .where("ragVersion", "==", RAG_CACHE_VERSION)
-    .limit(50)
+    .limit(10)
     .get();
 
   let best: { entry: CacheEntry; similarity: number } | null = null;
@@ -120,22 +121,6 @@ async function lookupCache(embedding: number[]): Promise<CacheEntry | null> {
 
 async function saveToCache(question: string, answer: string, embedding: number[]): Promise<void> {
   const cacheRef = adminDb.collection("questionCache");
-
-  const countSnap = await cacheRef
-    .where("ragVersion", "==", RAG_CACHE_VERSION)
-    .count()
-    .get();
-  const total = countSnap.data().count;
-
-  if (total >= 5000) {
-    const oldest = await cacheRef
-      .where("ragVersion", "==", RAG_CACHE_VERSION)
-      .limit(500)
-      .get();
-    const batch = adminDb.batch();
-    for (const doc of oldest.docs) batch.delete(doc.ref);
-    await batch.commit();
-  }
 
   await cacheRef.add({
     question,

@@ -12,15 +12,15 @@ const PREMIUM_TOKEN_BUDGET = 1_500_000;
 const EXAM_PREP_TOKEN_BUDGET = 3_000_000;
 
 /** Daily hard limits (queries per calendar day UTC) */
-const FREE_DAILY_LIMIT = 30;
-const PREMIUM_DAILY_LIMIT = 80;
-const EXAM_PREP_DAILY_LIMIT = 140;
+const FREE_DAILY_LIMIT = 15;
+const PREMIUM_DAILY_LIMIT = 40;
+const EXAM_PREP_DAILY_LIMIT = 80;
 
-/** Rate window: max queries per 3-hour rolling window */
-const FREE_RATE_LIMIT = 10;
-const PREMIUM_RATE_LIMIT = 25;
-const EXAM_PREP_RATE_LIMIT = 40;
-const RATE_WINDOW_MS = 3 * 60 * 60 * 1000; // 3 hours in ms
+/** Rate window: max queries per 1-minute rolling window */
+const FREE_RATE_LIMIT = 5;
+const PREMIUM_RATE_LIMIT = 5;
+const EXAM_PREP_RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 60_000; // 1 minute in ms
 
 function getBudgetForTier(tier: string): number {
   switch (tier) {
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // --- 3-hour rate window gate ---
+  // --- 1-minute rate window gate ---
   const rateWindowStart = usageData.rateWindowStart as number | undefined;
   const windowActive = rateWindowStart !== undefined && now.getTime() - rateWindowStart < RATE_WINDOW_MS;
   const rateWindowCount = windowActive ? ((usageData.rateWindowCount as number) ?? 0) : 0;
@@ -152,13 +152,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { message, subject, grade, model, conversationHistory, conversationId } = parsed.data;
+  const { subject, grade, model, conversationHistory, conversationId } = parsed.data;
 
-  // Tier-based model routing: free users always get DeepSeek
-  const effectiveModel = tier === "free" ? "deepseek" : model;
+  // Strip HTML tags to prevent prompt injection
+  const message = parsed.data.message.replace(/<[^>]*>/g, "");
 
-  // Max output tokens: 800 for free, 1500 for paid tiers
-  const maxTokens = tier === "free" ? 800 : 1500;
+  // Tier-based model routing: only exam_prep and school_pro may use Claude
+  const effectiveModel =
+    tier === "exam_prep" || tier === "school_pro" ? model : "deepseek";
+
+  // Max output tokens: 800 for all tiers
+  const maxTokens = 800;
 
   // --- Conversation persistence ---
   const SUBJECT_LABELS: Record<string, string> = {
