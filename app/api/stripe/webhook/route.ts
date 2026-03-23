@@ -71,11 +71,17 @@ export async function POST(request: NextRequest) {
       const periodEnd = (subscriptionData as Record<string, unknown>)
         .current_period_end as number;
 
+      const resolvedTier = tierMap[plan];
+      if (!resolvedTier) {
+        console.error(`Unrecognized plan "${plan}" in session ${session.id} — aborting tier update`);
+        break;
+      }
+
       await adminDb
         .collection("users")
         .doc(firebaseUid)
         .update({
-          tier: tierMap[plan] ?? "premium",
+          tier: resolvedTier,
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscriptionId,
           currentPeriodEnd: new Date(periodEnd * 1000).toISOString(),

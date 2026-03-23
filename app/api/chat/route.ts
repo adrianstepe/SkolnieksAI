@@ -66,6 +66,19 @@ const ChatRequestSchema = z.object({
     .optional(),
 });
 
+// Discriminated union returned from the usage transaction
+type TxnOk = { ok: true; tier: string };
+type TxnDenied = {
+  ok: false;
+  reason:
+    | "user_not_found"
+    | "token_budget_exceeded"
+    | "daily_limit_exceeded"
+    | "rate_limit_exceeded";
+  dailyLimit?: number;
+  minutesRemaining?: number;
+};
+
 export async function POST(request: NextRequest) {
   // --- Auth verification ---
   const decoded = await verifyAuthToken(request);
@@ -73,67 +86,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  // --- Read user tier + usage ---
-  const userRef = adminDb.collection("users").doc(decoded.uid);
-  const userDoc = await userRef.get();
-
-  if (!userDoc.exists) {
-    return NextResponse.json({ error: "user_not_found" }, { status: 404 });
-  }
-
-  const userData = userDoc.data() as Record<string, unknown>;
-  const tier = (userData.tier as string) ?? "free";
-
-  const now = new Date();
-  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const usageRef = userRef.collection("usage").doc(yearMonth);
-  const usageDoc = await usageRef.get();
-
-  const usageData = usageDoc.exists
-    ? (usageDoc.data() as Record<string, unknown>)
-    : { inputTokens: 0, outputTokens: 0, queryCount: 0 } as Record<string, unknown>;
-
-  const tokensUsed =
-    ((usageData.inputTokens as number) ?? 0) + ((usageData.outputTokens as number) ?? 0);
-  const tokenBudget = getBudgetForTier(tier);
-
-  // --- Monthly token budget gate ---
-  if (tokensUsed >= tokenBudget) {
-    return NextResponse.json(
-      { error: "token_budget_exceeded", upgrade_url: "/pricing" },
-      { status: 429 },
-    );
-  }
-
-  // --- Daily hard limit gate ---
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const storedDailyDate = usageData.dailyDate as string | undefined;
-  const dailyCount = storedDailyDate === today ? ((usageData.dailyCount as number) ?? 0) : 0;
-  const dailyLimit = getDailyLimitForTier(tier);
-
-  if (dailyCount >= dailyLimit) {
-    return NextResponse.json(
-      { error: "daily_limit_exceeded", limit: dailyLimit },
-      { status: 429 },
-    );
-  }
-
-  // --- 1-minute rate window gate ---
-  const rateWindowStart = usageData.rateWindowStart as number | undefined;
-  const windowActive = rateWindowStart !== undefined && now.getTime() - rateWindowStart < RATE_WINDOW_MS;
-  const rateWindowCount = windowActive ? ((usageData.rateWindowCount as number) ?? 0) : 0;
-  const rateLimit = getRateLimitForTier(tier);
-
-  if (rateWindowCount >= rateLimit) {
-    const msRemaining = RATE_WINDOW_MS - (now.getTime() - (rateWindowStart ?? 0));
-    const minutesRemaining = Math.ceil(msRemaining / 60_000);
-    return NextResponse.json(
-      { error: "rate_limit_exceeded", minutesRemaining },
-      { status: 429 },
-    );
-  }
-
-  // --- Validate body ---
+  // --- Validate body before reserving a usage slot ---
   let body: unknown;
   try {
     body = await request.json();
@@ -152,10 +105,131 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const now = new Date();
+  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  const userRef = adminDb.collection("users").doc(decoded.uid);
+  const usageRef = userRef.collection("usage").doc(yearMonth);
+
+  // --- Atomic limit check + slot reservation ---
+  // All three limits (monthly budget, daily hard cap, 1-min rate window) are
+  // evaluated and the counters are written inside a single Firestore transaction
+  // so that concurrent requests cannot both pass the same check simultaneously.
+  let txnResult: TxnOk | TxnDenied;
+  try {
+    txnResult = await adminDb.runTransaction(async (txn) => {
+      const [userDoc, usageDoc] = await Promise.all([
+        txn.get(userRef),
+        txn.get(usageRef),
+      ]);
+
+      if (!userDoc.exists) {
+        return { ok: false, reason: "user_not_found" } satisfies TxnDenied;
+      }
+
+      const userData = userDoc.data() as Record<string, unknown>;
+      const tier = (userData.tier as string) ?? "free";
+
+      const usageData = usageDoc.exists
+        ? (usageDoc.data() as Record<string, unknown>)
+        : ({} as Record<string, unknown>);
+
+      // --- Monthly token budget ---
+      const tokensUsed =
+        ((usageData.inputTokens as number) ?? 0) +
+        ((usageData.outputTokens as number) ?? 0);
+      if (tokensUsed >= getBudgetForTier(tier)) {
+        return { ok: false, reason: "token_budget_exceeded" } satisfies TxnDenied;
+      }
+
+      // --- Daily hard limit ---
+      const storedDailyDate = usageData.dailyDate as string | undefined;
+      const currentDailyCount =
+        storedDailyDate === today ? ((usageData.dailyCount as number) ?? 0) : 0;
+      const dailyLimit = getDailyLimitForTier(tier);
+      if (currentDailyCount >= dailyLimit) {
+        return { ok: false, reason: "daily_limit_exceeded", dailyLimit } satisfies TxnDenied;
+      }
+
+      // --- 1-minute rate window ---
+      const rateWindowStart = usageData.rateWindowStart as number | undefined;
+      const windowActive =
+        rateWindowStart !== undefined &&
+        now.getTime() - rateWindowStart < RATE_WINDOW_MS;
+      const currentRateWindowCount = windowActive
+        ? ((usageData.rateWindowCount as number) ?? 0)
+        : 0;
+      if (currentRateWindowCount >= getRateLimitForTier(tier)) {
+        const msRemaining =
+          RATE_WINDOW_MS - (now.getTime() - (rateWindowStart ?? 0));
+        return {
+          ok: false,
+          reason: "rate_limit_exceeded",
+          minutesRemaining: Math.ceil(msRemaining / 60_000),
+        } satisfies TxnDenied;
+      }
+
+      // --- Reserve the slot: write updated counters atomically ---
+      const newDailyCount =
+        storedDailyDate === today ? currentDailyCount + 1 : 1;
+      const isNewWindow = !windowActive;
+      const newRateWindowStart = isNewWindow
+        ? now.getTime()
+        : (rateWindowStart as number);
+      const newRateWindowCount = isNewWindow ? 1 : currentRateWindowCount + 1;
+
+      txn.set(
+        usageRef,
+        {
+          queryCount: FieldValue.increment(1),
+          lastQueryAt: now.toISOString(),
+          dailyDate: today,
+          dailyCount: newDailyCount,
+          rateWindowStart: newRateWindowStart,
+          rateWindowCount: newRateWindowCount,
+        },
+        { merge: true },
+      );
+
+      return { ok: true, tier } satisfies TxnOk;
+    });
+  } catch (err) {
+    console.error("Usage transaction failed:", err);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
+
+  // --- Handle limit denials ---
+  if (!txnResult.ok) {
+    switch (txnResult.reason) {
+      case "user_not_found":
+        return NextResponse.json({ error: "user_not_found" }, { status: 404 });
+      case "token_budget_exceeded":
+        return NextResponse.json(
+          { error: "token_budget_exceeded", upgrade_url: "/pricing" },
+          { status: 429 },
+        );
+      case "daily_limit_exceeded":
+        return NextResponse.json(
+          { error: "daily_limit_exceeded", limit: txnResult.dailyLimit },
+          { status: 429 },
+        );
+      case "rate_limit_exceeded":
+        return NextResponse.json(
+          { error: "rate_limit_exceeded", minutesRemaining: txnResult.minutesRemaining },
+          { status: 429 },
+        );
+    }
+  }
+
+  const { tier } = txnResult;
+
   const { subject, grade, model, conversationHistory, conversationId } = parsed.data;
 
-  // Strip HTML tags to prevent prompt injection
-  const message = parsed.data.message.replace(/<[^>]*>/g, "");
+  // Prompt injection is mitigated via strict system instructions in the LLM prompt,
+  // not by stripping user input here (regex-based HTML removal breaks valid inputs
+  // such as math inequalities and is trivially bypassed anyway).
+  const message = parsed.data.message;
 
   // Tier-based model routing: only exam_prep and school_pro may use Claude
   const effectiveModel =
@@ -263,28 +337,17 @@ export async function POST(request: NextRequest) {
               encoder.encode(`data: ${doneData}\n\n`),
             );
 
-            // --- Update usage in Firestore ---
+            // --- Update token counts in Firestore ---
+            // The slot (queryCount, dailyCount, rateWindowCount) was already
+            // reserved atomically by the transaction above. Here we only add
+            // the actual token counts, which are safe with FieldValue.increment.
             const inputTokens = event.usage.prompt_tokens ?? 0;
             const outputTokens = event.usage.completion_tokens ?? 0;
-
-            // Daily count: reset if new day
-            const newDailyCount = storedDailyDate === today ? dailyCount + 1 : 1;
-
-            // Rate window: start fresh if previous window expired
-            const isNewWindow = !rateWindowStart || now.getTime() - rateWindowStart >= RATE_WINDOW_MS;
-            const newRateWindowStart = isNewWindow ? now.getTime() : rateWindowStart;
-            const newRateWindowCount = isNewWindow ? 1 : rateWindowCount + 1;
 
             await usageRef.set(
               {
                 inputTokens: FieldValue.increment(inputTokens),
                 outputTokens: FieldValue.increment(outputTokens),
-                queryCount: FieldValue.increment(1),
-                lastQueryAt: now.toISOString(),
-                dailyDate: today,
-                dailyCount: newDailyCount,
-                rateWindowStart: newRateWindowStart,
-                rateWindowCount: newRateWindowCount,
               },
               { merge: true },
             );

@@ -4,6 +4,7 @@
  */
 
 const RAG_API_URL = process.env.RAG_API_URL ?? "http://localhost:8001";
+const RAG_API_KEY = process.env.RAG_API_KEY ?? "";
 
 /**
  * ChromaDB cosine distance: 0 = identical, 2 = opposite.
@@ -46,7 +47,7 @@ export async function retrieveContext(question: string, topK = 3): Promise<Retri
   try {
     const res = await fetch(`${RAG_API_URL}/query`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-API-Key": RAG_API_KEY },
       body: JSON.stringify({ question, top_k: topK }),
       // Abort quickly so a dead RAG service doesn't block the chat response
       signal: AbortSignal.timeout(5_000),

@@ -7,6 +7,7 @@ import { adminDb } from "@/lib/firebase/admin";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 const RAG_API_URL = process.env.RAG_API_URL ?? "http://localhost:8001";
+const RAG_API_KEY = process.env.RAG_API_KEY ?? "";
 
 // IMPORTANT: Bump this version string whenever you change:
 // - The system prompt
@@ -61,7 +62,7 @@ async function getEmbedding(text: string): Promise<number[] | null> {
   try {
     const res = await fetch(`${RAG_API_URL}/embed`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-API-Key": RAG_API_KEY },
       body: JSON.stringify({ text }),
       signal: AbortSignal.timeout(5_000),
     });

@@ -3,17 +3,33 @@ SkolnieksAI RAG API server — port 8001
 Run: uvicorn rag_server:app --port 8001 --reload
 """
 
+import os
 from contextlib import asynccontextmanager
 from typing import Any
 
 import chromadb
 import uvicorn
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel, Field
 from sentence_transformers import SentenceTransformer
 
 from RAG import CHROMA_DIR, COLLECTION, EMBEDDING_MODEL
+
+# ---------------------------------------------------------------------------
+# API key authentication
+# ---------------------------------------------------------------------------
+
+_RAG_API_KEY = os.environ.get("RAG_API_KEY", "")
+_api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def require_api_key(key: str | None = Security(_api_key_header)) -> None:
+    if not _RAG_API_KEY:
+        raise RuntimeError("RAG_API_KEY env var is not set — refusing all requests")
+    if key != _RAG_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing X-API-Key")
 
 # ---------------------------------------------------------------------------
 # Shared state — loaded once at startup, reused across requests
@@ -57,7 +73,7 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 
 class QueryRequest(BaseModel):
-    question: str
+    question: str = Field(..., max_length=2000)
     top_k: int = Field(default=3, ge=1, le=10)
 
 
@@ -68,7 +84,7 @@ class QueryResponse(BaseModel):
 
 
 class EmbedRequest(BaseModel):
-    text: str
+    text: str = Field(..., max_length=2000)
 
 
 class EmbedResponse(BaseModel):
@@ -80,7 +96,7 @@ class EmbedResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 @app.post("/query", response_model=QueryResponse)
-def query_endpoint(req: QueryRequest) -> QueryResponse:
+def query_endpoint(req: QueryRequest, _: None = Depends(require_api_key)) -> QueryResponse:
     assert _model is not None and _collection is not None, "Server not initialised"
 
     # Return empty gracefully if collection has no data yet
@@ -121,7 +137,7 @@ def query_endpoint(req: QueryRequest) -> QueryResponse:
 
 
 @app.post("/embed", response_model=EmbedResponse)
-def embed_endpoint(req: EmbedRequest) -> EmbedResponse:
+def embed_endpoint(req: EmbedRequest, _: None = Depends(require_api_key)) -> EmbedResponse:
     assert _model is not None, "Server not initialised"
     embedding = _model.encode([req.text], show_progress_bar=False).tolist()[0]
     return EmbedResponse(embedding=embedding)
