@@ -10,7 +10,7 @@ cd C:\Users\adria\.antigravity\SkolnieksAI
 
 ```bash
 .\skolnieksai-env\Scripts\activate
-uvicorn RAG_server:app --port 8001 --reload
+uvicorn rag_server:app --port 8001 --reload
 ```
 
 ## 2. Next.js dev server (Terminal 2)

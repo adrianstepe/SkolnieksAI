@@ -10,6 +10,7 @@ import { useSettings } from "@/lib/context/settings-context";
 import { useAuth } from "@/lib/context/auth-context";
 
 const SUBJECT_LABELS: Record<string, string> = {
+  general: "Vispārīgi",
   math: "Matemātika",
   physics: "Fizika",
   chemistry: "Ķīmija",
@@ -135,6 +136,31 @@ export function ChatContainer() {
     setActiveTab("learn");
   }, []);
 
+  // Delete a conversation
+  const handleChatDelete = useCallback(
+    async (chatId: string) => {
+      try {
+        const token = await getIdToken();
+        if (!token) return;
+        const res = await fetch(`/api/conversations/${chatId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        // Remove from sidebar list
+        setRecentChats((prev) => prev.filter((c) => c.id !== chatId));
+        // If the deleted conversation was active, clear the view
+        if (conversationId === chatId) {
+          setConversationId(null);
+          setMessages([]);
+        }
+      } catch {
+        // Silently fail
+      }
+    },
+    [getIdToken, conversationId],
+  );
+
   const handleSend = useCallback(
     async (text: string) => {
       const userMessage: Message = {
@@ -240,6 +266,8 @@ export function ChatContainer() {
                     ? {
                         ...m,
                         sources: event.chunks as Message["sources"],
+                        webSources: (event.webSources ?? []) as Message["webSources"],
+                        usedWebSearch: Boolean(event.usedWebSearch),
                       }
                     : m,
                 ),
@@ -317,6 +345,7 @@ export function ChatContainer() {
         recentChats={recentChats}
         activeChatId={conversationId}
         onChatSelect={handleChatSelect}
+        onChatDelete={handleChatDelete}
         onNewChat={handleNewChat}
         mobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
@@ -514,6 +543,12 @@ const SUBJECT_ICON_MAP = Object.fromEntries(SUBJECTS.map((s) => [s.value, s.icon
 
 const QUICK_STARTS: QuickStartCard[] = [
   {
+    value: "biology",
+    label: "Bioloģija",
+    prompt: "Kas ir fotosintēze?",
+    icon: SUBJECT_ICON_MAP.biology,
+  },
+  {
     value: "math",
     label: "Matemātika",
     prompt: "Izskaidro, kā atrisināt kvadrātvienādojumu",
@@ -524,12 +559,6 @@ const QUICK_STARTS: QuickStartCard[] = [
     label: "Fizika",
     prompt: "Kas ir Ņūtona otrais likums?",
     icon: SUBJECT_ICON_MAP.physics,
-  },
-  {
-    value: "biology",
-    label: "Bioloģija",
-    prompt: "Kā notiek fotosintēze?",
-    icon: SUBJECT_ICON_MAP.biology,
   },
   {
     value: "geography",
@@ -544,10 +573,10 @@ const QUICK_STARTS: QuickStartCard[] = [
     icon: SUBJECT_ICON_MAP.informatics,
   },
   {
-    value: "latvian",
-    label: "Latviešu valoda",
-    prompt: "Kā uzrakstīt labu eseju?",
-    icon: SUBJECT_ICON_MAP.latvian,
+    value: "general",
+    label: "Vispārīgi",
+    prompt: "Sveiki! Ko tu vari darīt?",
+    icon: SUBJECT_ICON_MAP.general,
   },
 ];
 
@@ -574,8 +603,8 @@ function WelcomeScreen({
           Sveiki! Es esmu <span className="text-primary">SkolnieksAI</span>
         </h1>
         <p className="text-sm text-muted-custom max-w-md mx-auto">
-          Tavs personīgais mācību palīgs. Uzdod jautājumu par jebkuru mācību priekšmetu —
-          es palīdzēšu saprast, nevis atbildēšu tavā vietā.
+          Tavs mācību palīgs. Uzdod jautājumu — saņemsi skaidru atbildi latviešu valodā,
+          balstoties uz Skola2030 programmu.
         </p>
       </div>
 

@@ -243,6 +243,9 @@ export async function POST(request: NextRequest) {
                 page: c.metadata.page_number,
                 section: c.metadata.section_title,
               })),
+              webSources: event.webSources,
+              usedWebSearch: event.usedWebSearch,
+              ragPath: event.path,
             });
             controller.enqueue(
               encoder.encode(`data: ${sourcesData}\n\n`),

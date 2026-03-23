@@ -1,4 +1,5 @@
 import { retrieveContext } from "@/lib/rag-client";
+import { webSearch, type WebSearchResult } from "@/lib/search/web";
 import { chat, chatStream, type ChatMessage } from "@/lib/ai/deepseek";
 import type { DeepSeekResponse } from "@/lib/ai/deepseek";
 import type { RetrievedChunk } from "./retriever";
@@ -13,7 +14,27 @@ const RAG_API_URL = process.env.RAG_API_URL ?? "http://localhost:8001";
 // - The AI model (DeepSeek version)
 // - Chunk size, overlap, or retrieval count
 // Changing this invalidates all old cache entries automatically.
-const RAG_CACHE_VERSION = "v1";
+const RAG_CACHE_VERSION = "v4"; // bumped: system prompt + web fallback + Path C guard
+
+// ---------------------------------------------------------------------------
+// Path C fallback message (no LLM call — no hallucination possible)
+// ---------------------------------------------------------------------------
+
+const PATH_C_RESPONSE =
+  "Es nevaru atrast atbildi šobrīd. Mani Skola2030 dokumenti nesatur šo informāciju, " +
+  "un interneta meklēšana arī neatdeva rezultātus. Mēģini pārformulēt jautājumu vai " +
+  "vaicāt par konkrētu mācību priekšmetu vai tēmu.";
+
+// ---------------------------------------------------------------------------
+// WebSource — public type consumed by UI
+// ---------------------------------------------------------------------------
+
+export interface WebSource {
+  title: string;
+  url: string;
+  snippet: string;
+  favicon: string;
+}
 
 // ---------------------------------------------------------------------------
 // Semantic cache helpers
@@ -87,8 +108,7 @@ async function lookupCache(embedding: number[]): Promise<CacheEntry | null> {
   }
 
   if (best) {
-    console.log(`[DEBUG] Cache hit — similarity: ${best.similarity.toFixed(4)}`);
-    // Fire-and-forget: increment hit stats
+    console.log(`[cache] Hit — similarity: ${best.similarity.toFixed(4)}`);
     adminDb.collection("questionCache").doc(best.entry.id).update({
       hitCount: FieldValue.increment(1),
       lastHitAt: Timestamp.now(),
@@ -101,7 +121,6 @@ async function lookupCache(embedding: number[]): Promise<CacheEntry | null> {
 async function saveToCache(question: string, answer: string, embedding: number[]): Promise<void> {
   const cacheRef = adminDb.collection("questionCache");
 
-  // Size protection: keep cache under 5,000 entries per RAG version
   const countSnap = await cacheRef
     .where("ragVersion", "==", RAG_CACHE_VERSION)
     .count()
@@ -109,7 +128,6 @@ async function saveToCache(question: string, answer: string, embedding: number[]
   const total = countSnap.data().count;
 
   if (total >= 5000) {
-    // Delete 500 entries (no orderBy — avoids composite index requirement)
     const oldest = await cacheRef
       .where("ragVersion", "==", RAG_CACHE_VERSION)
       .limit(500)
@@ -134,27 +152,33 @@ async function saveToCache(question: string, answer: string, embedding: number[]
 // System prompt — Latvian, Skola2030-aligned
 // ---------------------------------------------------------------------------
 
-/**
- * Builds the system prompt for SkolnieksAI.
- * Optimised for token economy (~150 tokens).
- */
 function buildSystemPrompt(subject: string, grade: number): string {
   const complexityRule =
     grade <= 9
-      ? "≤20 vārdi/teikumā. Aktīvā balss. Jauns termins → ikdienas analoģija. Bez ligzdotiem palīgteikumiem."
+      ? "≤20 vārdi/teikumā. Aktīvā balss. Jauns termins → ikdienas analoģija."
       : "Akadēmiska valoda, abstrakcijas, starppriekšmetu saiknes, zinātniskā terminoloģija.";
 
+  const subjectCtx =
+    subject === "general"
+      ? "Vari jautāt par jebko — mācībām, dzīvi, vai vienkārši parunāties."
+      : `Priekšmets: ${subject}. Klase: ${grade}.`;
+
   return `<system_role>
-Tu esi SkolnieksAI — Latvijas mācību palīgs (6.–12.kl.), Skola2030. Klase: ${grade}, priekšmets: ${subject}.
-Sokrātisks ceļvedis: pacietīgs, iedrošinošs, „tu" forma.
-Fakti/definīcijas → atbildi tieši. Uzdevumi → Sokrātiskā metode, VIENS mājiens. „Pastāsti" → izpildi.
+Tu esi SkolnieksAI — Latvijas labākais mācību palīgs (6.–12.kl.), balstoties uz Skola2030 programmu. ${subjectCtx}
+Mērķis: precīzas, skaidras atbildes latviešu valodā. „tu" forma. Pacietīgs, iedrošinošs.
 </system_role>
+<atbildes_stratēģija>
+ZINĀŠANU JAUTĀJUMS (kas ir / kā notiek / izskaidro / definē / salīdzini) → Atbildi TIEŠI pirmajā teikumā. Tad konteksts no Skola2030. NEKAD nesāc ar pretjautājumu.
+APRĒĶINS / UZDEVUMS → Atrisini pilnībā ar soļiem. Parādi metodi.
+ESEJAS RAKSTĪŠANA vai PILNĪGA MĀJASDARBU IZPILDE → Palīdzi strukturēt un domāt, bet neraksti skolēna vietā. VIENS konkrēts mājiens.
+SARUNA / NEAKADĒMISKS → Atbildi kā atbalstošs klasesbiedrs — īsi, silti. NEPĀRADRESĒ uz mācībām.
+</atbildes_stratēģija>
 <rules>
-VALODA: Tikai LV. Pro-drop, debitīvs. ${complexityRule}
-STILS: „pēdiņas"(U+201E/U+201C), – domuzīme, **treknraksts** jēdzieniem. ≤3 rindkopas. Bez: „Lielisks jautājums!", „Protams!", „Nirsim dziļāk". Neatkārto jautājumu, bez liekvārdības.
+VALODA: Tikai LV. ${complexityRule} „pēdiņas"(U+201E/U+201C), – domuzīme, **treknraksts** jēdzieniem. ≤3 rindkopas.
 MATH: $inline$, $$bloks$$. Decimālkomats: $3{,}14$.
-KONTEKSTS: Secini no fragmentiem. Nekad „nav datubāzē"/„nevaru". Nepietiek → saistīta tēma.
-<thinking> pirms atbildes (slēpts).
+AIZLIEGTS: „Lielisks jautājums!", „Protams!", „Nirsim dziļāk", atkārtot jautājumu, liekvārdība.
+KONTEKSTS: Balsties TIKAI uz dotajiem fragmentiem. Ja fragmenti nesatur atbildi — saki godīgi: „Mani Skola2030 dokumenti nesatur precīzu atbildi." NEKAD neizdomā faktus, kurus neredzi kontekstā.
+WEB: Ja konteksts sākas ar „[WEB MEKLĒŠANA]", atbilde nāk no interneta — sāc to ar: „Šī informācija nav manā Skola2030 bāzē, taču pēc interneta datiem:"
 </rules>`;
 }
 
@@ -176,11 +200,7 @@ export interface RagResult extends DeepSeekResponse {
 }
 
 // ---------------------------------------------------------------------------
-// RAG chain (non-streaming)
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Chunk cleanup — strip boilerplate, headers, page numbers before injection
+// Chunk cleanup
 // ---------------------------------------------------------------------------
 
 function cleanChunkText(text: string): string {
@@ -189,9 +209,7 @@ function cleanChunkText(text: string): string {
     .filter((line) => {
       const trimmed = line.trim();
       if (!trimmed) return false;
-      // Purely numeric lines (page numbers, table indices)
       if (/^\d+$/.test(trimmed)) return false;
-      // Very short lines — likely headers, section labels, or artifacts
       if (trimmed.length < 20) return false;
       return true;
     })
@@ -201,7 +219,7 @@ function cleanChunkText(text: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Query-aware retrieval — simple definition queries need fewer chunks
+// Query-aware retrieval
 // ---------------------------------------------------------------------------
 
 function getTopK(query: string): number {
@@ -221,11 +239,51 @@ function chunksFromTexts(texts: string[]): RetrievedChunk[] {
   }));
 }
 
-function formatContext(texts: string[], sources: string[]): string {
+function formatRagContext(texts: string[], sources: string[]): string {
   return texts
     .map((t, i) => `[${i + 1}] ${sources[i] ?? "nezināms avots"}\n${t}`)
     .join("\n\n---\n\n");
 }
+
+// ---------------------------------------------------------------------------
+// Web search helper — returns null on empty/failure (signals Path C)
+// ---------------------------------------------------------------------------
+
+interface WebContext {
+  context: string;
+  sources: WebSource[];
+}
+
+async function fetchWebContext(query: string): Promise<WebContext | null> {
+  let results: WebSearchResult[] = [];
+  try {
+    results = await webSearch(query, 3);
+  } catch (err) {
+    console.warn(`[chain] Web search threw: ${err instanceof Error ? err.message : String(err)}`);
+    return null;
+  }
+
+  if (results.length === 0) {
+    return null; // → Path C
+  }
+
+  const sources: WebSource[] = results.map((r) => ({
+    title: r.title,
+    snippet: r.snippet,
+    url: r.url,
+    favicon: r.favicon,
+  }));
+
+  const body = results
+    .map((r, i) => `[${i + 1}] ${r.title}\n${r.snippet}${r.url ? `\nAvots: ${r.url}` : ""}`)
+    .join("\n\n---\n\n");
+
+  return { context: `[WEB MEKLĒŠANA]\n${body}`, sources };
+}
+
+// ---------------------------------------------------------------------------
+// Message builder
+// ---------------------------------------------------------------------------
 
 function buildMessages(
   systemPrompt: string,
@@ -233,19 +291,19 @@ function buildMessages(
   query: string,
   conversationHistory: ChatMessage[],
 ): ChatMessage[] {
-  // Limit history to last 3 messages to control input token growth
   const recentHistory = conversationHistory.slice(-3);
-
-  // Anchor-turn pattern: context in a dedicated user turn acknowledged by
-  // the assistant, so the model treats the chunks as "received" information.
   return [
     { role: "system", content: systemPrompt },
-    { role: "user", content: `Konteksts no Skola2030:\n\n${context}` },
+    { role: "user", content: `Konteksts:\n\n${context}` },
     { role: "assistant", content: "Sapratu." },
     ...recentHistory,
     { role: "user", content: query },
   ];
 }
+
+// ---------------------------------------------------------------------------
+// RAG chain (non-streaming)
+// ---------------------------------------------------------------------------
 
 export async function runRagChain(input: RagInput): Promise<RagResult> {
   const { query, subject, grade, model = "deepseek", maxTokens = 800, conversationHistory = [] } = input;
@@ -255,12 +313,35 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
   const texts = raw.texts.map((t) => cleanChunkText(t).slice(0, 800));
   const sources = raw.sources;
   const chunks = chunksFromTexts(texts);
-  const context = formatContext(texts, sources);
+
+  let context: string;
+
+  if (raw.hasConfidentMatch) {
+    // Path A
+    console.log(`[chain] Path A — RAG confident for: "${query}"`);
+    context = formatRagContext(texts, sources);
+  } else {
+    const web = await fetchWebContext(query);
+    if (web !== null) {
+      // Path B
+      console.log(`[chain] Path B — web search fallback for: "${query}"`);
+      context = web.context;
+    } else {
+      // Path C — return honest answer without any LLM call
+      console.log(`[chain] Path C — no results for: "${query}"`);
+      return {
+        content: PATH_C_RESPONSE,
+        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        chunks,
+      };
+    }
+  }
+
   const systemPrompt = buildSystemPrompt(subject, grade);
   const messages = buildMessages(systemPrompt, context, query, conversationHistory as ChatMessage[]);
 
   const totalPromptChars = messages.reduce((sum, m) => sum + m.content.length, 0);
-  console.log(`[DEBUG] Total prompt length: ${totalPromptChars} characters (${messages.length} messages, ${texts.length} chunks)`);
+  console.log(`[chain] Prompt: ${totalPromptChars} chars, ${texts.length} RAG chunks`);
 
   const response = await chat(messages, 0.3, model, maxTokens);
   return { ...response, chunks };
@@ -270,88 +351,125 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
 // RAG chain (streaming) — yields text deltas then a final metadata object
 // ---------------------------------------------------------------------------
 
+export type RagPath = "A" | "B" | "C";
+
 export type StreamEvent =
   | { type: "delta"; text: string }
-  | { type: "done"; chunks: RetrievedChunk[]; usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number } };
+  | {
+      type: "done";
+      chunks: RetrievedChunk[];
+      webSources: WebSource[];
+      usedWebSearch: boolean;
+      path: RagPath;
+      usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+    };
+
+const ZERO_USAGE = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
 export async function* runRagChainStream(
   input: RagInput,
 ): AsyncGenerator<StreamEvent> {
   const { query, subject, grade, model = "deepseek", maxTokens = 800, conversationHistory = [] } = input;
 
-  // --- Semantic cache lookup (DeepSeek only — Claude responses are personalised) ---
-  if (model === "deepseek" && isCacheable(query)) {
+  // ---------------------------------------------------------------------------
+  // Retrieve + three-path routing
+  // ---------------------------------------------------------------------------
+  const topK = getTopK(query);
+  const raw = await retrieveContext(query, topK);
+  const texts = raw.texts.map((t) => cleanChunkText(t).slice(0, 800));
+  const sources = raw.sources;
+  const chunks = chunksFromTexts(texts);
+
+  let context: string;
+  let webSources: WebSource[] = [];
+  let path: RagPath;
+
+  if (raw.hasConfidentMatch) {
+    // ── Path A: RAG confident ──────────────────────────────────────────────
+    path = "A";
+    console.log(`[chain] Path A — RAG confident (best distance < 0.35) for: "${query}"`);
+    context = formatRagContext(texts, sources);
+  } else {
+    // RAG not confident — try web search
+    const web = await fetchWebContext(query);
+
+    if (web !== null) {
+      // ── Path B: web search returned results ─────────────────────────────
+      path = "B";
+      console.log(`[chain] Path B — web fallback (${web.sources.length} result(s)) for: "${query}"`);
+      context = web.context;
+      webSources = web.sources;
+    } else {
+      // ── Path C: both RAG and web returned nothing — NO LLM call ─────────
+      path = "C";
+      console.log(`[chain] Path C — no results from RAG or web for: "${query}"`);
+
+      // Stream the fallback message character-by-character (looks natural)
+      for (const char of PATH_C_RESPONSE) {
+        yield { type: "delta", text: char };
+      }
+      yield {
+        type: "done",
+        chunks,
+        webSources: [],
+        usedWebSearch: true,
+        path: "C",
+        usage: ZERO_USAGE,
+      };
+      return;
+    }
+  }
+
+  const systemPrompt = buildSystemPrompt(subject, grade);
+  const messages = buildMessages(systemPrompt, context, query, conversationHistory as ChatMessage[]);
+
+  const totalPromptChars = messages.reduce((sum, m) => sum + m.content.length, 0);
+  console.log(`[chain] Prompt: ${totalPromptChars} chars, path=${path}, ${texts.length} RAG chunks, ${webSources.length} web sources`);
+
+  // ---------------------------------------------------------------------------
+  // Semantic cache (Path A + DeepSeek only — web answers are volatile)
+  // ---------------------------------------------------------------------------
+  if (path === "A" && model === "deepseek" && isCacheable(query)) {
     const embedding = await getEmbedding(query);
     if (embedding) {
       const hit = await lookupCache(embedding);
       if (hit) {
-        // Stream cached answer character by character at 12ms/char
         for (const char of hit.answer) {
           yield { type: "delta", text: char };
           await new Promise((resolve) => setTimeout(resolve, 12));
         }
-        yield {
-          type: "done",
-          chunks: [],
-          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-        };
+        yield { type: "done", chunks: [], webSources: [], usedWebSearch: false, path: "A", usage: ZERO_USAGE };
         return;
       }
 
-      // Cache miss — run RAG normally, then save result in background
-      const topK = getTopK(query);
-      const raw = await retrieveContext(query, topK);
-      const texts = raw.texts.map((t) => cleanChunkText(t).slice(0, 800));
-      const sources = raw.sources;
-      const chunks = chunksFromTexts(texts);
-      const context = formatContext(texts, sources);
-      const systemPrompt = buildSystemPrompt(subject, grade);
-      const messages = buildMessages(systemPrompt, context, query, conversationHistory as ChatMessage[]);
-
-      const totalPromptChars = messages.reduce((sum, m) => sum + m.content.length, 0);
-      console.log(`[DEBUG] Total prompt length: ${totalPromptChars} characters (${messages.length} messages, ${texts.length} chunks)`);
-
+      // Cache miss — stream then save
       let fullAnswer = "";
       const { stream, getUsage } = chatStream(messages, 0.3, model, maxTokens);
       for await (const delta of stream) {
         fullAnswer += delta;
         yield { type: "delta", text: delta };
       }
-
       const usage = getUsage();
-      yield { type: "done", chunks, usage };
-
-      // Fire-and-forget cache save
+      yield { type: "done", chunks, webSources: [], usedWebSearch: false, path: "A", usage };
       saveToCache(query, fullAnswer, embedding).catch(() => {/* ignore */});
       return;
     }
   }
 
-  // --- Normal RAG path (cache skipped: Claude model, non-cacheable query, or embed unavailable) ---
-  const topK = getTopK(query);
-  const raw = await retrieveContext(query, topK);
-  // Clean boilerplate then truncate to 800 chars
-  const texts = raw.texts.map((t) => cleanChunkText(t).slice(0, 800));
-  const sources = raw.sources;
-
-  const chunks = chunksFromTexts(texts);
-  const context = formatContext(texts, sources);
-  const systemPrompt = buildSystemPrompt(subject, grade);
-  const messages = buildMessages(systemPrompt, context, query, conversationHistory as ChatMessage[]);
-
-  // Permanent debug logging — monitor prompt size
-  const totalPromptChars = messages.reduce((sum, m) => sum + m.content.length, 0);
-  console.log(`[DEBUG] Total prompt length: ${totalPromptChars} characters (${messages.length} messages, ${texts.length} chunks)`);
-
+  // ---------------------------------------------------------------------------
+  // Normal streaming path (Path B, Claude, non-cacheable, or embed unavailable)
+  // ---------------------------------------------------------------------------
   const { stream, getUsage } = chatStream(messages, 0.3, model, maxTokens);
   for await (const delta of stream) {
     yield { type: "delta", text: delta };
   }
-
   const usage = getUsage();
   yield {
     type: "done",
     chunks,
+    webSources,
+    usedWebSearch: path === "B",
+    path,
     usage,
   };
 }

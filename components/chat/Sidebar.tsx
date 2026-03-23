@@ -16,6 +16,7 @@ interface SidebarProps {
   recentChats?: RecentChat[];
   activeChatId?: string | null;
   onChatSelect?: (chatId: string) => void;
+  onChatDelete?: (chatId: string) => void;
   onNewChat?: () => void;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
@@ -36,6 +37,7 @@ export function Sidebar({
   recentChats = [],
   activeChatId,
   onChatSelect,
+  onChatDelete,
   onNewChat,
   mobileOpen = false,
   onMobileClose,
@@ -202,24 +204,39 @@ export function Sidebar({
               <div className="space-y-0.5">
                 {recentChats.length > 0 ? (
                   recentChats.map((chat) => (
-                    <button
+                    <div
                       key={chat.id}
-                      onClick={() => {
-                        onChatSelect?.(chat.id);
-                        onMobileClose?.();
-                      }}
-                      className={`flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm transition-colors ${
+                      className={`group flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm transition-colors ${
                         activeChatId === chat.id
                           ? "bg-muted text-primary-custom"
                           : "text-muted-custom hover:bg-muted/50 hover:text-primary-custom"
                       }`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0">
-                        <path fillRule="evenodd" d="M10 2c-2.236 0-4.43.18-6.57.524C1.993 2.755 1 3.997 1 5.402v5.196c0 1.405.993 2.647 2.43 2.878a49.143 49.143 0 0 0 3.57.42V17.5a.75.75 0 0 0 1.234.577l3.733-3.154a49.38 49.38 0 0 0 2.603-.27c1.437-.23 2.43-1.472 2.43-2.878V5.402c0-1.405-.993-2.647-2.43-2.878A49.024 49.024 0 0 0 10 2Z" clipRule="evenodd" />
-                      </svg>
-                      <span className="truncate flex-1 text-left">{chat.title}</span>
-                      <span className="ml-auto text-[10px] shrink-0">šodien</span>
-                    </button>
+                      <button
+                        onClick={() => {
+                          onChatSelect?.(chat.id);
+                          onMobileClose?.();
+                        }}
+                        className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0">
+                          <path fillRule="evenodd" d="M10 2c-2.236 0-4.43.18-6.57.524C1.993 2.755 1 3.997 1 5.402v5.196c0 1.405.993 2.647 2.43 2.878a49.143 49.143 0 0 0 3.57.42V17.5a.75.75 0 0 0 1.234.577l3.733-3.154a49.38 49.38 0 0 0 2.603-.27c1.437-.23 2.43-1.472 2.43-2.878V5.402c0-1.405-.993-2.647-2.43-2.878A49.024 49.024 0 0 0 10 2Z" clipRule="evenodd" />
+                        </svg>
+                        <span className="truncate">{chat.title}</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onChatDelete?.(chat.id);
+                        }}
+                        className="ml-auto shrink-0 rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                        aria-label="Dzēst sarunu"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                          <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
                   ))
                 ) : (
                   <div className="flex flex-col items-center py-5 px-2 text-center">

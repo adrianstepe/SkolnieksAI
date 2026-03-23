@@ -1,6 +1,6 @@
 """
 SkolnieksAI RAG API server — port 8001
-Run: uvicorn RAG_server:app --port 8001 --reload
+Run: uvicorn rag_server:app --port 8001 --reload
 """
 
 from contextlib import asynccontextmanager
@@ -30,8 +30,10 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
     _model = SentenceTransformer(EMBEDDING_MODEL)
     print(f"[startup] Connecting to ChromaDB: {CHROMA_DIR}")
     client = chromadb.PersistentClient(path=CHROMA_DIR)
-    _collection = client.get_collection(COLLECTION)
-    print("[startup] Ready.")
+    # get_or_create so the server starts cleanly even before first ingest
+    _collection = client.get_or_create_collection(COLLECTION)
+    count = _collection.count()
+    print(f"[startup] Ready — collection '{COLLECTION}' has {count} chunks.")
     yield
     # Nothing to clean up
 
@@ -62,6 +64,7 @@ class QueryRequest(BaseModel):
 class QueryResponse(BaseModel):
     chunks: list[str]
     sources: list[str]
+    distances: list[float]  # ChromaDB cosine distances 0–2; lower = more relevant
 
 
 class EmbedRequest(BaseModel):
@@ -80,6 +83,11 @@ class EmbedResponse(BaseModel):
 def query_endpoint(req: QueryRequest) -> QueryResponse:
     assert _model is not None and _collection is not None, "Server not initialised"
 
+    # Return empty gracefully if collection has no data yet
+    if _collection.count() == 0:
+        print("[query] Collection is empty — run ingest first")
+        return QueryResponse(chunks=[], sources=[], distances=[])  # type: ignore[call-arg]
+
     embedding = _model.encode([req.question], show_progress_bar=False).tolist()
 
     results = _collection.query(
@@ -88,19 +96,28 @@ def query_endpoint(req: QueryRequest) -> QueryResponse:
         include=["documents", "metadatas", "distances"],
     )
 
-    docs  = results["documents"][0]
-    metas = results["metadatas"][0]
+    docs:      list[Any] = results["documents"][0]   # type: ignore[index]
+    metas:     list[Any] = results["metadatas"][0]   # type: ignore[index]
+    raw_dists: list[Any] = results["distances"][0]   # type: ignore[index]
 
-    chunks:  list[str] = []
-    sources: list[str] = []
+    chunks:    list[str]   = []
+    sources:   list[str]   = []
+    distances: list[float] = []
 
-    for doc, meta in zip(docs, metas):
-        chunks.append(doc)
-        pdf  = meta.get("source_pdf", "unknown")
-        page = meta.get("page_number")
-        sources.append(f"{pdf}#p{page}" if page is not None else pdf)
+    for doc, meta, dist in zip(docs, metas, raw_dists):
+        chunks.append(str(doc) if doc else "")
+        pdf     = str(meta.get("source_pdf", "unknown"))
+        page    = meta.get("page_number")
+        subject = str(meta.get("subject", ""))
+        label   = f"{pdf} | {subject} | lpp. {page}" if page is not None else f"{pdf} | {subject}"
+        sources.append(label)
+        distances.append(float(dist))
 
-    return QueryResponse(chunks=chunks, sources=sources)
+    q_preview    = req.question[:60]  # type: ignore[index]
+    dist_preview = [round(d, 3) for d in distances]  # type: ignore[call-overload]
+    print(f"[query] q={q_preview!r}  returned={len(chunks)}  distances={dist_preview}")
+
+    return QueryResponse(chunks=chunks, sources=sources, distances=distances)  # type: ignore[call-arg]
 
 
 @app.post("/embed", response_model=EmbedResponse)
@@ -111,8 +128,36 @@ def embed_endpoint(req: EmbedRequest) -> EmbedResponse:
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health() -> dict[str, Any]:
+    count = _collection.count() if _collection is not None else -1
+    return {"status": "ok", "collection": COLLECTION, "chunk_count": count}
+
+
+@app.get("/audit")
+def audit() -> dict[str, Any]:
+    """
+    Show what source PDFs are indexed in ChromaDB.
+    Use this to verify exam-spec documents were actually ingested before
+    trusting the AI to answer curriculum questions about them.
+    """
+    if _collection is None:
+        return {"error": "collection not loaded"}
+    total = _collection.count()
+    if total == 0:
+        return {"count": 0, "sources": [], "note": "Collection is empty — run ingest first"}
+
+    sample = _collection.get(limit=200, include=["metadatas"])
+    metas: list[Any] = sample.get("metadatas") or []
+    seen: dict[str, int] = {}
+    for m in metas:
+        pdf = str(m.get("source_pdf", "unknown"))
+        seen[pdf] = seen.get(pdf, 0) + 1
+
+    return {
+        "total_chunks": total,
+        "sampled": len(metas),
+        "sources": [{"source_pdf": k, "chunks_in_sample": v} for k, v in sorted(seen.items())],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -120,4 +165,4 @@ def health() -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    uvicorn.run("RAG_server:app", host="127.0.0.1", port=8001, reload=True)
+    uvicorn.run("rag_server:app", host="127.0.0.1", port=8001, reload=True)

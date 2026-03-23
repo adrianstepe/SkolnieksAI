@@ -11,6 +11,7 @@ import {
   ALargeSmall,
   Code2,
   Palette,
+  MessageSquare,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,6 +21,7 @@ export const SUBJECTS: {
   shortLabel: string;
   icon: LucideIcon;
 }[] = [
+  { value: "general", label: "Vispārīgi", shortLabel: "Vispārīgi", icon: MessageSquare },
   { value: "math", label: "Matemātika", shortLabel: "Matemātika", icon: Calculator },
   { value: "physics", label: "Fizika", shortLabel: "Fizika", icon: FlaskConical },
   { value: "chemistry", label: "Ķīmija", shortLabel: "Ķīmija", icon: FlaskRound },

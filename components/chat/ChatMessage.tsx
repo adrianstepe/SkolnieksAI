@@ -4,6 +4,7 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import { SourcesBubble } from "@/components/SourcesBubble";
 
 // ---------------------------------------------------------------------------
 // Thinking block parser
@@ -134,12 +135,21 @@ export interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  /** Skola2030 RAG chunks (Path A) */
   sources?: Array<{
     id: string;
     subject: string;
     page: number;
     section: string;
   }>;
+  /** Web search results (Path B) */
+  webSources?: Array<{
+    title: string;
+    url: string;
+    snippet: string;
+    favicon: string;
+  }>;
+  usedWebSearch?: boolean;
 }
 
 export function ChatMessage({ message }: { message: Message }) {
@@ -184,14 +194,21 @@ export function ChatMessage({ message }: { message: Message }) {
               )}
 
               {parsed && parsed.answer && (
-                <div className="break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_p]:mb-2 [&_p:last-child]:mb-0 [&_code]:font-mono [&_code]:text-sm [&_code]:bg-base [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
-                  >
-                    {normalizeLatex(parsed.answer)}
-                  </ReactMarkdown>
-                </div>
+                <>
+                  <div className="break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_p]:mb-2 [&_p:last-child]:mb-0 [&_code]:font-mono [&_code]:text-sm [&_code]:bg-base [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                    >
+                      {normalizeLatex(parsed.answer)}
+                    </ReactMarkdown>
+                  </div>
+
+                  {/* Web sources bubble — shown for Path B answers */}
+                  {message.webSources && message.webSources.length > 0 && (
+                    <SourcesBubble sources={message.webSources} />
+                  )}
+                </>
               )}
             </>
           )}
