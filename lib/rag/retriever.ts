@@ -1,6 +1,7 @@
 import { ChromaClient, Collection } from "chromadb";
 import { embedText } from "@/lib/ai/embeddings";
 import type { ChunkMetadata } from "@/scripts/ingest";
+import { KNOWN_CURRICULUM_SUBJECTS } from "@/lib/rag-client";
 
 const CHROMA_URL = process.env.CHROMA_URL ?? "http://localhost:8000";
 const COLLECTION_NAME = process.env.CHROMA_COLLECTION ?? "skola2030_chunks";
@@ -54,9 +55,11 @@ export async function retrieve(
   const collection = await getCollection();
   const queryEmbedding = await embedText(query);
 
-  // Build ChromaDB where clause
+  // Build ChromaDB where clause.
+  // Only filter by subject when it's a known curriculum value — "general" and
+  // "unknown" must search across all chunks with no subject restriction.
   const where: Record<string, unknown> = {};
-  if (filters?.subject) {
+  if (filters?.subject && KNOWN_CURRICULUM_SUBJECTS.has(filters.subject)) {
     where.subject = { $eq: filters.subject };
   }
   if (filters?.grade !== undefined) {

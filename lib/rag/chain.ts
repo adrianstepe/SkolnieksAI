@@ -15,7 +15,7 @@ const RAG_API_KEY = process.env.RAG_API_KEY ?? "";
 // - The AI model (DeepSeek version)
 // - Chunk size, overlap, or retrieval count
 // Changing this invalidates all old cache entries automatically.
-const RAG_CACHE_VERSION = "v4"; // bumped: system prompt + web fallback + Path C guard
+const RAG_CACHE_VERSION = "v6"; // bumped: threshold raised to 1.0 for Latvian cross-lingual distances
 
 // ---------------------------------------------------------------------------
 // Path C fallback message (no LLM call — no hallucination possible)
@@ -164,7 +164,7 @@ VALODA: Tikai LV. ${complexityRule} „pēdiņas"(U+201E/U+201C), – domuzīme,
 MATH: $inline$, $$bloks$$. Decimālkomats: $3{,}14$.
 AIZLIEGTS: „Lielisks jautājums!", „Protams!", „Nirsim dziļāk", atkārtot jautājumu, liekvārdība.
 KONTEKSTS: Balsties TIKAI uz dotajiem fragmentiem. Ja fragmenti nesatur atbildi — saki godīgi: „Mani Skola2030 dokumenti nesatur precīzu atbildi." NEKAD neizdomā faktus, kurus neredzi kontekstā.
-WEB: Ja konteksts sākas ar „[WEB MEKLĒŠANA]", atbilde nāk no interneta — sāc to ar: „Šī informācija nav manā Skola2030 bāzē, taču pēc interneta datiem:"
+WEB: Ja konteksts sākas ar „[WEB MEKLĒŠANA — nav Skola2030]", sāc: „Šī informācija nav manā Skola2030 bāzē, taču pēc interneta datiem:". Ja konteksts sākas ar „[WEB MEKLĒŠANA]", izmanto interneta informāciju bez šā prefiksa.
 </rules>`;
 }
 
@@ -217,11 +217,18 @@ function getTopK(query: string): number {
   return 3;
 }
 
-function chunksFromTexts(texts: string[]): RetrievedChunk[] {
-  return texts.map((text) => ({
+function chunksFromRaw(raw: import("@/lib/rag-client").RetrieveResult, cleanedTexts: string[]): RetrievedChunk[] {
+  return cleanedTexts.map((text, i) => ({
     content: text,
-    metadata: { source_pdf: "", subject: "", grade_min: 1, grade_max: 12, page_number: 0, chunk_index: 0, section_title: "" },
-    distance: 0,
+    metadata: {
+      source_pdf:    raw.metadatas[i]?.source_pdf    ?? "",
+      subject:       raw.metadatas[i]?.subject       ?? "",
+      grade_min:     raw.metadatas[i]?.grade_min     ?? 1,
+      grade_max:     raw.metadatas[i]?.grade_max     ?? 12,
+      page_number:   raw.metadatas[i]?.page_number   ?? 0,
+      section_title: "",
+    },
+    distance: raw.distances[i] ?? 1,
   }));
 }
 
@@ -240,7 +247,7 @@ interface WebContext {
   sources: WebSource[];
 }
 
-async function fetchWebContext(query: string): Promise<WebContext | null> {
+async function fetchWebContext(query: string, ragEmpty: boolean): Promise<WebContext | null> {
   let results: WebSearchResult[] = [];
   try {
     results = await webSearch(query, 3);
@@ -264,7 +271,10 @@ async function fetchWebContext(query: string): Promise<WebContext | null> {
     .map((r, i) => `[${i + 1}] ${r.title}\n${r.snippet}${r.url ? `\nAvots: ${r.url}` : ""}`)
     .join("\n\n---\n\n");
 
-  return { context: `[WEB MEKLĒŠANA]\n${body}`, sources };
+  // Use a different tag when RAG returned 0 chunks so the system prompt can
+  // conditionally instruct the LLM to disclose the Skola2030 miss.
+  const tag = ragEmpty ? "[WEB MEKLĒŠANA — nav Skola2030]" : "[WEB MEKLĒŠANA]";
+  return { context: `${tag}\n${body}`, sources };
 }
 
 // ---------------------------------------------------------------------------
@@ -295,10 +305,10 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
   const { query, subject, grade, model = "deepseek", maxTokens = 800, conversationHistory = [] } = input;
 
   const topK = getTopK(query);
-  const raw = await retrieveContext(query, topK);
+  const raw = await retrieveContext(query, topK, subject);
   const texts = raw.texts.map((t) => cleanChunkText(t).slice(0, 800));
   const sources = raw.sources;
-  const chunks = chunksFromTexts(texts);
+  const chunks = chunksFromRaw(raw, texts);
 
   let context: string;
 
@@ -307,7 +317,7 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
     console.log(`[chain] Path A — RAG confident for: "${query}"`);
     context = formatRagContext(texts, sources);
   } else {
-    const web = await fetchWebContext(query);
+    const web = await fetchWebContext(query, raw.texts.length === 0);
     if (web !== null) {
       // Path B
       console.log(`[chain] Path B — web search fallback for: "${query}"`);
@@ -361,10 +371,10 @@ export async function* runRagChainStream(
   // Retrieve + three-path routing
   // ---------------------------------------------------------------------------
   const topK = getTopK(query);
-  const raw = await retrieveContext(query, topK);
+  const raw = await retrieveContext(query, topK, subject);
   const texts = raw.texts.map((t) => cleanChunkText(t).slice(0, 800));
   const sources = raw.sources;
-  const chunks = chunksFromTexts(texts);
+  const chunks = chunksFromRaw(raw, texts);
 
   let context: string;
   let webSources: WebSource[] = [];
@@ -373,11 +383,11 @@ export async function* runRagChainStream(
   if (raw.hasConfidentMatch) {
     // ── Path A: RAG confident ──────────────────────────────────────────────
     path = "A";
-    console.log(`[chain] Path A — RAG confident (best distance < 0.35) for: "${query}"`);
+    console.log(`[chain] Path A — RAG confident (best distance < 1.0) for: "${query}"`);
     context = formatRagContext(texts, sources);
   } else {
     // RAG not confident — try web search
-    const web = await fetchWebContext(query);
+    const web = await fetchWebContext(query, raw.texts.length === 0);
 
     if (web !== null) {
       // ── Path B: web search returned results ─────────────────────────────

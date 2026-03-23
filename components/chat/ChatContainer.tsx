@@ -8,6 +8,7 @@ import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { UpgradeModal } from "./UpgradeModal";
 import { useSettings } from "@/lib/context/settings-context";
 import { useAuth } from "@/lib/context/auth-context";
+import { detectSubject } from "@/lib/utils/detect-subject";
 
 const SUBJECT_LABELS: Record<string, string> = {
   general: "Vispārīgi",
@@ -24,6 +25,7 @@ const SUBJECT_LABELS: Record<string, string> = {
 };
 
 type NavTab = "learn" | "tasks" | "progress";
+type SystemError = { message: string; type: "billing" | "rate_limit" | "general" } | null;
 
 export function ChatContainer() {
   const { settings } = useSettings();
@@ -39,11 +41,21 @@ export function ChatContainer() {
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [activeTab, setActiveTab] = useState<NavTab>("learn");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Conversation state
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [recentChats, setRecentChats] = useState<RecentChat[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
+
+  const [systemError, setSystemError] = useState<SystemError>(null);
+  const [detectedSubjectLabel, setDetectedSubjectLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!detectedSubjectLabel) return;
+    const timer = setTimeout(() => setDetectedSubjectLabel(null), 4000);
+    return () => clearTimeout(timer);
+  }, [detectedSubjectLabel]);
 
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
@@ -161,6 +173,10 @@ export function ChatContainer() {
     [getIdToken, conversationId],
   );
 
+  const handleStop = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
+
   const handleSend = useCallback(
     async (text: string) => {
       const userMessage: Message = {
@@ -169,7 +185,17 @@ export function ChatContainer() {
         content: text,
       };
 
+      // Auto-detect subject on the very first message of a new general conversation
+      if (subject === "general" && messages.length === 0) {
+        const detected = detectSubject(text);
+        if (detected) {
+          setSubject(detected);
+          setDetectedSubjectLabel(SUBJECT_LABELS[detected] ?? detected);
+        }
+      }
+
       setMessages((prev) => [...prev, userMessage]);
+      setSystemError(null);
       setIsLoading(true);
 
       const assistantId = `assistant-${Date.now()}`;
@@ -181,6 +207,9 @@ export function ChatContainer() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       try {
         const history = messages.slice(-6).map((m) => ({
           role: m.role as "user" | "assistant",
@@ -190,6 +219,7 @@ export function ChatContainer() {
         const token = await getIdToken();
         const response = await fetch("/api/chat", {
           method: "POST",
+          signal: controller.signal,
           headers: {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -290,6 +320,14 @@ export function ChatContainer() {
         // Refresh sidebar after new message
         fetchRecentChats();
       } catch (err) {
+        // User-initiated abort — keep partial content, show nothing
+        if (err instanceof DOMException && err.name === "AbortError") {
+          return;
+        }
+
+        // Remove the empty assistant bubble — error is shown as a banner, not in chat
+        setMessages((prev) => prev.filter((m) => m.id !== assistantId));
+
         const msg = err instanceof Error ? err.message : "";
         const isBudgetExceeded = msg === "BUDGET_EXCEEDED";
         const isDailyLimitExceeded = msg === "DAILY_LIMIT_EXCEEDED";
@@ -299,11 +337,16 @@ export function ChatContainer() {
           setShowUpgrade(true);
         }
 
-        let errorMessage: string;
         if (isBudgetExceeded) {
-          errorMessage = "Tavs mēneša limits ir sasniegts. Uzlabo plānu, lai turpinātu!";
+          setSystemError({
+            message: "Tavs mēneša limits ir sasniegts. Uzlabo plānu, lai turpinātu!",
+            type: "billing",
+          });
         } else if (isDailyLimitExceeded) {
-          errorMessage = "Šodien esi sasniedzis dienas jautājumu limitu. Atgriezies rīt vai uzlabo plānu!";
+          setSystemError({
+            message: "Šodien esi sasniedzis dienas jautājumu limitu. Atgriezies rīt vai uzlabo plānu!",
+            type: "billing",
+          });
         } else if (isRateLimited) {
           const mins = parseInt(msg.split(":")[1] ?? "180", 10);
           const hours = Math.floor(mins / 60);
@@ -311,17 +354,18 @@ export function ChatContainer() {
           const timeStr = hours > 0
             ? `${hours} st. ${remainingMins > 0 ? `${remainingMins} min.` : ""}`.trim()
             : `${mins} min.`;
-          errorMessage = `Pārāk daudz jautājumu īsā laikā. Pagaidi ${timeStr} un mēģini vēlreiz.`;
+          setSystemError({
+            message: `Pārāk daudz jautājumu īsā laikā. Pagaidi ${timeStr} un mēģini vēlreiz.`,
+            type: "rate_limit",
+          });
         } else {
-          errorMessage = `Kļūda: ${msg || "Nevarēja izveidot savienojumu"}`;
+          setSystemError({
+            message: `Nevarēja izveidot savienojumu. Lūdzu, mēģini vēlreiz.`,
+            type: "general",
+          });
         }
-
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantId ? { ...m, content: errorMessage } : m,
-          ),
-        );
       } finally {
+        abortControllerRef.current = null;
         setIsLoading(false);
       }
     },
@@ -444,6 +488,14 @@ export function ChatContainer() {
           </div>
         </header>
 
+        {/* Subject auto-detect toast */}
+        {detectedSubjectLabel && (
+          <div className="animate-fade-up flex items-center justify-between gap-2 bg-primary/10 border-b border-primary/20 px-5 py-1.5 text-xs text-primary">
+            <span>Automātiski noteikts priekšmets: <strong>{detectedSubjectLabel}</strong></span>
+            <button onClick={() => setDetectedSubjectLabel(null)} className="text-primary/60 hover:text-primary">✕</button>
+          </div>
+        )}
+
         {/* Content area */}
         {activeTab === "learn" ? (
           <>
@@ -456,28 +508,90 @@ export function ChatContainer() {
                 <WelcomeScreen onSelectPrompt={handleSend} onSubjectChange={setSubject} />
               ) : (
                 <div className="mx-auto max-w-3xl space-y-6">
-                  {loadingChat && (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    </div>
+                  {loadingChat ? (
+                    <ChatSkeleton />
+                  ) : (
+                    <>
+                      {messages.map((msg) => (
+                        <ChatMessage key={msg.id} message={msg} />
+                      ))}
+
+                      {isLoading &&
+                        messages[messages.length - 1]?.role === "assistant" &&
+                        messages[messages.length - 1]?.content === "" && (
+                          <TypingIndicator />
+                        )}
+                    </>
                   )}
-
-                  {!loadingChat &&
-                    messages.map((msg) => (
-                      <ChatMessage key={msg.id} message={msg} />
-                    ))}
-
-                  {isLoading &&
-                    messages[messages.length - 1]?.role === "assistant" &&
-                    messages[messages.length - 1]?.content === "" && (
-                      <TypingIndicator />
-                    )}
                 </div>
               )}
             </div>
 
+            {/* System error banner */}
+            {systemError && (
+              <div
+                className={`px-4 py-3 border-t shrink-0 ${
+                  systemError.type === "general"
+                    ? "bg-red-500/10 border-red-500/20"
+                    : "bg-warning/10 border-warning/20"
+                }`}
+              >
+                <div className="max-w-3xl mx-auto flex items-start gap-3">
+                  {/* Icon */}
+                  <div
+                    className={`shrink-0 mt-0.5 ${
+                      systemError.type === "general" ? "text-red-400" : "text-warning"
+                    }`}
+                  >
+                    {systemError.type === "rate_limit" ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+
+                  {/* Message */}
+                  <p
+                    className={`flex-1 text-sm ${
+                      systemError.type === "general" ? "text-red-300" : "text-warning"
+                    }`}
+                  >
+                    {systemError.message}
+                    {systemError.type === "billing" && (
+                      <button
+                        onClick={() => setShowUpgrade(true)}
+                        className="ml-2 underline underline-offset-2 hover:opacity-80 transition-opacity"
+                      >
+                        Uzzināt vairāk
+                      </button>
+                    )}
+                  </p>
+
+                  {/* Dismiss */}
+                  <button
+                    onClick={() => setSystemError(null)}
+                    className="shrink-0 text-muted-custom hover:text-primary-custom transition-colors"
+                    aria-label="Aizvērt"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                      <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Input */}
-            <ChatInput onSend={handleSend} disabled={isLoading || loadingChat} />
+            <ChatInput
+              onSend={handleSend}
+              disabled={isLoading || loadingChat}
+              isGenerating={isLoading}
+              onStop={handleStop}
+            />
           </>
         ) : (
           /* Drīzumā placeholder for Uzdevumi & Progress */
@@ -638,6 +752,30 @@ function WelcomeScreen({
         <span className="inline-flex items-center gap-1">🔒 Privāts un drošs</span>
         <span className="inline-flex items-center gap-1">🇱🇻 Latviski</span>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Chat skeleton loader
+// ---------------------------------------------------------------------------
+
+function SkeletonBubble({ align, widthClass }: { align: "left" | "right"; widthClass: string }) {
+  return (
+    <div className={`flex ${align === "right" ? "justify-end" : "justify-start"}`}>
+      <div className={`${widthClass} h-10 rounded-2xl bg-surface animate-pulse`} />
+    </div>
+  );
+}
+
+function ChatSkeleton() {
+  return (
+    <div className="space-y-6 py-2">
+      <SkeletonBubble align="right" widthClass="w-48" />
+      <SkeletonBubble align="left"  widthClass="w-3/4" />
+      <SkeletonBubble align="left"  widthClass="w-2/3" />
+      <SkeletonBubble align="right" widthClass="w-36" />
+      <SkeletonBubble align="left"  widthClass="w-4/5" />
     </div>
   );
 }

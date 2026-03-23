@@ -75,12 +75,23 @@ app.add_middleware(
 class QueryRequest(BaseModel):
     question: str = Field(..., max_length=2000)
     top_k: int = Field(default=3, ge=1, le=10)
+    where_subject: str | None = None  # optional subject filter (e.g. "physics")
+
+
+class ChunkMeta(BaseModel):
+    source_pdf: str
+    subject: str
+    grade_min: int
+    grade_max: int
+    page_number: int
+    chunk_index: int
 
 
 class QueryResponse(BaseModel):
     chunks: list[str]
     sources: list[str]
     distances: list[float]  # ChromaDB cosine distances 0–2; lower = more relevant
+    metadatas: list[ChunkMeta]
 
 
 class EmbedRequest(BaseModel):
@@ -102,13 +113,19 @@ def query_endpoint(req: QueryRequest, _: None = Depends(require_api_key)) -> Que
     # Return empty gracefully if collection has no data yet
     if _collection.count() == 0:
         print("[query] Collection is empty — run ingest first")
-        return QueryResponse(chunks=[], sources=[], distances=[])  # type: ignore[call-arg]
+        return QueryResponse(chunks=[], sources=[], distances=[], metadatas=[])  # type: ignore[call-arg]
 
     embedding = _model.encode([req.question], show_progress_bar=False).tolist()
+
+    # Apply subject filter when provided (skips filter for None/"general"/"unknown")
+    where_clause: dict[str, Any] | None = None
+    if req.where_subject:
+        where_clause = {"subject": {"$eq": req.where_subject}}
 
     results = _collection.query(
         query_embeddings=embedding,
         n_results=req.top_k,
+        where=where_clause,
         include=["documents", "metadatas", "distances"],
     )
 
@@ -116,9 +133,10 @@ def query_endpoint(req: QueryRequest, _: None = Depends(require_api_key)) -> Que
     metas:     list[Any] = results["metadatas"][0]   # type: ignore[index]
     raw_dists: list[Any] = results["distances"][0]   # type: ignore[index]
 
-    chunks:    list[str]   = []
-    sources:   list[str]   = []
-    distances: list[float] = []
+    chunks:    list[str]       = []
+    sources:   list[str]       = []
+    distances: list[float]     = []
+    metadatas: list[ChunkMeta] = []
 
     for doc, meta, dist in zip(docs, metas, raw_dists):
         chunks.append(str(doc) if doc else "")
@@ -128,12 +146,21 @@ def query_endpoint(req: QueryRequest, _: None = Depends(require_api_key)) -> Que
         label   = f"{pdf} | {subject} | lpp. {page}" if page is not None else f"{pdf} | {subject}"
         sources.append(label)
         distances.append(float(dist))
+        metadatas.append(ChunkMeta(
+            source_pdf  = pdf,
+            subject     = subject,
+            grade_min   = int(meta.get("grade_min", 1)),
+            grade_max   = int(meta.get("grade_max", 12)),
+            page_number = int(page) if page is not None else 0,
+            chunk_index = int(meta.get("chunk_index", 0)),
+        ))
 
     q_preview    = req.question[:60]  # type: ignore[index]
     dist_preview = [round(d, 3) for d in distances]  # type: ignore[call-overload]
-    print(f"[query] q={q_preview!r}  returned={len(chunks)}  distances={dist_preview}")
+    subject_tag  = f"  subject_filter={req.where_subject!r}" if req.where_subject else ""
+    print(f"[query] q={q_preview!r}  returned={len(chunks)}  distances={dist_preview}{subject_tag}")
 
-    return QueryResponse(chunks=chunks, sources=sources, distances=distances)  # type: ignore[call-arg]
+    return QueryResponse(chunks=chunks, sources=sources, distances=distances, metadatas=metadatas)  # type: ignore[call-arg]
 
 
 @app.post("/embed", response_model=EmbedResponse)
