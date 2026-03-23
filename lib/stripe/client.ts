@@ -1,12 +1,17 @@
 import Stripe from "stripe";
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-if (!stripeSecretKey) {
-  throw new Error("STRIPE_SECRET_KEY environment variable is not set");
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error("STRIPE_SECRET_KEY environment variable is not set");
+  }
+  return new Stripe(key, { typescript: true });
 }
 
-export const stripe = new Stripe(stripeSecretKey, {
-  typescript: true,
+// Lazy proxy — defers initialization to first request, not module load.
+// Prevents Next.js build failures when env vars aren't set at build time.
+export const stripe: Stripe = new Proxy({} as Stripe, {
+  get: (_, prop) => Reflect.get(getStripe(), prop as string),
 });
 
 export const PRICE_IDS = {
