@@ -12,7 +12,35 @@ SCRIPT_DIR    = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR      = os.path.join(SCRIPT_DIR, "Skola2030")
 CHROMA_DIR    = os.path.join(SCRIPT_DIR, "SkolnieksAI_DB")
 COLLECTION    = "skola2030_chunks"          # matches ARCHITECTURE.md
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"       # matches RAG-PIPELINE.md
+
+# Chroma Cloud env vars — if CHROMA_TENANT is set, cloud mode is active
+_CHROMA_TENANT   = os.environ.get("CHROMA_TENANT", "")
+_CHROMA_DATABASE = os.environ.get("CHROMA_DATABASE", "skolnieksai")
+_CHROMA_API_KEY  = os.environ.get("CHROMA_API_KEY", "")
+
+
+def get_chroma_client() -> chromadb.ClientAPI:
+    """Return a Chroma Cloud HttpClient if CHROMA_TENANT is set, else local PersistentClient."""
+    if _CHROMA_TENANT:
+        return chromadb.HttpClient(
+            ssl=True,
+            host="api.trychroma.com",
+            tenant=_CHROMA_TENANT,
+            database=_CHROMA_DATABASE,
+            headers={"x-chroma-token": _CHROMA_API_KEY},
+        )
+    return chromadb.PersistentClient(path=CHROMA_DIR)
+# Multilingual model — handles Latvian + English in the same vector space.
+# Switched from all-MiniLM-L6-v2 (English-primary) to support Wikipedia LV + OpenStax.
+EMBEDDING_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+
+# Collections:
+#   skolnieks_content  — open-license content (OpenStax + Wikipedia LV). Always present.
+#   skola2030_chunks   — Skola2030 PDFs. Optional — legal clearance pending.
+CONTENT_COLLECTION  = "skolnieks_content"
+SKOLA2030_COLLECTION = "skola2030_chunks"
+COLLECTION          = CONTENT_COLLECTION   # default collection for backwards-compat imports
+
 CHUNK_SIZE    = 500   # words
 CHUNK_OVERLAP = 50    # words
 MIN_CHUNK     = 100   # words — discard tiny tail fragments
@@ -172,37 +200,13 @@ def collect_unique_pdfs(base_dir: str) -> list[str]:
 # Main ingestion
 # ---------------------------------------------------------------------------
 
-def main() -> None:
-    print("=" * 60)
-    print("SkolnieksAI — RAG ingestion pipeline")
-    print("=" * 60)
-
-    # -- ChromaDB setup: wipe stale data, create fresh collection ----------
-    print(f"\n[1/4] Opening ChromaDB: {CHROMA_DIR}")
-    client = chromadb.PersistentClient(path=CHROMA_DIR)
-
-    for stale in ["skola2030", COLLECTION]:
-        try:
-            client.delete_collection(stale)
-            print(f"  Deleted old collection: '{stale}'")
-        except Exception:
-            pass
-
-    collection = client.create_collection(COLLECTION)
-    print(f"  Created fresh collection: '{COLLECTION}'")
-
-    # -- Embedding model ---------------------------------------------------
-    print(f"\n[2/4] Loading embedding model: {EMBEDDING_MODEL}")
-    model = SentenceTransformer(EMBEDDING_MODEL)
-    print("  Model ready.")
-
-    # -- Discover PDFs -----------------------------------------------------
-    print(f"\n[3/4] Scanning PDFs in: {BASE_DIR}")
-    pdf_paths = collect_unique_pdfs(BASE_DIR)
-    print(f"  Found {len(pdf_paths)} unique PDFs (duplicates and saites.pdf excluded)")
-
-    # -- Ingest ------------------------------------------------------------
-    print(f"\n[4/4] Ingesting...")
+def ingest_pdf_list(
+    pdf_paths: list[str],
+    collection: "chromadb.Collection",  # type: ignore[name-defined]
+    model: "SentenceTransformer",  # type: ignore[name-defined]
+    source_tag: str = "skola2030",
+) -> dict[str, int]:
+    """Ingest a list of PDFs into a ChromaDB collection. Returns stats dict."""
     stats: dict[str, int] = {"pdfs": 0, "chunks": 0, "skipped": 0}
 
     for pdf_path in pdf_paths:
@@ -211,23 +215,22 @@ def main() -> None:
         subject   = classify_subject(filename)
 
         print(f"\n  {filename}")
-        print(f"    grades {grade_min}–{grade_max} | subject: {subject}")
+        print(f"    grades {grade_min}-{grade_max} | subject: {subject}")
 
         pages = extract_pages(pdf_path)
         if not pages:
-            print("    ⚠ No text extracted — skipping.")
-            stats["skipped"] = stats["skipped"] + 1
+            print("    No text extracted -- skipping.")
+            stats["skipped"] += 1
             continue
 
         chunks = chunk_pages(pages)
         if not chunks:
-            print("    ⚠ No chunks produced — skipping.")
-            stats["skipped"] = stats["skipped"] + 1
+            print("    No chunks produced -- skipping.")
+            stats["skipped"] += 1
             continue
 
-        print(f"    {len(pages)} pages → {len(chunks)} chunks", end="", flush=True)
+        print(f"    {len(pages)} pages -> {len(chunks)} chunks", end="", flush=True)
 
-        # Batch embed all chunks for this PDF at once (faster than one-by-one)
         texts = [text for _, text in chunks]
         embeddings = model.encode(texts, show_progress_bar=False).tolist()
 
@@ -240,28 +243,87 @@ def main() -> None:
             docs.append(text)
             metas.append({
                 "source_pdf":  filename,
+                "source_type": source_tag,
                 "subject":     subject,
-                "grade_min":   grade_min,   # int — enables $lte/$gte filtering
-                "grade_max":   grade_max,   # int
+                "grade_min":   grade_min,
+                "grade_max":   grade_max,
                 "page_number": page_num,
                 "chunk_index": idx,
+                "license":     "Skola2030",
+                "language":    "lv",
             })
             embeds.append(embedding)
 
         collection.upsert(ids=ids, embeddings=embeds, documents=docs, metadatas=metas)
-        stats["chunks"] = stats["chunks"] + len(chunks)
-        stats["pdfs"] = stats["pdfs"] + 1
-        print(" ✓")
+        stats["chunks"] += len(chunks)
+        stats["pdfs"] += 1
+        print(" OK")
 
-    print("\n" + "=" * 60)
-    print("✅  Ingestion complete")
-    print(f"   PDFs processed : {stats['pdfs']}")
-    print(f"   PDFs skipped   : {stats['skipped']}")
-    print(f"   Chunks stored  : {stats['chunks']}")
-    print(f"   Collection     : '{COLLECTION}'")
-    print(f"   Embedding model: '{EMBEDDING_MODEL}'")
-    print(f"   DB path        : {CHROMA_DIR}")
+    return stats
+
+
+def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="SkolnieksAI -- RAG ingestion pipeline")
+    parser.add_argument(
+        "--skola2030", action="store_true",
+        help="Ingest Skola2030 PDFs from ./Skola2030/ into skola2030_chunks (optional, legal clearance pending)",
+    )
+    parser.add_argument(
+        "--reset-skola2030", action="store_true",
+        help="Delete and recreate the skola2030_chunks collection before ingesting",
+    )
+    args = parser.parse_args()
+
     print("=" * 60)
+    print("SkolnieksAI -- RAG ingestion pipeline")
+    print("=" * 60)
+
+    location = f"Chroma Cloud (tenant={_CHROMA_TENANT})" if _CHROMA_TENANT else CHROMA_DIR
+    print(f"\nOpening ChromaDB: {location}")
+    client = get_chroma_client()
+
+    print(f"Loading embedding model: {EMBEDDING_MODEL}")
+    model = SentenceTransformer(EMBEDDING_MODEL)
+    print("  Model ready.")
+
+    if args.skola2030:
+        print(f"\n[Skola2030] Scanning PDFs in: {BASE_DIR}")
+        pdf_paths = collect_unique_pdfs(BASE_DIR)
+        if not pdf_paths:
+            print(f"  No PDFs found in {BASE_DIR} -- place Skola2030 PDFs there first.")
+            return
+
+        print(f"  Found {len(pdf_paths)} unique PDFs")
+
+        if args.reset_skola2030:
+            try:
+                client.delete_collection(SKOLA2030_COLLECTION)
+                print(f"  Deleted old collection: '{SKOLA2030_COLLECTION}'")
+            except Exception:
+                pass
+
+        skola_coll = client.get_or_create_collection(SKOLA2030_COLLECTION)
+        print(f"  Collection: '{SKOLA2030_COLLECTION}' (existing chunks: {skola_coll.count()})")
+
+        print("\nIngesting Skola2030 PDFs...")
+        stats = ingest_pdf_list(pdf_paths, skola_coll, model, source_tag="skola2030")
+
+        print("\n" + "=" * 60)
+        print("Ingestion complete")
+        print(f"   PDFs processed : {stats['pdfs']}")
+        print(f"   PDFs skipped   : {stats['skipped']}")
+        print(f"   Chunks stored  : {stats['chunks']}")
+        print(f"   Collection     : '{SKOLA2030_COLLECTION}'")
+        print("=" * 60)
+    else:
+        print("\nNo source flag provided.")
+        print("Usage:")
+        print("  python RAG.py --skola2030                        # ingest Skola2030 PDFs")
+        print("  python RAG.py --skola2030 --reset-skola2030      # reset then ingest")
+        print("  python scripts/ingest_openstax.py                # ingest OpenStax books")
+        print("  python scripts/ingest_wikipedia_lv.py            # ingest Latvian Wikipedia")
 
 
 # ---------------------------------------------------------------------------
@@ -274,7 +336,7 @@ def query(question: str, top_k: int = 5) -> list[dict]:
     Returns a list of dicts with keys: text, source_pdf, page_number, subject,
     grade_min, grade_max, chunk_index, distance.
     """
-    client = chromadb.PersistentClient(path=CHROMA_DIR)
+    client = get_chroma_client()
     collection = client.get_collection(COLLECTION)
 
     model = SentenceTransformer(EMBEDDING_MODEL)

@@ -5,6 +5,7 @@ import type { DeepSeekResponse } from "@/lib/ai/deepseek";
 import type { RetrievedChunk } from "./retriever";
 import { adminDb } from "@/lib/firebase/admin";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { normalizeSubjectToRagKey, isMetaQuestion, answerMetaQuestion } from "@/lib/curriculum/subjects";
 
 const RAG_API_URL = process.env.RAG_API_URL ?? "http://localhost:8001";
 const RAG_API_KEY = process.env.RAG_API_KEY ?? "";
@@ -302,7 +303,8 @@ function buildMessages(
 // ---------------------------------------------------------------------------
 
 export async function runRagChain(input: RagInput): Promise<RagResult> {
-  const { query, subject, grade, model = "deepseek", maxTokens = 800, conversationHistory = [] } = input;
+  const { query, grade, model = "deepseek", maxTokens = 800, conversationHistory = [] } = input;
+  const subject = normalizeSubjectToRagKey(input.subject) ?? input.subject;
 
   const topK = getTopK(query);
   const raw = await retrieveContext(query, topK, subject);
@@ -347,7 +349,8 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
 // RAG chain (streaming) — yields text deltas then a final metadata object
 // ---------------------------------------------------------------------------
 
-export type RagPath = "A" | "B" | "C";
+// Path D = meta-question answered from VIIS structured data (no LLM, no RAG)
+export type RagPath = "A" | "B" | "C" | "D";
 
 export type StreamEvent =
   | { type: "delta"; text: string }
@@ -365,7 +368,31 @@ const ZERO_USAGE = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 export async function* runRagChainStream(
   input: RagInput,
 ): AsyncGenerator<StreamEvent> {
-  const { query, subject, grade, model = "deepseek", maxTokens = 800, conversationHistory = [] } = input;
+  const { query, grade, model = "deepseek", maxTokens = 800, conversationHistory = [] } = input;
+
+  // Normalize subject via VIIS lookup → correct RAG filter key
+  const normalizedSubject = normalizeSubjectToRagKey(input.subject) ?? input.subject;
+  const subject = normalizedSubject;
+
+  // ── Path D: meta-question about curriculum structure → answer from VIIS ──
+  if (isMetaQuestion(query)) {
+    const metaAnswer = answerMetaQuestion(query);
+    if (metaAnswer) {
+      console.log(`[chain] Path D — VIIS meta-question: "${query}"`);
+      for (const char of metaAnswer) {
+        yield { type: "delta", text: char };
+      }
+      yield {
+        type: "done",
+        chunks: [],
+        webSources: [],
+        usedWebSearch: false,
+        path: "D",
+        usage: ZERO_USAGE,
+      };
+      return;
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Retrieve + three-path routing

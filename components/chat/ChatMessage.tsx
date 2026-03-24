@@ -135,12 +135,14 @@ export interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  /** Skola2030 RAG chunks (Path A) */
+  /** RAG chunks (Path A) */
   sources?: Array<{
     id: string;
     subject: string;
     page: number;
     section: string;
+    sourceType?: string;
+    sourceTitle?: string;
   }>;
   /** Web search results (Path B) */
   webSources?: Array<{
@@ -227,10 +229,14 @@ export function ChatMessage({ message }: { message: Message }) {
                 </svg>
                 <div className="min-w-0">
                   <p className="text-[11px] font-medium text-primary">
-                    {source.subject} — {source.section}
+                    {source.subject}
+                    {source.sourceTitle ? ` — ${source.sourceTitle}` : source.section ? ` — ${source.section}` : ""}
                   </p>
                   <p className="text-[10px] text-muted-custom mt-0.5">
-                    Skola2030 · lpp. {source.page}
+                    {source.sourceType === "openstax" ? "OpenStax CC BY 4.0"
+                      : source.sourceType === "wikipedia_lv" ? "Wikipedia LV CC BY-SA 4.0"
+                      : "Skola2030"}
+                    {source.page > 0 ? ` · lpp. ${source.page}` : ""}
                   </p>
                 </div>
               </div>

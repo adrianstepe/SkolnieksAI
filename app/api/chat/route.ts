@@ -320,6 +320,8 @@ export async function POST(request: NextRequest) {
                 subject: c.metadata.subject,
                 page: c.metadata.page_number,
                 section: c.metadata.section_title,
+                sourceType: c.metadata.source_type ?? "",
+                sourceTitle: c.metadata.source_title ?? "",
               })),
               webSources: event.webSources,
               usedWebSearch: event.usedWebSearch,

@@ -26,7 +26,7 @@ export const RAG_DISTANCE_THRESHOLD = 1.0;
  * where filter so the query searches across all curriculum chunks.
  */
 export const KNOWN_CURRICULUM_SUBJECTS = new Set([
-  // RAG.py values
+  // RAG.py / Skola2030 values
   "latvian_literature", "minority_russian", "history", "social_history",
   "social_sciences", "social_studies", "design_tech", "sports", "arts",
   "culture", "latvian", "russian", "english", "french", "german",
@@ -34,6 +34,10 @@ export const KNOWN_CURRICULUM_SUBJECTS = new Set([
   "chemistry", "programming", "cs", "engineering", "visual_arts", "theater", "music",
   // scripts/ingest.ts additional value
   "informatics",
+  // OpenStax + Wikipedia LV subject_ids (from ingest_openstax.py / ingest_wikipedia_lv.py)
+  "astronomy", "programming",
+  // VIIS_TO_RAG_SUBJECT values from lib/curriculum/subjects.ts
+  "social_sciences", "social_studies",
 ]);
 
 // Shape returned by the Python /query endpoint

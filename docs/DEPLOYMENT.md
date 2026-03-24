@@ -166,3 +166,45 @@ Vercel handles deployment automatically on push to `main`.
 - **Sentry**: Free tier for error tracking. Add `@sentry/nextjs`.
 - **Firestore Console**: Monitor reads/writes to stay under limits.
 - **Stripe Dashboard**: Monitor subscriptions and revenue.
+
+## Before Deployment
+
+The current dev/testing setup runs on **Vercel (free tier)** with a **local ChromaDB** instance. This is intentional for the MVP phase — it keeps costs at zero and lets you iterate fast.
+
+**However, before going live** (defined as: first paying user OR Skola2030 license obtained), the stack must be migrated to **Hetzner VPS + Coolify** for hosting, with **Chroma Cloud** replacing the local vector DB. Reasons:
+
+- Vercel Hobby has no SLA and bans commercial use without a paid plan
+- Local ChromaDB is tied to a dev machine — it does not survive a Vercel deployment
+- Hetzner (EU region) + Chroma Cloud satisfies GDPR data residency requirements
+- Coolify gives you full deployment control, zero vendor lock-in, and costs ~€14/mo total
+
+Do these two checklists in order. Checklist 1 can be done while still on Vercel. Checklist 2 is the actual cutover.
+
+---
+
+### Checklist 1 — Chroma Cloud setup (do this before go-live, while still on Vercel)
+
+- [ ] Sign up for Chroma Cloud at trychroma.com and create a database called `skolnieksai`
+- [ ] Copy `CHROMA_HOST`, `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE` from the Chroma Cloud dashboard
+- [ ] Add the Chroma Cloud env vars to `.env.local` and test that the RAG pipeline works against Chroma Cloud
+- [ ] Run the PDF ingestion script against Chroma Cloud to populate the hosted vector DB (`npm run ingest`)
+- [ ] Verify queries return correct Skola2030 results from Chroma Cloud (not local DB)
+- [ ] Update `.env.example` with all Chroma Cloud variable names and descriptions
+
+---
+
+### Checklist 2 — Hetzner + Coolify migration (do this at go-live)
+
+- [ ] Create a Hetzner account at hetzner.com
+- [ ] Spin up a **CX32** (4 vCPU, 8 GB RAM, 80 GB SSD, Ubuntu 24.04) in a EU region (Finland or Germany — closest to Latvia, GDPR compliant)
+- [ ] SSH into the VPS and install Coolify using their one-line installer (docs at coolify.io)
+- [ ] Connect the GitHub repo to Coolify
+- [ ] Add ALL environment variables to the Coolify dashboard (Firebase, Stripe, DeepSeek, Anthropic, Chroma Cloud — mirror everything in `.env.example`)
+- [ ] Add Cloudflare as a free CDN/DDoS layer in front of the VPS IP (cloudflare.com, free plan)
+- [ ] Point the domain DNS A record to the Hetzner VPS IP (via Cloudflare)
+- [ ] Add the domain in Coolify and let it provision the SSL certificate automatically
+- [ ] Trigger the first deployment and verify it succeeds
+- [ ] Verify the RAG pipeline can reach Chroma Cloud from the VPS
+- [ ] Verify Firebase Auth, Firestore, and Stripe all work in production
+- [ ] Switch Stripe from test mode to live mode
+- [ ] Remove the Vercel project (optional — keep it a few days as a fallback before deleting)
