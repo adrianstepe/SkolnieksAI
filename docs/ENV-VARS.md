@@ -22,7 +22,7 @@ FIREBASE_SERVICE_ACCOUNT_KEY=...     # Server-side ONLY. JSON string of service 
 
 # --- ChromaDB ---
 CHROMA_URL=http://localhost:8000     # Local dev ChromaDB instance
-CHROMA_COLLECTION=skola2030_chunks   # Collection name
+CHROMA_COLLECTION=knowledge_chunks   # Collection name
 ```
 
 ## Required for Production
@@ -52,7 +52,7 @@ UPSTASH_REDIS_REST_URL=...           # If using Upstash for rate limiting
 UPSTASH_REDIS_REST_TOKEN=...
 
 # --- Embedding Model ---
-EMBEDDING_MODEL=all-MiniLM-L6-v2    # Sentence-transformers model name
+EMBEDDING_MODEL=paraphrase-multilingual-MiniLM-L12-v2    # Sentence-transformers model name
 ```
 
 ## Stripe Test Mode (Development)

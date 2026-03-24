@@ -12,6 +12,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [inviteCode, setInviteCode] = useState("");
+  const [ageConsent, setAgeConsent] = useState<"over13" | "parental" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -40,6 +41,10 @@ export default function SignupPage() {
       setError("Parolei jābūt vismaz 6 simbolus garai.");
       return;
     }
+    if (!ageConsent) {
+      setError("Lūdzu apstipriniet vecumu vai vecāku atļauju.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -56,6 +61,10 @@ export default function SignupPage() {
 
   const handleGoogleSignup = async () => {
     setError(null);
+    if (!ageConsent) {
+      setError("Lūdzu apstipriniet vecumu vai vecāku atļauju pirms reģistrācijas ar Google.");
+      return;
+    }
     setSubmitting(true);
     try {
       await signInWithGoogle();
@@ -172,6 +181,40 @@ export default function SignupPage() {
           />
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-text-secondary mb-2">
+            Vecuma ierobežojums <span className="text-red-500">*</span>
+          </label>
+          <div className="space-y-3 rounded-lg border border-border bg-surface/50 p-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="ageConsent"
+                value="over13"
+                checked={ageConsent === "over13"}
+                onChange={() => setAgeConsent("over13")}
+                className="mt-1 h-4 w-4 bg-base border-border text-primary focus:ring-primary/50"
+              />
+              <span className="text-sm text-text-primary">
+                Man ir vismaz 13 gadi.
+              </span>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="ageConsent"
+                value="parental"
+                checked={ageConsent === "parental"}
+                onChange={() => setAgeConsent("parental")}
+                className="mt-1 h-4 w-4 bg-base border-border text-primary focus:ring-primary/50"
+              />
+              <span className="text-sm text-text-primary leading-tight">
+                Man vēl nav 13 gadi, bet man ir vecāku vai aizbildņa atļauja izmantot SkolnieksAI.
+              </span>
+            </label>
+          </div>
+        </div>
+
         <button
           type="submit"
           disabled={submitting}
@@ -216,7 +259,14 @@ export default function SignupPage() {
         Reģistrēties ar Google
       </button>
 
-      <p className="text-center text-sm text-text-secondary">
+      <div className="mt-6 text-center text-xs text-text-muted">
+        Reģistrējoties jūs piekrītat mūsu{" "}
+        <Link href="/terms" className="underline hover:text-text-secondary">Lietošanas noteikumiem</Link>
+        {" "}un{" "}
+        <Link href="/privacy" className="underline hover:text-text-secondary">Privātuma politikai</Link>.
+      </div>
+
+      <p className="mt-2 text-center text-sm text-text-secondary">
         Jau ir konts?{" "}
         <Link
           href="/login"

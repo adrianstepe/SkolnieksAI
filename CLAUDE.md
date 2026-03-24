@@ -1,6 +1,6 @@
 # SkolnieksAI
 
-Latvia's first AI study companion. Aligns to the national Skola2030 curriculum via RAG over official framework PDFs. Target: 110–120k students grades 6–12 across 553 schools.
+Latvia's first AI study companion. Aligns to the national curriculum via RAG over open educational resources like OpenStax and Wikipedia (LV). Target: 110–120k students grades 6–12 across 553 schools.
 
 **Founder**: Adrians, 18, solo dev. **Company**: Stepe Digital (pre-SIA). **Budget**: ~€60 baseline.
 
@@ -24,7 +24,7 @@ npm run build        # Production build
 npm run lint         # ESLint + Prettier check
 npm run test         # Vitest unit tests
 npm run test:e2e     # Playwright e2e tests
-npm run ingest       # Parse Skola2030 PDFs → ChromaDB (scripts/ingest.ts)
+npm run ingest       # Parse PDFs (OpenStax etc.) → ChromaDB (scripts/ingest.ts)
 npm run seed         # Seed test data into Firestore
 ```
 
@@ -53,13 +53,14 @@ src/
 │   ├── ingest.ts         # PDF → chunks → embeddings → ChromaDB
 │   └── seed.ts           # Firestore test data seeder
 └── data/
-    └── skola2030/        # Source PDFs (git-ignored)
+    ├── openstax/         # OpenStax PDFs
+    └── skola2030/        # (Future) Official framework PDFs
 ```
 
 ## Critical Rules
 
 1. **NEVER** commit `.env`, `.env.local`, or any file with API keys
-2. **NEVER** ingest VISC exam papers — legal clearance pending. Skola2030 framework PDFs only
+2. **Current MVP**: Use OpenStax and Wikipedia. Skola2030 and VISC exams are currently un-licensed; keep structure ready for future integration.
 3. **All UI text in Latvian** by default. English only in code/comments
 4. **Token budget**: Free tier = hidden token budget (~60q/month), NOT a flat query counter. Track in Firestore `users/{uid}/usage/{YYYY-MM}`
 5. **GDPR**: Latvia consent age = 13. Under-13 needs parental consent. EU data residency

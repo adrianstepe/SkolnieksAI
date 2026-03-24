@@ -37,15 +37,15 @@ Target launch: Late April / Early May 2026.
 
 **Goal:** Firebase auth + free/paid tier enforcement.
 
-- [ ] Set up Firebase project (europe-west1)
-- [ ] Implement sign-up / login pages (email + Google)
-- [ ] Age verification + parental consent flow (under 13)
-- [ ] Create user docs in Firestore on first sign-in
-- [ ] Build usage tracking: token counting per request, monthly budget
-- [ ] Implement tier middleware: check budget before AI call
-- [ ] Free tier: hidden token budget, vague "usage remaining" UI indicator
-- [ ] AI provider abstraction: `lib/ai/provider.ts` (DeepSeek + Claude)
-- [ ] **Milestone:** Free users hit budget limit and see upgrade prompt
+- [x] Set up Firebase project (europe-west1)
+- [x] Implement sign-up / login pages (email + Google)
+- [x] Age verification + parental consent flow (under 13)
+- [x] Create user docs in Firestore on first sign-in
+- [x] Build usage tracking: token counting per request, monthly budget
+- [x] Implement tier middleware: check budget before AI call
+- [x] Free tier: hidden token budget, vague "usage remaining" UI indicator
+- [x] AI provider abstraction: `lib/ai/provider.ts` (DeepSeek + Claude)
+- [x] **Milestone:** Free users hit budget limit and see upgrade prompt
 
 **Deliverable:** Auth-gated app with working usage limits.
 
@@ -53,15 +53,15 @@ Target launch: Late April / Early May 2026.
 
 **Goal:** Payments working. Token budget unlocked for paid users. Safe to share URL.
 
-- [ ] Stripe products + prices created (Premium, Exam Prep)
-- [ ] `POST /api/stripe/checkout` — create Checkout session
-- [ ] `POST /api/webhooks/stripe` — handle subscription events
-- [ ] Tier upgrade/downgrade reflected in Firestore immediately
-- [ ] Pricing page with clear plans and CTA
-- [ ] Customer portal for subscription management
-- [ ] Test full payment flow with Stripe test cards
-- [ ] Privacy policy + Terms of service pages (Latvian)
-- [ ] **Milestone:** Complete paid flow — sign up → pay → unlimited access
+- [x] Stripe products + prices created (Premium, Exam Prep)
+- [x] `POST /api/stripe/checkout` — create Checkout session
+- [x] `POST /api/webhooks/stripe` — handle subscription events
+- [x] Tier upgrade/downgrade reflected in Firestore immediately
+- [x] Pricing page with clear plans and CTA
+- [x] Customer portal for subscription management
+- [x] Test full payment flow with Stripe test cards
+- [x] Privacy policy + Terms of service pages (Latvian)
+- [x] **Milestone:** Complete paid flow — sign up → pay → unlimited access
 
 **Deliverable:** Production-ready app safe to share publicly.
 
@@ -83,7 +83,7 @@ Target launch: Late April / Early May 2026.
 - [ ] Teacher dashboard (class stats, usage reports)
 - [ ] School Pro tier + B2B sales
 - [ ] Flutter mobile app
-- [ ] Register SIA Stepe Digital (~€280)
+- [x] Register SIA Stepe Digital (~€280)
 - [ ] Apply LIAA AI grant
 - [ ] TikToker affiliate partnerships
 - [ ] Facebook parent ads (€5/day during exam season Apr-Jun)

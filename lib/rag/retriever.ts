@@ -4,7 +4,11 @@ import type { ChunkMetadata } from "@/scripts/ingest";
 import { KNOWN_CURRICULUM_SUBJECTS } from "@/lib/rag-client";
 
 const CHROMA_URL = process.env.CHROMA_URL ?? "http://localhost:8000";
-const COLLECTION_NAME = process.env.CHROMA_COLLECTION ?? "skola2030_chunks";
+// NOTE: Default matches ingest.ts. "skola2030_chunks" was the old name —
+// kept as CHROMA_COLLECTION override for environments where the old collection
+// is still in use, but the unlicensed skola2030 PDFs must not be ingested
+// until a license is obtained (data/skola2030/ is excluded from DATA_DIRS in ingest.ts).
+const COLLECTION_NAME = process.env.CHROMA_COLLECTION ?? "knowledge_chunks";
 
 // Reuse client across requests in the same Node.js process
 let clientInstance: ChromaClient | null = null;

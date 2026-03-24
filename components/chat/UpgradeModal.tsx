@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/context/auth-context";
 
 interface UpgradeModalProps {
@@ -9,15 +10,27 @@ interface UpgradeModalProps {
 
 const PLANS = [
   {
+    id: "free" as const,
+    name: "Bezmaksas",
+    price: "€0",
+    period: "/mēn.",
+    features: [
+      "Ierobežots jautājumu skaits (~60/mēn.)",
+      "Standarta palīgs",
+      "Pamata priekšmetu skaidrojumi",
+    ],
+    accent: "muted",
+  },
+  {
     id: "premium" as const,
     name: "Premium",
     price: "€5.99",
     period: "/mēn.",
     features: [
       "Vairāk jautājumu mēnesī",
-      "DeepSeek V3 modelis",
+      "Standarta palīgs",
       "Prioritāra atbilde",
-      "Pilns Skola2030 saturs",
+      "Pilns izglītības saturs",
     ],
     accent: "primary",
   },
@@ -28,7 +41,7 @@ const PLANS = [
     period: "/mēn.",
     features: [
       "Maksimāls jautājumu skaits",
-      "Claude Sonnet — jaudīgākais AI",
+      "Eksāmenu eksperts — ātrāks, detalizētāks",
       "Eksāmenu simulācijas",
       "Detalizēti paskaidrojumi",
       "Prioritārs atbalsts",
@@ -122,7 +135,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
         </div>
 
         {/* Plans */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
@@ -176,10 +189,12 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
               </ul>
 
               <button
-                onClick={() => handleCheckout(plan.id)}
-                disabled={loading !== null}
+                onClick={() => plan.id !== "free" && handleCheckout(plan.id as "premium" | "exam_prep")}
+                disabled={loading !== null || plan.id === "free"}
                 className={`mt-5 w-full rounded-lg py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 ${
-                  plan.popular
+                  plan.id === "free"
+                    ? "bg-surface text-text-muted border border-border"
+                    : plan.popular
                     ? "bg-accent text-white hover:bg-accent-hover"
                     : "bg-primary text-white hover:bg-primary-hover"
                 }`}
@@ -189,6 +204,8 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                     Notiek pāradresēšana...
                   </span>
+                ) : plan.id === "free" ? (
+                  "Pašreizējais plāns"
                 ) : (
                   `Izvēlēties ${plan.name}`
                 )}
@@ -198,8 +215,9 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
         </div>
 
         {/* Footer */}
-        <p className="mt-5 text-center text-xs text-text-muted">
-          Droši maksājumi caur Stripe. Atcelšana jebkurā laikā.
+        <p className="mt-5 text-center text-xs text-text-muted leading-relaxed">
+          Droši maksājumi caur Stripe. Atcelšana jebkurā laikā.{" "}
+          <Link href="/terms" className="underline hover:text-text-secondary ml-1">Lietošanas noteikumi</Link>.
         </p>
       </div>
     </div>

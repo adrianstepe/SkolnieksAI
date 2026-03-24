@@ -82,7 +82,7 @@ interface LLMClient {
 
 ## ChromaDB Collection
 
-Collection: `skola2030_chunks`
+Collection: `knowledge_chunks`
 
 Document shape:
 - `id`: hash of (pdf_filename + page + chunk_index)

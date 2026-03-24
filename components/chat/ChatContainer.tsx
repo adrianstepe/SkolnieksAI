@@ -496,6 +496,24 @@ export function ChatContainer() {
           </div>
         )}
 
+        {/* Sticky Premium CTA Banner */}
+        {!isPremium && usage && (usage.queriesCount ?? 0) >= 3 && (
+          <div className="animate-fade-up flex items-center justify-between gap-2 bg-gradient-to-r from-primary/10 to-accent/10 border-b border-primary/20 px-5 py-2.5 text-sm shadow-sm shrink-0">
+            <span className="text-text-primary">
+              Tev atlikuši <strong className="text-primary">{Math.max(0, 60 - (usage.queriesCount ?? 0))}</strong> jautājumi šomēnes.
+            </span>
+            <button
+              onClick={() => setShowUpgrade(true)}
+              className="font-semibold text-accent hover:text-accent-hover flex items-center gap-1 transition-colors"
+            >
+              Paplašini
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         {/* Content area */}
         {activeTab === "learn" ? (
           <>
@@ -505,7 +523,13 @@ export function ChatContainer() {
               className="flex-1 overflow-y-auto bg-chat px-6 py-6 thin-scrollbar"
             >
               {!hasMessages && !loadingChat ? (
-                <WelcomeScreen onSelectPrompt={handleSend} onSubjectChange={setSubject} />
+                <WelcomeScreen 
+                  onSelectPrompt={handleSend} 
+                  onSubjectChange={setSubject} 
+                  currentGrade={grade}
+                  onGradeChange={setGrade}
+                  currentSubject={subject}
+                />
               ) : (
                 <div className="mx-auto max-w-3xl space-y-6">
                   {loadingChat ? (
@@ -643,68 +667,43 @@ export function ChatContainer() {
 // Welcome Screen (matches design-studio WelcomeScreen)
 // ---------------------------------------------------------------------------
 
-import { SUBJECTS } from "./SubjectGradeSelector";
-import type { LucideIcon } from "lucide-react";
+import { SUBJECTS, GRADES } from "./SubjectGradeSelector";
 
-interface QuickStartCard {
-  value: string;
-  label: string;
-  prompt: string;
-  icon: LucideIcon;
-}
-
-const SUBJECT_ICON_MAP = Object.fromEntries(SUBJECTS.map((s) => [s.value, s.icon]));
-
-const QUICK_STARTS: QuickStartCard[] = [
-  {
-    value: "biology",
-    label: "Bioloģija",
-    prompt: "Kas ir fotosintēze?",
-    icon: SUBJECT_ICON_MAP.biology,
-  },
-  {
-    value: "math",
-    label: "Matemātika",
-    prompt: "Izskaidro, kā atrisināt kvadrātvienādojumu",
-    icon: SUBJECT_ICON_MAP.math,
-  },
-  {
-    value: "physics",
-    label: "Fizika",
-    prompt: "Kas ir Ņūtona otrais likums?",
-    icon: SUBJECT_ICON_MAP.physics,
-  },
-  {
-    value: "geography",
-    label: "Ģeogrāfija",
-    prompt: "Izskaidro Latvijas klimata zonas",
-    icon: SUBJECT_ICON_MAP.geography,
-  },
-  {
-    value: "informatics",
-    label: "Datorzinātne",
-    prompt: "Kas ir mainīgais programmēšanā?",
-    icon: SUBJECT_ICON_MAP.informatics,
-  },
-  {
-    value: "general",
-    label: "Vispārīgi",
-    prompt: "Sveiki! Ko tu vari darīt?",
-    icon: SUBJECT_ICON_MAP.general,
-  },
-];
+const SUBJECT_TOPICS: Record<string, string> = {
+  general: "Kā tu man vari palīdzēt mācībās?",
+  math: "Paskaidro algebras objektus un to īpašības",
+  physics: "Kas ir Ņūtona pievilkšanās spēks?",
+  chemistry: "Kā darbojas ķīmiskās saites?",
+  biology: "Paskaidro fotosintēzes procesu",
+  history: "Paskaidro nozīmīgākos notikumus Latvijas vēsturē",
+  geography: "Kādi ir Latvijas dabas resursi?",
+  latvian: "Kad teikumā ir jālieto komati?",
+  english: "Explain the rules of Present Perfect tense",
+  informatics: "Kas ir mainīgais programmēšanā?",
+  art: "Kas ir perspektīva vizuālajā mākslā?",
+};
 
 function WelcomeScreen({
   onSelectPrompt,
   onSubjectChange,
+  currentGrade,
+  onGradeChange,
+  currentSubject,
 }: {
   onSelectPrompt: (text: string) => void;
   onSubjectChange: (subject: string) => void;
+  currentGrade: number;
+  onGradeChange: (grade: number) => void;
+  currentSubject: string;
 }) {
+  const generatedPrompt = currentSubject === "general"
+    ? SUBJECT_TOPICS.general
+    : `${SUBJECT_TOPICS[currentSubject] || "Palīdzi man mācībās"} ${currentGrade}. klases līmenī.`;
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 min-h-full animate-fade-in">
       {/* Hero */}
-      <div className="text-center space-y-4 mb-10">
+      <div className="text-center space-y-4 mb-10 w-full">
         <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto glow-primary animate-float">
           <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8">
             <path
@@ -717,40 +716,76 @@ function WelcomeScreen({
           Sveiki! Es esmu <span className="text-primary">SkolnieksAI</span>
         </h1>
         <p className="text-sm text-muted-custom max-w-md mx-auto">
-          Tavs mācību palīgs. Uzdod jautājumu — saņemsi skaidru atbildi latviešu valodā,
-          balstoties uz Skola2030 programmu.
+          Tavs mācību palīgs. Izvēlies klasi un priekšmetu, lai sāktu sarunu!
         </p>
+
+        {/* Trust Badges moved here to maintain conversion trust above the fold */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-[11px] text-muted-custom">
+          <span className="inline-flex items-center gap-1">📚 Atbilst Skola2030 standartiem</span>
+          <span className="inline-flex items-center gap-1">🔒 Privāts un drošs</span>
+          <span className="inline-flex items-center gap-1">🇱🇻 Latviski</span>
+        </div>
       </div>
 
-      {/* Quick-start cards grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-2xl w-full">
-        {QUICK_STARTS.map((card, i) => (
-          <button
-            key={card.value}
-            onClick={() => {
-              onSubjectChange(card.value);
-              onSelectPrompt(card.prompt);
-            }}
-            className="group flex flex-col items-start gap-3 p-4 rounded-xl bg-surface border border-subtle hover:border-primary/40 hover:bg-surface-hover hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-150 text-left animate-slide-up"
-            style={{ animationDelay: `${i * 80}ms` }}
+      {/* Onboarding Box */}
+      <div className="w-full max-w-md rounded-2xl border border-subtle bg-surface p-6 shadow-sm animate-slide-up">
+        <h2 className="text-lg font-semibold text-primary-custom mb-6">Kas tu esi?</h2>
+        
+        {/* Grade */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-muted-custom mb-3">Tava klase</label>
+          <div className="flex flex-wrap gap-2">
+            {GRADES.map((g) => (
+              <button
+                key={g}
+                onClick={() => onGradeChange(g)}
+                className={`h-10 w-10 rounded-full text-sm font-semibold transition-all ${
+                  currentGrade === g
+                    ? "bg-primary text-white shadow-md shadow-primary/20 scale-105"
+                    : "bg-muted text-muted-custom hover:bg-muted/80 hover:text-primary-custom"
+                }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Subject */}
+        <div className="mb-8">
+          <label className="block text-sm font-medium text-muted-custom mb-3">Mācību priekšmets</label>
+          <select
+            value={currentSubject}
+            onChange={(e) => onSubjectChange(e.target.value)}
+            className="w-full rounded-xl border border-subtle bg-base px-4 py-3 text-sm text-primary-custom focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all"
           >
-            <div className="flex items-center gap-2">
-              <card.icon className="h-4 w-4 shrink-0 text-muted-custom" />
-              <span className="text-xs font-medium text-muted-custom">{card.label}</span>
-            </div>
-            <p className="text-[15px] font-semibold text-primary-custom leading-snug">{card.prompt}</p>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-muted-custom group-hover:text-primary group-hover:translate-x-0.5 transition-all ml-auto">
+            {SUBJECTS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Generated Prompt Suggestion & CTA */}
+        <div className="space-y-4 pt-4 border-t border-subtle">
+          <div className="rounded-xl bg-muted/50 p-4 border border-subtle/50 relative group">
+            <span className="absolute -top-2.5 left-4 bg-surface px-2 text-[10px] font-bold uppercase tracking-wider text-muted-custom">
+              Tavs pirmais jautājums
+            </span>
+            <p className="text-sm font-medium text-primary-custom italic text-center">"{generatedPrompt}"</p>
+          </div>
+          
+          <button
+            onClick={() => onSelectPrompt(generatedPrompt)}
+            className="w-full flex items-center justify-center gap-2 rounded-xl gradient-primary py-3.5 text-sm font-bold text-white shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
+          >
+            Sākt sarunu
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
               <path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" />
             </svg>
           </button>
-        ))}
-      </div>
-
-      {/* Footer badges */}
-      <div className="mt-10 flex items-center gap-6 text-[11px] text-muted-custom">
-        <span className="inline-flex items-center gap-1">📚 Atbilst Skola2030 standartiem</span>
-        <span className="inline-flex items-center gap-1">🔒 Privāts un drošs</span>
-        <span className="inline-flex items-center gap-1">🇱🇻 Latviski</span>
+        </div>
       </div>
     </div>
   );

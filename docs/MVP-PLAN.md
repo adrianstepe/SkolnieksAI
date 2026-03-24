@@ -4,11 +4,11 @@ Target launch: Late April / Early May 2026
 
 ## Phase 1: RAG Foundation (Week 1–2)
 
-**Goal**: Prove that Skola2030 RAG answers beat raw ChatGPT for Latvian curriculum questions.
+**Goal**: Prove that OpenStax and Wikipedia RAG answers beat raw ChatGPT for Latvian curriculum questions.
 
 ### Tasks
 - [ ] Set up ChromaDB locally (Docker or direct install)
-- [ ] Write `scripts/ingest.ts` — parse 3–5 sample Skola2030 PDFs with pdfplumber
+- [ ] Write `scripts/ingest.ts` — parse sample OpenStax PDFs with pdf-parse
 - [ ] Chunk, embed (sentence-transformers), and store in ChromaDB
 - [ ] Write `lib/rag/retriever.ts` — query ChromaDB with filters
 - [ ] Write `lib/rag/chain.ts` — build prompt with Latvian system message + chunks
@@ -45,14 +45,14 @@ Target launch: Late April / Early May 2026
 **Goal**: Users can sign up, and free users hit a soft token budget wall.
 
 ### Tasks
-- [ ] Set up Firebase project (EU region)
-- [ ] Integrate Firebase Auth (email + Google sign-in)
-- [ ] Create auth pages: `/login`, `/signup` (Latvian UI)
-- [ ] Middleware: protect `/api/chat` and dashboard routes
-- [ ] Firestore: create user doc on signup with `tier: 'free'`
-- [ ] Token tracking: log input/output tokens per query to `usage/{YYYY-MM}`
-- [ ] Usage gate: check budget before calling LLM, return upgrade prompt if exhausted
-- [ ] Firestore security rules: users own their data
+- [x] Set up Firebase project (EU region)
+- [x] Integrate Firebase Auth (email + Google sign-in)
+- [x] Create auth pages: `/login`, `/signup` (Latvian UI)
+- [x] Middleware: protect `/api/chat` and dashboard routes
+- [x] Firestore: create user doc on signup with `tier: 'free'`
+- [x] Token tracking: log input/output tokens per query to `usage/{YYYY-MM}`
+- [x] Usage gate: check budget before calling LLM, return upgrade prompt if exhausted
+- [x] Firestore security rules: users own their data
 
 ### Acceptance Criteria
 - Cannot access chat without auth
@@ -64,15 +64,15 @@ Target launch: Late April / Early May 2026
 **Goal**: Users can pay. Revenue flows.
 
 ### Tasks
-- [ ] Register SIA with Stepe Digital (~€280) — REQUIRED before live payments
-- [ ] Create Stripe account, get live API keys
-- [ ] Build pricing page: Free / Premium (€5.99) / Exam Prep (€14.99)
-- [ ] Stripe Checkout session creation from pricing page
-- [ ] Webhook handler: `checkout.session.completed` → update Firestore tier
-- [ ] Webhook handler: `customer.subscription.deleted` → downgrade to free
-- [ ] Webhook signature validation (critical security)
-- [ ] Premium users routed to Claude Sonnet 4.6 instead of DeepSeek
-- [ ] Test full flow: signup → free use → hit limit → pay → premium access
+- [x] Register SIA with Stepe Digital (~€280) — REQUIRED before live payments
+- [x] Create Stripe account, get live API keys
+- [x] Build pricing page: Free / Premium (€5.99) / Exam Prep (€14.99)
+- [x] Stripe Checkout session creation from pricing page
+- [x] Webhook handler: `checkout.session.completed` → update Firestore tier
+- [x] Webhook handler: `customer.subscription.deleted` → downgrade to free
+- [x] Webhook signature validation (critical security)
+- [x] Premium users routed to Claude Sonnet 4.6 instead of DeepSeek
+- [x] Test full flow: signup → free use → hit limit → pay → premium access
 
 ### Acceptance Criteria
 - Payment flow works end-to-end in Stripe test mode

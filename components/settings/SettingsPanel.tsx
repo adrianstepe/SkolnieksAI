@@ -8,6 +8,8 @@ import {
   type AiModel,
 } from "@/lib/context/settings-context";
 import { SUBJECTS, GRADES } from "@/components/chat/SubjectGradeSelector";
+import { useAuth } from "@/lib/context/auth-context";
+import { useState } from "react";
 
 interface SettingsPanelProps {
   onClose: () => void;
@@ -99,6 +101,32 @@ function SegmentedControl<T extends string>({
 
 export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const { settings, update } = useSettings();
+  const { profile, getIdToken } = useAuth();
+  const [loadingPortal, setLoadingPortal] = useState(false);
+
+  const isPremium =
+    profile?.tier === "premium" ||
+    profile?.tier === "exam_prep" ||
+    profile?.tier === "school_pro";
+
+  const handleManageSubscription = async () => {
+    setLoadingPortal(true);
+    try {
+      const token = await getIdToken();
+      if (!token) return;
+      const res = await fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error(err);
+      setLoadingPortal(false);
+    }
+  };
 
   return (
     <>
@@ -183,16 +211,16 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   value={settings.aiModel}
                   onChange={(v) => update("aiModel", v)}
                   options={[
-                    { value: "deepseek", label: "DeepSeek" },
-                    { value: "claude", label: "Claude" },
+                    { value: "deepseek", label: "Standarta palīgs" },
+                    { value: "claude", label: "Eksāmenu eksperts" },
                   ]}
                 />
               </Row>
             </div>
             <p className="mt-2 text-xs text-text-muted">
               {settings.aiModel === "claude"
-                ? "Claude Sonnet — augstāka kvalitāte (maksas)"
-                : "DeepSeek V3 — bezmaksas līmenis"}
+                ? "Eksāmenu eksperts — ātrāks, detalizētāks (maksas)"
+                : "Standarta palīgs — ikdienas jautājumiem (bezmaksas līmenis)"}
             </p>
           </section>
 
@@ -257,6 +285,29 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               </Row>
             </div>
           </section>
+
+          {/* ── Abonements ── */}
+          {isPremium && (
+            <section>
+              <SectionTitle>Abonements</SectionTitle>
+              <div className="py-2.5">
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={loadingPortal}
+                  className="w-full rounded-lg bg-surface border border-border px-4 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loadingPortal ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-primary">
+                      <path fillRule="evenodd" d="M2.5 4A1.5 1.5 0 0 0 1 5.5V6h18v-.5A1.5 1.5 0 0 0 17.5 4h-15ZM19 8.5H1v6A1.5 1.5 0 0 0 2.5 16h15a1.5 1.5 0 0 0 1.5-1.5v-6ZM3 13.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  {loadingPortal ? "Notiek pāradresēšana..." : "Pārvaldīt abonementu"}
+                </button>
+              </div>
+            </section>
+          )}
         </div>
 
         {/* Footer */}

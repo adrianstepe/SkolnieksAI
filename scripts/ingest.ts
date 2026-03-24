@@ -5,9 +5,9 @@
  *   PDF → extract text → clean → chunk → embed → ChromaDB
  *
  * Usage:
- *   npm run ingest                          # all PDFs in data/skola2030/
- *   npm run ingest -- --file path/to.pdf   # single file
- *   npm run ingest -- --reset              # drop collection first
+ *   npm run ingest                          # all PDFs in data/openstax/, data/wikipedia/
+ *   npm run ingest -- --file path/to.pdf    # single file
+ *   npm run ingest -- --reset               # drop collection first
  */
 
 import fs from "fs";
@@ -22,8 +22,13 @@ import { chunkText } from "../lib/utils/chunker";
 // ---------------------------------------------------------------------------
 
 const CHROMA_URL = process.env.CHROMA_URL ?? "http://localhost:8000";
-const COLLECTION_NAME = process.env.CHROMA_COLLECTION ?? "skola2030_chunks";
-const PDF_DIR = path.resolve(process.cwd(), "data/skola2030");
+const COLLECTION_NAME = process.env.CHROMA_COLLECTION ?? "knowledge_chunks";
+const DATA_DIRS = [
+  path.resolve(process.cwd(), "data/openstax"),
+  path.resolve(process.cwd(), "data/wikipedia"),
+  // DISABLED: data/skola2030 — unlicensed; re-enable once a content license is obtained.
+  // path.resolve(process.cwd(), "data/skola2030"),
+];
 
 // Batch size for ChromaDB upserts
 const UPSERT_BATCH = 100;
@@ -136,7 +141,7 @@ async function getOrCreateCollection(
   const collection = await client.getOrCreateCollection({
     name: COLLECTION_NAME,
     metadata: {
-      description: "Skola2030 curriculum chunks",
+      description: "Knowledge base curriculum chunks",
       hnsw_space: "cosine",
     },
   });
@@ -183,7 +188,13 @@ async function processPdf(
   const fullText = cleanText(pdf.text);
   const charsPerPage = Math.ceil(fullText.length / Math.max(pdf.numpages, 1));
 
-  const rawChunks = chunkText(fullText);
+  // Use explicit chunking params for large texts (OpenStax) with min 15% overlap
+  const rawChunks = chunkText(fullText, {
+    targetTokens: 500,
+    overlapTokens: 75,
+    minChunkTokens: 100,
+    separators: ["\n\n", "\n", ". ", " "],
+  });
   console.log(`  Pages: ${pdf.numpages}, Raw chunks: ${rawChunks.length}`);
 
   // Accumulate batches
@@ -257,17 +268,24 @@ async function main() {
 
   const collection = await getOrCreateCollection(client, reset);
 
-  const pdfFiles = singleFile
-    ? [path.resolve(singleFile)]
-    : fs
-        .readdirSync(PDF_DIR)
-        .filter((f) => f.toLowerCase().endsWith(".pdf"))
-        .map((f) => path.join(PDF_DIR, f));
+  let pdfFiles: string[] = [];
+  if (singleFile) {
+    pdfFiles = [path.resolve(singleFile)];
+  } else {
+    for (const dir of DATA_DIRS) {
+      if (fs.existsSync(dir)) {
+        const files = fs.readdirSync(dir)
+          .filter((f) => f.toLowerCase().endsWith(".pdf"))
+          .map((f) => path.join(dir, f));
+        pdfFiles.push(...files);
+      }
+    }
+  }
 
   if (pdfFiles.length === 0) {
     console.warn(
-      `No PDFs found in ${PDF_DIR}.\n` +
-        `Place Skola2030 framework PDFs there and re-run.`,
+      `No PDFs found in ${DATA_DIRS.join(", ")}.\n` +
+        `Place OpenStax or Wikipedia PDFs there and re-run.`,
     );
     process.exit(0);
   }

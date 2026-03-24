@@ -23,7 +23,7 @@ const RAG_CACHE_VERSION = "v6"; // bumped: threshold raised to 1.0 for Latvian c
 // ---------------------------------------------------------------------------
 
 const PATH_C_RESPONSE =
-  "Es nevaru atrast atbildi šobrīd. Mani Skola2030 dokumenti nesatur šo informāciju, " +
+  "Es nevaru atrast atbildi šobrīd. Manā zināšanu bāzē nav šīs informācijas, " +
   "un interneta meklēšana arī neatdeva rezultātus. Mēģini pārformulēt jautājumu vai " +
   "vaicāt par konkrētu mācību priekšmetu vai tēmu.";
 
@@ -142,8 +142,8 @@ async function saveToCache(question: string, answer: string, embedding: number[]
 function buildSystemPrompt(subject: string, grade: number): string {
   const complexityRule =
     grade <= 9
-      ? "≤20 vārdi/teikumā. Aktīvā balss. Jauns termins → ikdienas analoģija."
-      : "Akadēmiska valoda, abstrakcijas, starppriekšmetu saiknes, zinātniskā terminoloģija.";
+      ? "≤20 vārdi/teikumā. Aktīvā balss. Jauns termins → ikdienas analoģija. Pielāgo atbildi " + grade + ". klases līmenim un nepārspīlē ar akadēmisko sarežģītību."
+      : "Akadēmiska valoda, abstrakcijas, starppriekšmetu saiknes, zinātniskā terminoloģija atbilstoši " + grade + ". klasei.";
 
   const subjectCtx =
     subject === "general"
@@ -151,11 +151,12 @@ function buildSystemPrompt(subject: string, grade: number): string {
       : `Priekšmets: ${subject}. Klase: ${grade}.`;
 
   return `<system_role>
-Tu esi SkolnieksAI — Latvijas labākais mācību palīgs (6.–12.kl.), balstoties uz Skola2030 programmu. ${subjectCtx}
+Tu esi SkolnieksAI — Latvijas labākais mācību palīgs. ${subjectCtx}
+Lietotājs ir ${grade}. klases skolēns. Tev JĀPASKAIDRO atrastais konteksts, izmantojot vārdu krājumu un jēdzienus, kas ir stingri atbilstoši ${grade}. klases skolēnam Latvijā. Nepārveido atbildi pārāk sarežģīti.
 Mērķis: precīzas, skaidras atbildes latviešu valodā. „tu" forma. Pacietīgs, iedrošinošs.
 </system_role>
 <atbildes_stratēģija>
-ZINĀŠANU JAUTĀJUMS (kas ir / kā notiek / izskaidro / definē / salīdzini) → Atbildi TIEŠI pirmajā teikumā. Tad konteksts no Skola2030. NEKAD nesāc ar pretjautājumu.
+ZINĀŠANU JAUTĀJUMS (kas ir / kā notiek / izskaidro / definē / salīdzini) → Atbildi TIEŠI pirmajā teikumā. Tad sniedz kontekstu. NEKAD nesāc ar pretjautājumu.
 APRĒĶINS / UZDEVUMS → Atrisini pilnībā ar soļiem. Parādi metodi.
 ESEJAS RAKSTĪŠANA vai PILNĪGA MĀJASDARBU IZPILDE → Palīdzi strukturēt un domāt, bet neraksti skolēna vietā. VIENS konkrēts mājiens.
 SARUNA / NEAKADĒMISKS → Atbildi kā atbalstošs klasesbiedrs — īsi, silti. NEPĀRADRESĒ uz mācībām.
@@ -164,8 +165,8 @@ SARUNA / NEAKADĒMISKS → Atbildi kā atbalstošs klasesbiedrs — īsi, silti.
 VALODA: Tikai LV. ${complexityRule} „pēdiņas"(U+201E/U+201C), – domuzīme, **treknraksts** jēdzieniem. ≤3 rindkopas.
 MATH: $inline$, $$bloks$$. Decimālkomats: $3{,}14$.
 AIZLIEGTS: „Lielisks jautājums!", „Protams!", „Nirsim dziļāk", atkārtot jautājumu, liekvārdība.
-KONTEKSTS: Balsties TIKAI uz dotajiem fragmentiem. Ja fragmenti nesatur atbildi — saki godīgi: „Mani Skola2030 dokumenti nesatur precīzu atbildi." NEKAD neizdomā faktus, kurus neredzi kontekstā.
-WEB: Ja konteksts sākas ar „[WEB MEKLĒŠANA — nav Skola2030]", sāc: „Šī informācija nav manā Skola2030 bāzē, taču pēc interneta datiem:". Ja konteksts sākas ar „[WEB MEKLĒŠANA]", izmanto interneta informāciju bez šā prefiksa.
+KONTEKSTS: Balsties TIKAI uz dotajiem fragmentiem. Ja fragmenti nesatur atbildi — saki godīgi: „Manā zināšanu bāzē nav precīzas atbildes." NEKAD neizdomā faktus, kurus neredzi kontekstā.
+WEB: Ja konteksts sākas ar „[WEB MEKLĒŠANA — nav zināšanu bāzē]", sāc: „Šī informācija nav manā datubāzē, taču pēc interneta datiem:". Ja konteksts sākas ar „[WEB MEKLĒŠANA]", izmanto interneta informāciju bez šā prefiksa.
 </rules>`;
 }
 
@@ -273,8 +274,8 @@ async function fetchWebContext(query: string, ragEmpty: boolean): Promise<WebCon
     .join("\n\n---\n\n");
 
   // Use a different tag when RAG returned 0 chunks so the system prompt can
-  // conditionally instruct the LLM to disclose the Skola2030 miss.
-  const tag = ragEmpty ? "[WEB MEKLĒŠANA — nav Skola2030]" : "[WEB MEKLĒŠANA]";
+  // conditionally instruct the LLM to disclose the knowledge base miss.
+  const tag = ragEmpty ? "[WEB MEKLĒŠANA — nav zināšanu bāzē]" : "[WEB MEKLĒŠANA]";
   return { context: `${tag}\n${body}`, sources };
 }
 

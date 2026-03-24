@@ -2,14 +2,14 @@
 
 ## Overview
 
-The RAG (Retrieval-Augmented Generation) pipeline is the core differentiator. It grounds AI responses in Latvia's official Skola2030 curriculum, making answers verifiable and education-aligned.
+The RAG (Retrieval-Augmented Generation) pipeline is the core differentiator. It grounds AI responses in open educational resources like OpenStax and Wikipedia (LV).
 
 ## Phase 1: Ingestion (`scripts/ingest.ts`)
 
 ### Source Documents
-- Skola2030 framework PDFs from official government sources
-- **DO NOT** include VISC exam papers (legal clearance pending)
-- Store raw PDFs in `data/skola2030/` (git-ignored)
+- OpenStax PDFs (translated or retrieved cross-lingually) and Wikipedia (LV).
+- Store raw PDFs in `data/openstax/`, etc. (git-ignored)
+- *Future: Integrate Skola2030 framework PDFs and VISC exams once licensing is acquired.*
 
 ### Pipeline Steps
 
@@ -21,8 +21,8 @@ PDF → pdfplumber (extract text + tables) → clean text → chunk → embed �
 2. **Clean**: Remove headers/footers, page numbers, excessive whitespace. Keep section headings.
 3. **Chunk**: Split into ~500 token chunks with ~50 token overlap. Respect paragraph/section boundaries — never split mid-sentence.
 4. **Metadata**: Attach to each chunk: `{ source_pdf, subject, grade_min, grade_max, page_number, section_title }`
-5. **Embed**: Generate 384-dim embeddings using `all-MiniLM-L6-v2` via sentence-transformers
-6. **Store**: Upsert into ChromaDB collection `skola2030_chunks`
+5. **Embed**: Generate 384-dim embeddings using `paraphrase-multilingual-MiniLM-L12-v2` via sentence-transformers
+6. **Store**: Upsert into ChromaDB collection `knowledge_chunks`
 
 ### Chunking Strategy
 
@@ -88,17 +88,17 @@ Discard results with cosine distance > 0.8 — they're noise, not signal. Better
 ### System Prompt Template
 
 ```
-Tu esi SkolnieksAI — Latvijas mācību palīgs, kas balstīts uz Skola2030 mācību programmu.
+Tu esi SkolnieksAI — Latvijas mācību palīgs. Skolēns mācās {grade}. klasē.
 
 Noteikumi:
+- Sazinies un skaidro tādā līmenī, kas ir atbilstošs {grade}. klases skolēnam Latvijā. Neveido pārāk sarežģītas atbildes.
 - Atbildi TIKAI latviešu valodā
-- Balsties uz zemāk norādīto mācību materiālu
+- Balsties uz zemāk norādīto zināšanu bāzi
 - Ja informācija nav pieejama dotajos materiālos, saki to godīgi
-- Pielāgo grūtības līmeni {grade}. klases skolēnam
-- Norādi atsauces uz konkrētām mācību programmas sadaļām
+- Norādi atsauces uz konkrētām tēmām vai eksāmenu uzdevumiem
 - Tu palīdzi SAPRAST, nevis dari mājas darbus skolēna vietā
 
-Mācību materiāls:
+Zināšanu materiāls:
 {retrieved_chunks}
 ```
 

@@ -1,7 +1,7 @@
 // Lazily loaded pipeline singleton
 let pipelineInstance: ((texts: string | string[]) => Promise<{ data: Float32Array }>) | null = null;
 
-const MODEL = process.env.EMBEDDING_MODEL ?? "Xenova/all-MiniLM-L6-v2";
+const MODEL = process.env.EMBEDDING_MODEL ?? "Xenova/paraphrase-multilingual-MiniLM-L12-v2";
 
 async function getPipeline() {
   if (!pipelineInstance) {
