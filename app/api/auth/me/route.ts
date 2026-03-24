@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
       displayName: userData.displayName ?? null,
       tier,
       grade: userData.grade ?? null,
+      onboardingComplete: userData.onboardingComplete === true,
     },
     usage: {
       tokensUsed,

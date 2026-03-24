@@ -17,7 +17,7 @@ const PLANS = [
     features: [
       "Ierobežots jautājumu skaits (~60/mēn.)",
       "Standarta palīgs",
-      "Pamata priekšmetu skaidrojumi",
+      "Visi priekšmeti, ierobežots jautājumu skaits",
     ],
     accent: "muted",
   },
@@ -28,7 +28,7 @@ const PLANS = [
     period: "/mēn.",
     features: [
       "Vairāk jautājumu mēnesī",
-      "Standarta palīgs",
+      "Pilns palīgs",
       "Prioritāra atbilde",
       "Pilns izglītības saturs",
     ],

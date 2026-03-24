@@ -106,7 +106,7 @@ export function ChatInput({ onSend, disabled, isGenerating, onStop }: ChatInputP
               disabled={disabled || !hasText || isOverLimit}
               className={`p-2 rounded-lg transition-all duration-150 shrink-0 mb-0.5 ${
                 hasText && !isOverLimit
-                  ? "gradient-primary text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:scale-105"
+                  ? "bg-primary text-white shadow-md shadow-primary/25 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/35 hover:scale-105"
                   : "bg-muted text-muted-custom"
               } disabled:opacity-30 disabled:cursor-not-allowed`}
               aria-label="Sūtīt"

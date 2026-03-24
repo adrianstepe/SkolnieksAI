@@ -26,6 +26,7 @@ export interface UserProfile {
   displayName: string | null;
   tier: UserTier;
   grade: number | null;
+  onboardingComplete?: boolean;
 }
 
 export interface UsageInfo {

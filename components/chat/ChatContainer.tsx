@@ -372,6 +372,24 @@ export function ChatContainer() {
     [messages, subject, grade, settings.aiModel, conversationId, getIdToken, refreshProfile, fetchRecentChats],
   );
 
+  const handleOnboardingComplete = async () => {
+    try {
+      const token = await getIdToken();
+      if (!token) return;
+      await fetch("/api/auth/onboard", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ grade, subject }),
+      });
+      await refreshProfile();
+    } catch (err) {
+      console.error("Failed to complete onboarding:", err);
+    }
+  };
+
   const isPremium =
     profile?.tier === "premium" ||
     profile?.tier === "exam_prep" ||
@@ -437,26 +455,41 @@ export function ChatContainer() {
               >
                 Mācīties
               </button>
-              <button
-                onClick={() => setActiveTab("tasks")}
-                className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                  activeTab === "tasks"
-                    ? "font-medium text-primary"
-                    : "text-muted-custom hover:text-primary-custom"
-                }`}
-              >
-                Uzdevumi
-              </button>
-              <button
-                onClick={() => setActiveTab("progress")}
-                className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                  activeTab === "progress"
-                    ? "font-medium text-primary"
-                    : "text-muted-custom hover:text-primary-custom"
-                }`}
-              >
-                Progress
-              </button>
+              {(() => {
+                const locked = recentChats.length < 3;
+                return (
+                  <>
+                    <button
+                      onClick={() => !locked && setActiveTab("tasks")}
+                      disabled={locked}
+                      title={locked ? "Pieejams pēc 3 sarunām" : undefined}
+                      className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                        locked
+                          ? "opacity-40 cursor-not-allowed text-muted-custom"
+                          : activeTab === "tasks"
+                          ? "font-medium text-primary"
+                          : "text-muted-custom hover:text-primary-custom"
+                      }`}
+                    >
+                      Uzdevumi
+                    </button>
+                    <button
+                      onClick={() => !locked && setActiveTab("progress")}
+                      disabled={locked}
+                      title={locked ? "Pieejams pēc 3 sarunām" : undefined}
+                      className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                        locked
+                          ? "opacity-40 cursor-not-allowed text-muted-custom"
+                          : activeTab === "progress"
+                          ? "font-medium text-primary"
+                          : "text-muted-custom hover:text-primary-custom"
+                      }`}
+                    >
+                      Progress
+                    </button>
+                  </>
+                );
+              })()}
             </nav>
           </div>
 
@@ -469,19 +502,16 @@ export function ChatContainer() {
             {/* Usage meter */}
             {usage && <UsageMeter percent={usage.budgetPercentUsed} queriesCount={usage.queriesCount} />}
 
-            {/* Upgrade / Premium button */}
+            {/* Upgrade / Premium button (always visible next to progress bar) */}
             {!isPremium && (
               <button
                 onClick={() => setShowUpgrade(true)}
-                className="flex items-center gap-1.5 rounded-full gradient-primary px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/25"
+                className="font-semibold text-accent hover:text-accent-hover flex items-center gap-1 transition-colors text-xs sm:text-sm"
               >
-                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
-                  <path
-                    d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                    fill="currentColor"
-                  />
+                Paplašini
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                  <path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" />
                 </svg>
-                Premium
               </button>
             )}
 
@@ -497,20 +527,11 @@ export function ChatContainer() {
         )}
 
         {/* Sticky Premium CTA Banner */}
-        {!isPremium && usage && (usage.queriesCount ?? 0) >= 3 && (
-          <div className="animate-fade-up flex items-center justify-between gap-2 bg-gradient-to-r from-primary/10 to-accent/10 border-b border-primary/20 px-5 py-2.5 text-sm shadow-sm shrink-0">
-            <span className="text-text-primary">
+        {!isPremium && usage && usage.budgetPercentUsed > 50 && (
+          <div className="animate-fade-up flex items-center justify-center bg-primary/10 border-b border-primary/20 px-5 py-2.5 text-sm shadow-sm shrink-0">
+            <span className="text-text-primary text-center">
               Tev atlikuši <strong className="text-primary">{Math.max(0, 60 - (usage.queriesCount ?? 0))}</strong> jautājumi šomēnes.
             </span>
-            <button
-              onClick={() => setShowUpgrade(true)}
-              className="font-semibold text-accent hover:text-accent-hover flex items-center gap-1 transition-colors"
-            >
-              Paplašini
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                <path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" />
-              </svg>
-            </button>
           </div>
         )}
 
@@ -525,10 +546,8 @@ export function ChatContainer() {
               {!hasMessages && !loadingChat ? (
                 <WelcomeScreen 
                   onSelectPrompt={handleSend} 
-                  onSubjectChange={setSubject} 
-                  currentGrade={grade}
-                  onGradeChange={setGrade}
                   currentSubject={subject}
+                  currentGrade={grade}
                 />
               ) : (
                 <div className="mx-auto max-w-3xl space-y-6">
@@ -536,15 +555,23 @@ export function ChatContainer() {
                     <ChatSkeleton />
                   ) : (
                     <>
-                      {messages.map((msg) => (
-                        <ChatMessage key={msg.id} message={msg} />
-                      ))}
+                      {messages.map((msg) => {
+                        // Suppress the empty assistant placeholder while loading — TypingIndicator renders instead
+                        if (
+                          isLoading &&
+                          msg.role === "assistant" &&
+                          msg.content === "" &&
+                          msg.id === messages[messages.length - 1]?.id
+                        ) {
+                          return null;
+                        }
+                        return <ChatMessage key={msg.id} message={msg} />;
+                      })}
 
-                      {isLoading &&
-                        messages[messages.length - 1]?.role === "assistant" &&
-                        messages[messages.length - 1]?.content === "" && (
-                          <TypingIndicator />
-                        )}
+                      {isLoading && (() => {
+                        const last = messages[messages.length - 1];
+                        return last?.role === "user" || (last?.role === "assistant" && last.content === "");
+                      })() && <TypingIndicator />}
                     </>
                   )}
                 </div>
@@ -659,6 +686,17 @@ export function ChatContainer() {
       {showUpgrade && (
         <UpgradeModal onClose={() => setShowUpgrade(false)} />
       )}
+
+      {/* Onboarding modal */}
+      {profile && !profile.onboardingComplete && (
+        <OnboardingModal
+          currentGrade={grade}
+          onGradeChange={setGrade}
+          currentSubject={subject}
+          onSubjectChange={setSubject}
+          onComplete={handleOnboardingComplete}
+        />
+      )}
     </div>
   );
 }
@@ -685,16 +723,12 @@ const SUBJECT_TOPICS: Record<string, string> = {
 
 function WelcomeScreen({
   onSelectPrompt,
-  onSubjectChange,
-  currentGrade,
-  onGradeChange,
   currentSubject,
+  currentGrade,
 }: {
   onSelectPrompt: (text: string) => void;
-  onSubjectChange: (subject: string) => void;
-  currentGrade: number;
-  onGradeChange: (grade: number) => void;
   currentSubject: string;
+  currentGrade: number;
 }) {
   const generatedPrompt = currentSubject === "general"
     ? SUBJECT_TOPICS.general
@@ -703,7 +737,7 @@ function WelcomeScreen({
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 min-h-full animate-fade-in">
       {/* Hero */}
-      <div className="text-center space-y-4 mb-10 w-full">
+      <div className="text-center space-y-4 mb-10 w-full mt-[-10vh]">
         <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto glow-primary animate-float">
           <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8">
             <path
@@ -716,10 +750,10 @@ function WelcomeScreen({
           Sveiki! Es esmu <span className="text-primary">SkolnieksAI</span>
         </h1>
         <p className="text-sm text-muted-custom max-w-md mx-auto">
-          Tavs mācību palīgs. Izvēlies klasi un priekšmetu, lai sāktu sarunu!
+          Tavs mācību palīgs. Ieraksti jautājumu zemāk vai izvēlies tēmu!
         </p>
 
-        {/* Trust Badges moved here to maintain conversion trust above the fold */}
+        {/* Trust Badges */}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-[11px] text-muted-custom">
           <span className="inline-flex items-center gap-1">📚 Atbilst Skola2030 standartiem</span>
           <span className="inline-flex items-center gap-1">🔒 Privāts un drošs</span>
@@ -727,22 +761,84 @@ function WelcomeScreen({
         </div>
       </div>
 
-      {/* Onboarding Box */}
-      <div className="w-full max-w-md rounded-2xl border border-subtle bg-surface p-6 shadow-sm animate-slide-up">
-        <h2 className="text-lg font-semibold text-primary-custom mb-6">Kas tu esi?</h2>
-        
+      {/* Suggested Prompt */}
+      <div className="w-full max-w-md animate-slide-up">
+        <button
+          onClick={() => onSelectPrompt(generatedPrompt)}
+          className="w-full rounded-2xl border border-subtle bg-surface p-4 text-left transition-all hover:border-primary/50 hover:shadow-sm"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                <path fillRule="evenodd" d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 2.45 3 3.414 3 4.517V17.25a.75.75 0 0 0 1.075.676L10 15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2Z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-custom uppercase tracking-wider mb-1">
+                Ieteikums
+              </p>
+              <p className="text-sm font-medium text-primary-custom">
+                {generatedPrompt}
+              </p>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function OnboardingModal({
+  currentGrade,
+  onGradeChange,
+  currentSubject,
+  onSubjectChange,
+  onComplete,
+}: {
+  currentGrade: number;
+  onGradeChange: (grade: number) => void;
+  currentSubject: string;
+  onSubjectChange: (subject: string) => void;
+  onComplete: () => Promise<void>;
+}) {
+  const [loading, setLoading] = useState(false);
+
+  const handleSave = async () => {
+    setLoading(true);
+    await onComplete();
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+      <div className="w-full max-w-md rounded-3xl border border-subtle bg-base p-6 md:p-8 shadow-2xl animate-slide-up">
+        {/* Icon */}
+        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7">
+            <path
+              d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+
+        <h2 className="text-2xl font-bold text-primary-custom mb-2">Iepazīsimies!</h2>
+        <p className="text-sm text-muted-custom mb-8">
+          Izvēlies klasi un tēmu, lai mēs varētu pielāgot atbildes tavam līmenim.
+        </p>
+
         {/* Grade */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-muted-custom mb-3">Tava klase</label>
-          <div className="flex flex-wrap gap-2">
+          <label className="block text-sm font-medium text-primary-custom mb-3">Tava klase</label>
+          <div className="flex flex-wrap gap-2.5">
             {GRADES.map((g) => (
               <button
                 key={g}
                 onClick={() => onGradeChange(g)}
-                className={`h-10 w-10 rounded-full text-sm font-semibold transition-all ${
+                className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold transition-all ${
                   currentGrade === g
-                    ? "bg-primary text-white shadow-md shadow-primary/20 scale-105"
-                    : "bg-muted text-muted-custom hover:bg-muted/80 hover:text-primary-custom"
+                    ? "bg-primary text-white shadow-md shadow-primary/25 scale-105"
+                    : "bg-surface border border-subtle text-muted-custom hover:border-primary/50 hover:text-primary-custom"
                 }`}
               >
                 {g}
@@ -753,11 +849,11 @@ function WelcomeScreen({
 
         {/* Subject */}
         <div className="mb-8">
-          <label className="block text-sm font-medium text-muted-custom mb-3">Mācību priekšmets</label>
+          <label className="block text-sm font-medium text-primary-custom mb-3">Mācību priekšmets</label>
           <select
             value={currentSubject}
             onChange={(e) => onSubjectChange(e.target.value)}
-            className="w-full rounded-xl border border-subtle bg-base px-4 py-3 text-sm text-primary-custom focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+            className="w-full rounded-xl border border-subtle bg-surface px-4 py-3.5 text-sm text-primary-custom focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all"
           >
             {SUBJECTS.map((s) => (
               <option key={s.value} value={s.value}>
@@ -767,25 +863,19 @@ function WelcomeScreen({
           </select>
         </div>
 
-        {/* Generated Prompt Suggestion & CTA */}
-        <div className="space-y-4 pt-4 border-t border-subtle">
-          <div className="rounded-xl bg-muted/50 p-4 border border-subtle/50 relative group">
-            <span className="absolute -top-2.5 left-4 bg-surface px-2 text-[10px] font-bold uppercase tracking-wider text-muted-custom">
-              Tavs pirmais jautājums
-            </span>
-            <p className="text-sm font-medium text-primary-custom italic text-center">"{generatedPrompt}"</p>
-          </div>
-          
-          <button
-            onClick={() => onSelectPrompt(generatedPrompt)}
-            className="w-full flex items-center justify-center gap-2 rounded-xl gradient-primary py-3.5 text-sm font-bold text-white shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
-          >
-            Sākt sarunu
+        {/* CTA - Brand purple solid color, no gradient */}
+        <button
+          onClick={handleSave}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent py-4 text-sm font-bold text-white shadow-sm transition-all hover:bg-accent-hover active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none"
+        >
+          {loading ? "Saglabā..." : "Sākt sarunu"}
+          {!loading && (
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
               <path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" />
             </svg>
-          </button>
-        </div>
+          )}
+        </button>
       </div>
     </div>
   );
