@@ -94,9 +94,9 @@ export async function retrieve(
 export function formatContext(chunks: RetrievedChunk[]): string {
   return chunks
     .map((chunk, i) => {
-      const { source_pdf, subject, grade_min, grade_max, page_number } =
+      const { source_pdf, subject, grade_min, grade_max } =
         chunk.metadata;
-      const header = `[${i + 1}] ${source_pdf} | ${subject} | grades ${grade_min}–${grade_max} | p.${page_number}`;
+      const header = `[${i + 1}] ${source_pdf} | ${subject} | grades ${grade_min}–${grade_max}`;
       return `${header}\n${chunk.content}`;
     })
     .join("\n\n---\n\n");

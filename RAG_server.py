@@ -182,7 +182,7 @@ def query_endpoint(req: QueryRequest, _: None = Depends(require_api_key)) -> Que
         page    = meta.get("page_number")
         subject = str(meta.get("subject", ""))
         src_type = str(meta.get("source_type", ""))
-        label   = f"{pdf} | {subject} | lpp. {page}" if page is not None else f"{pdf} | {subject}"
+        label   = f"{pdf} | {subject}"
         if src_type:
             label = f"[{src_type}] {label}"
         sources.append(label)
