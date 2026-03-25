@@ -47,14 +47,14 @@ export function ChatInput({ onSend, disabled, isGenerating, onStop }: ChatInputP
   const showCounter = charCount > 1500;
 
   return (
-    <div className="border-t border-subtle bg-base/80 backdrop-blur-sm px-4 py-3">
+    <div className="border-t border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB]/80 dark:bg-[#0B0E14]/80 backdrop-blur-sm px-4 py-3">
       <div className="max-w-3xl mx-auto">
         {/* Card-style input container */}
-        <div className="flex items-end gap-2 bg-[#151926] rounded-xl border border-primary/20 px-4 py-3 transition-all duration-150 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15 focus-within:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]">
+        <div className="flex items-end gap-2 bg-white dark:bg-[#151926] rounded-xl border border-[#E5E7EB] dark:border-white/7 px-4 py-3 transition-all duration-150 focus-within:border-[#2563EB]/50 dark:focus-within:border-[#4F8EF7]/50 focus-within:ring-2 focus-within:ring-[#2563EB]/15 dark:focus-within:ring-[#4F8EF7]/15 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.08)] dark:focus-within:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]">
           {/* Paperclip button */}
           <button
             disabled
-            className="p-1 text-muted-custom shrink-0 mb-0.5 opacity-40 cursor-not-allowed"
+            className="p-1 text-[#6B7280] dark:text-[#8B95A8] shrink-0 mb-0.5 opacity-40 cursor-not-allowed"
             aria-label="Pievienot failu"
             title="Funkcija drīzumā būs pieejama!"
           >
@@ -73,13 +73,13 @@ export function ChatInput({ onSend, disabled, isGenerating, onStop }: ChatInputP
             placeholder="Uzdod jautājumu par mācību vielu..."
             disabled={disabled}
             rows={1}
-            className="flex-1 bg-transparent text-sm text-primary-custom placeholder:text-muted-custom resize-none outline-none min-h-[24px] max-h-[160px] disabled:opacity-50"
+            className="flex-1 bg-transparent text-sm text-[#111827] dark:text-[#E8ECF4] placeholder:text-[#6B7280] dark:placeholder:text-[#8B95A8] resize-none outline-none min-h-[24px] max-h-[160px] disabled:opacity-50"
           />
 
           {/* Book button */}
           <button
             disabled
-            className="p-1 text-muted-custom shrink-0 mb-0.5 opacity-40 cursor-not-allowed"
+            className="p-1 text-[#6B7280] dark:text-[#8B95A8] shrink-0 mb-0.5 opacity-40 cursor-not-allowed"
             aria-label="Mācību materiāli"
             title="Funkcija drīzumā būs pieejama!"
           >
@@ -106,8 +106,8 @@ export function ChatInput({ onSend, disabled, isGenerating, onStop }: ChatInputP
               disabled={disabled || !hasText || isOverLimit}
               className={`p-2 rounded-lg transition-all duration-150 shrink-0 mb-0.5 ${
                 hasText && !isOverLimit
-                  ? "bg-primary text-white shadow-md shadow-primary/25 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/35 hover:scale-105"
-                  : "bg-muted text-muted-custom"
+                  ? "bg-[#2563EB] dark:bg-[#4F8EF7] text-white shadow-md shadow-[#2563EB]/25 dark:shadow-[#4F8EF7]/25 hover:bg-[#1D4ED8] dark:hover:bg-[#3D7CE5] hover:shadow-lg hover:shadow-[#2563EB]/35 dark:hover:shadow-[#4F8EF7]/35 hover:scale-105"
+                  : "bg-[#F1F5F9] dark:bg-[#1A2033] text-[#6B7280] dark:text-[#8B95A8]"
               } disabled:opacity-30 disabled:cursor-not-allowed`}
               aria-label="Sūtīt"
             >
@@ -120,13 +120,13 @@ export function ChatInput({ onSend, disabled, isGenerating, onStop }: ChatInputP
 
         {/* Character counter */}
         {showCounter && (
-          <p className={`text-[11px] text-right mt-1 tabular-nums ${isOverLimit ? "text-red-400" : "text-warning"}`}>
+          <p className={`text-[11px] text-right mt-1 tabular-nums ${isOverLimit ? "text-red-400" : "text-[#F59E0B]"}`}>
             {charCount} / 2000
           </p>
         )}
 
         {/* Disclaimer text below input */}
-        <p className="text-[11px] text-muted-custom text-center mt-2 flex items-center justify-center gap-1">
+        <p className="text-[11px] text-[#6B7280] dark:text-[#8B95A8] text-center mt-2 flex items-center justify-center gap-1">
           <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
             <path
               d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"

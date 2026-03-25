@@ -425,12 +425,12 @@ export function ChatContainer() {
       {/* Main area */}
       <div className={`${sidebarWidth} flex flex-1 flex-col min-w-0 transition-all duration-300`}>
         {/* Header — h-14 with backdrop blur */}
-        <header className="h-14 flex items-center justify-between px-4 lg:px-6 border-b border-subtle bg-base/50 backdrop-blur-sm shrink-0">
+        <header className="h-14 flex items-center justify-between px-4 lg:px-6 border-b border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB]/50 dark:bg-[#0F1117]/50 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-3">
             {/* Hamburger — mobile only */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="rounded-lg p-1.5 text-muted-custom transition-colors hover:bg-muted hover:text-primary-custom lg:hidden"
+              className="rounded-lg p-1.5 text-[#6B7280] dark:text-[#8B95A8] transition-colors hover:bg-[#E5E7EB] dark:hover:bg-[#1A2033] hover:text-[#111827] dark:hover:text-[#E8ECF4] lg:hidden"
               aria-label="Atvērt izvēlni"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
@@ -439,7 +439,7 @@ export function ChatContainer() {
             </button>
 
             {/* Status text */}
-            <span className="text-sm text-muted-custom hidden sm:inline">
+            <span className="text-sm font-semibold text-[#111827] dark:text-[#E8ECF4] hidden sm:inline">
               {hasMessages ? "Aktīva saruna" : "Jauna saruna"}
             </span>
 
@@ -449,8 +449,8 @@ export function ChatContainer() {
                 onClick={() => setActiveTab("learn")}
                 className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
                   activeTab === "learn"
-                    ? "font-medium text-primary"
-                    : "text-muted-custom hover:text-primary-custom"
+                    ? "font-bold text-[#1D4ED8] dark:text-[#3D7CE5]"
+                    : "font-semibold text-[#111827] dark:text-[#E8ECF4] hover:bg-[#E5E7EB] dark:hover:bg-[#1A2033]"
                 }`}
               >
                 Mācīties
@@ -465,10 +465,10 @@ export function ChatContainer() {
                       title={locked ? "Pieejams pēc 3 sarunām" : undefined}
                       className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
                         locked
-                          ? "opacity-40 cursor-not-allowed text-muted-custom"
+                          ? "opacity-40 cursor-not-allowed font-semibold text-[#111827] dark:text-[#E8ECF4]"
                           : activeTab === "tasks"
-                          ? "font-medium text-primary"
-                          : "text-muted-custom hover:text-primary-custom"
+                          ? "font-bold text-[#1D4ED8] dark:text-[#3D7CE5]"
+                          : "font-semibold text-[#111827] dark:text-[#E8ECF4] hover:bg-[#E5E7EB] dark:hover:bg-[#1A2033]"
                       }`}
                     >
                       Uzdevumi
@@ -479,10 +479,10 @@ export function ChatContainer() {
                       title={locked ? "Pieejams pēc 3 sarunām" : undefined}
                       className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
                         locked
-                          ? "opacity-40 cursor-not-allowed text-muted-custom"
+                          ? "opacity-40 cursor-not-allowed font-semibold text-[#111827] dark:text-[#E8ECF4]"
                           : activeTab === "progress"
-                          ? "font-medium text-primary"
-                          : "text-muted-custom hover:text-primary-custom"
+                          ? "font-bold text-[#1D4ED8] dark:text-[#3D7CE5]"
+                          : "font-semibold text-[#111827] dark:text-[#E8ECF4] hover:bg-[#E5E7EB] dark:hover:bg-[#1A2033]"
                       }`}
                     >
                       Progress
@@ -501,7 +501,7 @@ export function ChatContainer() {
             {!isPremium && (
               <button
                 onClick={() => setShowUpgrade(true)}
-                className="font-semibold text-accent hover:text-accent-hover flex items-center gap-1 transition-colors text-xs sm:text-sm"
+                className="font-bold text-[#111827] dark:text-[#E8ECF4] hover:text-[#1D4ED8] dark:hover:text-[#3D7CE5] flex items-center gap-1 transition-colors text-xs sm:text-sm"
               >
                 Paplašini
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
@@ -515,17 +515,17 @@ export function ChatContainer() {
 
         {/* Subject auto-detect toast */}
         {detectedSubjectLabel && (
-          <div className="animate-fade-up flex items-center justify-between gap-2 bg-primary/10 border-b border-primary/20 px-5 py-1.5 text-xs text-primary">
+          <div className="animate-fade-up flex items-center justify-between gap-2 bg-[#2563EB]/10 dark:bg-[#4F8EF7]/10 border-b border-[#2563EB]/20 dark:border-[#4F8EF7]/20 px-5 py-1.5 text-xs text-[#2563EB] dark:text-[#4F8EF7]">
             <span>Automātiski noteikts priekšmets: <strong>{detectedSubjectLabel}</strong></span>
-            <button onClick={() => setDetectedSubjectLabel(null)} className="text-primary/60 hover:text-primary">✕</button>
+            <button onClick={() => setDetectedSubjectLabel(null)} className="text-[#2563EB]/60 dark:text-[#4F8EF7]/60 hover:text-[#2563EB] dark:hover:text-[#4F8EF7]">✕</button>
           </div>
         )}
 
         {/* Sticky Premium CTA Banner */}
         {!isPremium && usage && usage.budgetPercentUsed > 50 && (
-          <div className="animate-fade-up flex items-center justify-center bg-primary/10 border-b border-primary/20 px-5 py-2.5 text-sm shadow-sm shrink-0">
-            <span className="text-text-primary text-center">
-              Tev atlikuši <strong className="text-primary">{Math.max(0, 60 - (usage.queriesCount ?? 0))}</strong> jautājumi šomēnes.
+          <div className="animate-fade-up flex items-center justify-center bg-[#2563EB]/10 dark:bg-[#4F8EF7]/10 border-b border-[#2563EB]/20 dark:border-[#4F8EF7]/20 px-5 py-2.5 text-sm shadow-sm shrink-0">
+            <span className="text-[#111827] dark:text-[#E8ECF4] text-center">
+              Tev atlikuši <strong className="text-[#2563EB] dark:text-[#4F8EF7]">{Math.max(0, 60 - (usage.queriesCount ?? 0))}</strong> jautājumi šomēnes.
             </span>
           </div>
         )}
@@ -536,7 +536,7 @@ export function ChatContainer() {
             {/* Chat messages area */}
             <div
               ref={scrollRef}
-              className="flex-1 overflow-y-auto bg-chat px-6 py-6 thin-scrollbar"
+              className="flex-1 overflow-y-auto bg-[#F9FAFB] dark:bg-[#0B0E14] px-6 py-6 thin-scrollbar"
             >
               {!hasMessages && !loadingChat ? (
                 <WelcomeScreen 
@@ -620,7 +620,7 @@ export function ChatContainer() {
                   {/* Dismiss */}
                   <button
                     onClick={() => setSystemError(null)}
-                    className="shrink-0 text-muted-custom hover:text-primary-custom transition-colors"
+                    className="shrink-0 text-[#6B7280] dark:text-[#8B95A8] hover:text-[#111827] dark:hover:text-[#E8ECF4] transition-colors"
                     aria-label="Aizvērt"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
@@ -641,25 +641,25 @@ export function ChatContainer() {
           </>
         ) : (
           /* Drīzumā placeholder for Uzdevumi & Progress */
-          <div className="flex flex-1 items-center justify-center bg-chat">
+          <div className="flex flex-1 items-center justify-center bg-[#F9FAFB] dark:bg-[#0B0E14]">
             <div className="flex flex-col items-center text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F1F5F9] dark:bg-[#1A2033]">
                 {activeTab === "tasks" ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8 text-muted-custom">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8 text-[#6B7280] dark:text-[#8B95A8]">
                     <path fillRule="evenodd" d="M7.502 6h7.128A3.375 3.375 0 0 1 18 9.375v9.375a3 3 0 0 0 3-3V6.108c0-1.505-1.125-2.811-2.664-2.94a48.972 48.972 0 0 0-.673-.05A3 3 0 0 0 15 1.5h-1.5a3 3 0 0 0-2.663 1.618c-.225.015-.45.032-.673.05C8.662 3.295 7.554 4.542 7.502 6ZM13.5 3a1.5 1.5 0 0 0-1.5 1.5H15A1.5 1.5 0 0 0 13.5 3ZM7.5 9.375A1.875 1.875 0 0 1 9.375 7.5h5.25a1.875 1.875 0 0 1 1.875 1.875v9.375A1.875 1.875 0 0 1 14.625 20.625h-5.25A1.875 1.875 0 0 1 7.5 18.75V9.375Z" clipRule="evenodd" />
                     <path d="M10.5 12.75a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Zm0 3a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Z" />
                   </svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8 text-muted-custom">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8 text-[#6B7280] dark:text-[#8B95A8]">
                     <path fillRule="evenodd" d="M2.25 13.5a8.25 8.25 0 0 1 8.25-8.25.75.75 0 0 1 .75.75v6.75H18a.75.75 0 0 1 .75.75 8.25 8.25 0 0 1-16.5 0Z" clipRule="evenodd" />
                     <path fillRule="evenodd" d="M12.75 3a.75.75 0 0 1 .75-.75 8.25 8.25 0 0 1 8.25 8.25.75.75 0 0 1-.75.75h-7.5a.75.75 0 0 1-.75-.75V3Z" clipRule="evenodd" />
                   </svg>
                 )}
               </div>
-              <h2 className="text-lg font-semibold text-primary-custom mb-2">
+              <h2 className="text-lg font-semibold text-[#111827] dark:text-[#E8ECF4] mb-2">
                 {activeTab === "tasks" ? "Uzdevumi" : "Progress"}
               </h2>
-              <p className="text-sm text-muted-custom max-w-xs">
+              <p className="text-sm text-[#6B7280] dark:text-[#8B95A8] max-w-xs">
                 {activeTab === "tasks"
                   ? "Interaktīvi uzdevumi un testi — drīzumā!"
                   : "Tava mācīšanās statistika un sasniegumi — drīzumā!"}
@@ -741,15 +741,15 @@ function WelcomeScreen({
             />
           </svg>
         </div>
-        <h1 className="text-[28px] font-semibold text-primary-custom tracking-tight">
-          Sveiki! Es esmu <span className="text-primary">SkolnieksAI</span>
+        <h1 className="text-[28px] font-semibold text-[#111827] dark:text-[#E8ECF4] tracking-tight">
+          Sveiki! Es esmu <span className="text-[#2563EB] dark:text-[#4F8EF7]">SkolnieksAI</span>
         </h1>
-        <p className="text-sm text-muted-custom max-w-md mx-auto">
+        <p className="text-sm font-semibold text-[#111827] dark:text-[#E8ECF4] max-w-md mx-auto">
           Tavs mācību palīgs. Ieraksti jautājumu zemāk vai izvēlies tēmu!
         </p>
 
         {/* Trust Badges */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-[11px] text-muted-custom">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-[11px] font-semibold text-[#111827] dark:text-[#E8ECF4]">
           <span className="inline-flex items-center gap-1">📚 Balstīts uz OpenStax</span>
           <span className="inline-flex items-center gap-1">🔒 Privāts un drošs</span>
           <span className="inline-flex items-center gap-1">🇱🇻 Latviski</span>
@@ -760,19 +760,19 @@ function WelcomeScreen({
       <div className="w-full max-w-md animate-slide-up">
         <button
           onClick={() => onSelectPrompt(generatedPrompt)}
-          className="w-full rounded-2xl border border-subtle bg-surface p-4 text-left transition-all hover:border-primary/50 hover:shadow-sm"
+          className="w-full rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-[#F1F5F9] dark:bg-[#1A2033] p-4 text-left transition-all hover:border-[#2563EB]/50 dark:hover:border-[#4F8EF7]/50 hover:shadow-sm"
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563EB]/10 dark:bg-[#4F8EF7]/10 text-[#2563EB] dark:text-[#4F8EF7]">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                 <path fillRule="evenodd" d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 2.45 3 3.414 3 4.517V17.25a.75.75 0 0 0 1.075.676L10 15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2Z" clipRule="evenodd" />
               </svg>
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-custom uppercase tracking-wider mb-1">
+              <p className="text-xs font-medium text-[#6B7280] dark:text-[#8B95A8] uppercase tracking-wider mb-1">
                 Ieteikums
               </p>
-              <p className="text-sm font-medium text-primary-custom">
+              <p className="text-sm font-medium text-[#111827] dark:text-[#E8ECF4]">
                 {generatedPrompt}
               </p>
             </div>
@@ -806,9 +806,9 @@ function OnboardingModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="w-full max-w-md rounded-3xl border border-subtle bg-base p-6 md:p-8 shadow-2xl animate-slide-up">
+      <div className="w-full max-w-md rounded-3xl border border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB] dark:bg-[#1A2033] p-6 md:p-8 shadow-2xl animate-slide-up">
         {/* Icon */}
-        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#2563EB]/10 dark:bg-[#4F8EF7]/10 text-[#2563EB] dark:text-[#4F8EF7]">
           <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7">
             <path
               d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
@@ -817,14 +817,14 @@ function OnboardingModal({
           </svg>
         </div>
 
-        <h2 className="text-2xl font-bold text-primary-custom mb-2">Iepazīsimies!</h2>
-        <p className="text-sm text-muted-custom mb-8">
+        <h2 className="text-2xl font-bold text-[#111827] dark:text-[#E8ECF4] mb-2">Iepazīsimies!</h2>
+        <p className="text-sm text-[#6B7280] dark:text-[#8B95A8] mb-8">
           Izvēlies klasi un tēmu, lai mēs varētu pielāgot atbildes tavam līmenim.
         </p>
 
         {/* Grade */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-primary-custom mb-3">Tava klase</label>
+          <label className="block text-sm font-medium text-[#111827] dark:text-[#E8ECF4] mb-3">Tava klase</label>
           <div className="flex flex-wrap gap-2.5">
             {GRADES.map((g) => (
               <button
@@ -832,8 +832,8 @@ function OnboardingModal({
                 onClick={() => onGradeChange(g)}
                 className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold transition-all ${
                   currentGrade === g
-                    ? "bg-primary text-white shadow-md shadow-primary/25 scale-105"
-                    : "bg-surface border border-subtle text-muted-custom hover:border-primary/50 hover:text-primary-custom"
+                    ? "bg-[#2563EB] dark:bg-[#4F8EF7] text-white shadow-md shadow-[#2563EB]/25 dark:shadow-[#4F8EF7]/25 scale-105"
+                    : "bg-[#F1F5F9] dark:bg-[#1A2033] border border-[#E5E7EB] dark:border-white/7 text-[#6B7280] dark:text-[#8B95A8] hover:border-[#2563EB]/50 dark:hover:border-[#4F8EF7]/50 hover:text-[#111827] dark:hover:text-[#E8ECF4]"
                 }`}
               >
                 {g}
@@ -844,11 +844,11 @@ function OnboardingModal({
 
         {/* Subject */}
         <div className="mb-8">
-          <label className="block text-sm font-medium text-primary-custom mb-3">Mācību priekšmets</label>
+          <label className="block text-sm font-medium text-[#111827] dark:text-[#E8ECF4] mb-3">Mācību priekšmets</label>
           <select
             value={currentSubject}
             onChange={(e) => onSubjectChange(e.target.value)}
-            className="w-full rounded-xl border border-subtle bg-surface px-4 py-3.5 text-sm text-primary-custom focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+            className="w-full rounded-xl border border-[#E5E7EB] dark:border-white/7 bg-[#F1F5F9] dark:bg-[#1A2033] px-4 py-3.5 text-sm text-[#111827] dark:text-[#E8ECF4] focus:border-[#2563EB] dark:focus:border-[#4F8EF7] focus:outline-none focus:ring-1 focus:ring-[#2563EB] dark:focus:ring-[#4F8EF7] transition-all"
           >
             {SUBJECTS.map((s) => (
               <option key={s.value} value={s.value}>
@@ -883,7 +883,7 @@ function OnboardingModal({
 function SkeletonBubble({ align, widthClass }: { align: "left" | "right"; widthClass: string }) {
   return (
     <div className={`flex ${align === "right" ? "justify-end" : "justify-start"}`}>
-      <div className={`${widthClass} h-10 rounded-2xl bg-surface animate-pulse`} />
+      <div className={`${widthClass} h-10 rounded-2xl bg-[#F1F5F9] dark:bg-[#1A2033] animate-pulse`} />
     </div>
   );
 }
@@ -922,13 +922,13 @@ function UsageMeter({ percent, queriesCount }: { percent: number; queriesCount?:
       className="hidden items-center gap-2 sm:flex cursor-default"
       title={tooltipText}
     >
-      <div className="h-1.5 w-14 overflow-hidden rounded-full bg-muted">
+      <div className="h-1.5 w-14 overflow-hidden rounded-full bg-[#E5E7EB] dark:bg-[#1A2033]">
         <div
           className={`h-full rounded-full transition-all ${color}`}
           style={{ width: `${Math.min(100, percent)}%` }}
         />
       </div>
-      <span className="text-[11px] text-muted-custom">{percent}%</span>
+      <span className="text-[11px] font-bold text-[#111827] dark:text-[#E8ECF4]">{percent}%</span>
     </div>
   );
 }

@@ -18,7 +18,6 @@ export function LogoWordmark({ size = "md" }: LogoWordmarkProps) {
     fontWeight: 600,
     fontSize: c.wordSize,
     letterSpacing: "-0.02em",
-    color: "#E8ECF4",
     display: "inline-flex",
     alignItems: "baseline",
     whiteSpace: "nowrap",
@@ -47,7 +46,7 @@ export function LogoWordmark({ size = "md" }: LogoWordmarkProps) {
   };
 
   return (
-    <span style={wrapStyle}>
+    <span style={wrapStyle} className="text-[#111827] dark:text-[#E8ECF4]">
       <span>Skolnieks</span>
       <span style={dotStyle} />
       <span style={aiStyle}>AI</span>

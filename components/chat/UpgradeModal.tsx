@@ -93,11 +93,11 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative mx-4 w-full max-w-2xl animate-fade-up rounded-2xl border border-border bg-base p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+      <div className="relative mx-4 w-full max-w-3xl animate-fade-up rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB] dark:bg-[#0F1117] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface hover:text-text-secondary"
+          className="absolute right-4 top-4 rounded-lg p-1.5 text-[#6B7280] dark:text-[#8B95A8] transition-colors hover:bg-[#F1F5F9] dark:hover:bg-[#1A2033] hover:text-[#111827] dark:hover:text-[#E8ECF4]"
           aria-label="Aizvērt"
         >
           <svg
@@ -112,67 +112,72 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
 
         {/* Header */}
         <div className="mb-6 text-center">
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2563EB] to-[#10B981] bg-clip-text text-transparent sm:text-3xl">
             Uzlabo savu plānu
           </h2>
-          <p className="mt-1 text-sm text-text-secondary">
-            Iegūsti vairāk no SkolnieksAI ar premium funkcijām
+          <p className="mt-2 text-base text-[#6B7280] dark:text-[#8B95A8]">
+            Sasniedz augstākus rezultātus ar SkolnieksAI Premium
           </p>
         </div>
 
         {/* Social proof */}
-        <div className="mb-5 flex items-center justify-center gap-2">
+        <div className="mb-8 flex items-center justify-center gap-2">
           <div className="flex -space-x-2">
             {["A", "M", "K"].map((l) => (
-              <div key={l} className="flex h-7 w-7 items-center justify-center rounded-full bg-surface border-2 border-base text-[10px] font-semibold text-text-secondary">
+              <div key={l} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F1F5F9] dark:bg-[#1A2033] border-2 border-[#F9FAFB] dark:border-[#0F1117] text-[10px] font-semibold text-[#6B7280] dark:text-[#8B95A8]">
                 {l}
               </div>
             ))}
           </div>
-          <p className="text-sm text-text-secondary">
-            Jau <span className="font-semibold text-text-primary">2 400+</span> skolēni mācās ar SkolnieksAI Premium
+          <p className="text-sm text-[#6B7280] dark:text-[#8B95A8]">
+            Jau <span className="font-semibold text-[#111827] dark:text-[#E8ECF4]">2 400+</span> skolēni mācās ar SkolnieksAI Premium
           </p>
         </div>
 
         {/* Plans */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-start">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 items-start relative z-10">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
-              className={`relative flex flex-col rounded-xl border px-5 py-[20px] transition-colors ${
+              className={`relative flex flex-col rounded-2xl border px-5 py-6 transition-all duration-300 ${
                 plan.popular
-                  ? "border-[#0e7a4f]/40 bg-[#0e7a4f]/5"
-                  : "border-border bg-surface/50"
+                  ? "border-transparent bg-gradient-to-b from-[#10B981]/15 to-transparent dark:from-[#10B981]/25 ring-2 ring-[#10B981] shadow-xl shadow-[#10B981]/20 dark:shadow-[#10B981]/10 sm:-translate-y-2 z-20"
+                  : "border-[#D1D5DB] dark:border-white/7 bg-white dark:bg-[#1A2033]/50 sm:mt-2"
               }`}
             >
               {plan.popular && (
-                <span className="absolute -top-2.5 left-4 rounded-full bg-[#0e7a4f] px-3 py-0.5 text-xs font-semibold text-white">
-                  Populārākais
-                </span>
+                <div className="absolute -top-3 left-0 right-0 flex justify-center">
+                  <span className="rounded-full bg-gradient-to-r from-[#10B981] to-[#059669] px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-white shadow-lg whitespace-nowrap flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                      <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clipRule="evenodd" />
+                    </svg>
+                    Populārākais
+                  </span>
+                </div>
               )}
 
-              <h3 className="text-lg font-semibold text-text-primary">
+              <h3 className={`text-lg font-semibold ${plan.popular ? "text-[#059669] dark:text-[#34D399]" : "text-[#111827] dark:text-[#E8ECF4]"}`}>
                 {plan.name}
               </h3>
 
-              <div className="mt-2 flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-text-primary">
+              <div className="mt-3 flex items-baseline gap-1">
+                <span className="text-3xl font-extrabold tracking-tight text-[#111827] dark:text-[#E8ECF4]">
                   {plan.price}
                 </span>
-                <span className="text-sm text-text-secondary">
+                <span className="text-sm font-medium text-[#6B7280] dark:text-[#8B95A8]">
                   {plan.period}
                 </span>
               </div>
 
-              <ul className="mt-4 flex-1 space-y-[8px]">
+              <ul className="mt-5 flex-1 space-y-3">
                 {plan.features.map((feature) => (
                   <li
                     key={feature}
-                    className="flex items-start gap-2 text-sm text-text-secondary"
+                    className="flex items-start gap-2.5 text-sm text-[#6B7280] dark:text-[#8B95A8] font-medium"
                   >
                     <svg
                       className={`mt-0.5 h-4 w-4 shrink-0 ${
-                        plan.popular ? "text-accent" : "text-primary"
+                        plan.popular ? "text-[#10B981] dark:text-[#34D399]" : "text-[#2563EB] dark:text-[#4F8EF7]"
                       }`}
                       fill="currentColor"
                       viewBox="0 0 20 20"
@@ -191,19 +196,19 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
               <button
                 onClick={() => plan.id !== "free" && handleCheckout(plan.id as "premium" | "exam_prep")}
                 disabled={loading !== null || plan.id === "free"}
-                className={`mt-5 w-full rounded-lg py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 ${
+                className={`mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
                   plan.id === "free"
-                    ? "bg-surface text-text-muted border border-border"
+                    ? "bg-[#F1F5F9] dark:bg-[#1A2033] text-[#6B7280] dark:text-[#8B95A8] border border-[#E5E7EB] dark:border-white/7"
                     : plan.popular
-                    ? "bg-accent text-white hover:bg-accent-hover"
-                    : "bg-primary text-white hover:bg-primary-hover"
+                    ? "bg-gradient-to-r from-[#10B981] to-[#059669] text-white hover:from-[#059669] hover:to-[#047857] shadow-lg shadow-[#10B981]/30 hover:shadow-xl hover:-translate-y-0.5"
+                    : "bg-[#2563EB] dark:bg-[#4F8EF7] text-white hover:bg-[#1D4ED8] dark:hover:bg-[#3D7CE5] shadow-md hover:shadow-xl hover:-translate-y-0.5"
                 }`}
               >
                 {loading === plan.id ? (
-                  <span className="flex items-center justify-center gap-2">
+                  <>
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                     Notiek pāradresēšana...
-                  </span>
+                  </>
                 ) : plan.id === "free" ? (
                   "Pašreizējais plāns"
                 ) : (
@@ -215,7 +220,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
         </div>
 
         {/* Footer */}
-        <p className="mt-5 text-center text-xs text-text-muted leading-relaxed">
+        <p className="mt-5 text-center text-xs text-[#6B7280] dark:text-[#8B95A8] leading-relaxed">
           Droši maksājumi caur Stripe. Atcelšana jebkurā laikā.{" "}
           <Link href="/terms" className="underline hover:text-text-secondary ml-1">Lietošanas noteikumi</Link>.
         </p>

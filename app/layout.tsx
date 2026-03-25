@@ -47,7 +47,7 @@ export default function RootLayout({
       lang="lv"
       className={`${dmSans.variable} ${jetbrainsMono.variable} ${sora.variable} dark h-full antialiased`}
     >
-      <body className="h-full bg-base font-sans text-text-primary">
+      <body className="h-full bg-[#F9FAFB] dark:bg-[#0F1117] font-sans text-[#111827] dark:text-[#E8ECF4]">
         <AuthProvider>
           <SettingsProvider>{children}</SettingsProvider>
         </AuthProvider>

@@ -75,7 +75,7 @@ function ThinkingBlock({
     <div className="mb-3">
       <button
         onClick={() => !isThinking && setOpen((o) => !o)}
-        className="flex items-center gap-1.5 text-xs font-medium text-muted-custom hover:text-primary-custom transition-colors"
+        className="flex items-center gap-1.5 text-xs font-medium text-[#6B7280] dark:text-[#8B95A8] hover:text-[#111827] dark:hover:text-[#E8ECF4] transition-colors"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -119,7 +119,7 @@ function ThinkingBlock({
       </button>
 
       {(isThinking || open) && thinking && (
-        <div className="mt-2 rounded-lg border border-subtle bg-base px-3 py-2 text-xs leading-relaxed text-muted-custom">
+        <div className="mt-2 rounded-lg border border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB] dark:bg-[#1A2033] px-3 py-2 text-xs leading-relaxed text-[#6B7280] dark:text-[#8B95A8]">
           <div className="whitespace-pre-wrap">{thinking}</div>
         </div>
       )}
@@ -178,8 +178,8 @@ export function ChatMessage({ message }: { message: Message }) {
         <div
           className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
             isUser
-              ? "bg-primary text-white rounded-br-md"
-              : "bg-surface text-primary-custom rounded-bl-md"
+              ? "bg-[#2563EB] dark:bg-[#4F8EF7] text-white rounded-br-md"
+              : "bg-[#F1F5F9] dark:bg-[#1A2033] text-[#111827] dark:text-[#E8ECF4] rounded-bl-md"
           }`}
         >
           {isUser ? (
@@ -197,7 +197,7 @@ export function ChatMessage({ message }: { message: Message }) {
 
               {parsed && parsed.answer && (
                 <>
-                  <div className="break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_p]:mb-2 [&_p:last-child]:mb-0 [&_code]:font-mono [&_code]:text-sm [&_code]:bg-base [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded">
+                  <div className="break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_p]:mb-2 [&_p:last-child]:mb-0 [&_code]:font-mono [&_code]:text-sm [&_code]:bg-[#F9FAFB] dark:[&_code]:bg-[#0F1117] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded">
                     <ReactMarkdown
                       remarkPlugins={[remarkMath]}
                       rehypePlugins={[rehypeKatex]}
@@ -222,17 +222,17 @@ export function ChatMessage({ message }: { message: Message }) {
             {message.sources.map((source, i) => (
               <div
                 key={`${source.id}-${i}`}
-                className="flex items-start gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-subtle"
+                className="flex items-start gap-2 px-3 py-2 rounded-lg bg-[#F1F5F9] dark:bg-[#1A2033]/30 border border-[#E5E7EB] dark:border-white/7"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-[#2563EB] dark:text-[#4F8EF7] mt-0.5 shrink-0">
                   <path d="M10.75 16.82A7.462 7.462 0 0 1 15 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0 0 18 15.06V3.44a.75.75 0 0 0-.525-.72A8.963 8.963 0 0 0 15 2.25a8.963 8.963 0 0 0-4.25 1.063v13.507ZM9.25 4.313A8.963 8.963 0 0 0 5 2.25c-.862 0-1.7.121-2.475.345a.75.75 0 0 0-.525.72v11.62a.75.75 0 0 0 .954.721A7.506 7.506 0 0 1 5 15.5c1.579 0 3.042.487 4.25 1.32V4.313Z" />
                 </svg>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium text-primary">
+                  <p className="text-[11px] font-medium text-[#2563EB] dark:text-[#4F8EF7]">
                     {source.subject}
                     {source.sourceTitle ? ` — ${source.sourceTitle}` : source.section ? ` — ${source.section}` : ""}
                   </p>
-                  <p className="text-[10px] text-muted-custom mt-0.5">
+                  <p className="text-[10px] text-[#6B7280] dark:text-[#8B95A8] mt-0.5">
                     {source.sourceType === "openstax" ? "OpenStax CC BY 4.0"
                       : source.sourceType === "wikipedia_lv" ? "Wikipedia LV CC BY-SA 4.0"
                       : "Skola2030"}
@@ -260,11 +260,11 @@ export function TypingIndicator() {
           />
         </svg>
       </div>
-      <div className="bg-surface rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5">
+      <div className="bg-[#F1F5F9] dark:bg-[#1A2033] rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="w-2 h-2 rounded-full bg-primary/60 animate-typing-dot"
+            className="w-2 h-2 rounded-full bg-[#2563EB]/60 dark:bg-[#4F8EF7]/60 animate-typing-dot"
             style={{ animationDelay: `${i * 0.2}s` }}
           />
         ))}

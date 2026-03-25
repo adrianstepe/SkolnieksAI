@@ -99,14 +99,14 @@ export function Sidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar border-r border-subtle transition-all duration-300 ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#E5E7EB] dark:bg-[#0D1117] border-r border-[#D1D5DB] dark:border-white/7 transition-all duration-300 ${
           collapsed ? "w-16" : "w-64"
         } ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:z-30`}
       >
         {/* Logo + collapse */}
-        <div className="flex items-center gap-3 px-4 h-14 border-b border-subtle">
+        <div className="flex items-center gap-3 px-4 h-14 border-b border-[#D1D5DB] dark:border-white/7">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg gradient-primary">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
               <path
@@ -119,24 +119,24 @@ export function Sidebar({
           {/* Mobile close button — visible only on small screens */}
           <button
             onClick={onMobileClose}
-            className="ml-auto rounded-md p-1 transition-colors hover:bg-muted lg:hidden"
+            className="ml-auto rounded-md p-1 transition-colors hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033] lg:hidden"
             aria-label="Aizvērt"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-muted-custom">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-[#374151] dark:text-[#8B95A8]">
               <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
             </svg>
           </button>
           {/* Desktop collapse toggle */}
           <button
             onClick={onToggleCollapse}
-            className="ml-auto rounded-md p-1 transition-colors hover:bg-muted hidden lg:block"
+            className="ml-auto rounded-md p-1 transition-colors hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033] hidden lg:block"
             aria-label="Sakļaut"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor"
-              className={`h-4 w-4 text-muted-custom transition-transform ${collapsed ? "rotate-180" : ""}`}
+              className={`h-4 w-4 text-[#374151] dark:text-[#8B95A8] transition-transform ${collapsed ? "rotate-180" : ""}`}
             >
               <path fillRule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" />
             </svg>
@@ -150,15 +150,15 @@ export function Sidebar({
               onNewChat?.();
               onMobileClose?.();
             }}
-            className={`flex items-center gap-2 w-full rounded-lg border border-subtle transition-colors hover:bg-muted/50 ${
+            className={`flex items-center gap-2 w-full rounded-lg border border-[#D1D5DB] dark:border-white/7 transition-colors hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033]/50 ${
               collapsed ? "p-2 justify-center" : "px-3 py-2"
             }`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-[#2563EB] dark:text-[#4F8EF7]">
               <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
             </svg>
             {!collapsed && (
-              <span className="text-sm text-primary-custom">Jauna saruna</span>
+              <span className="text-sm font-semibold text-[#111827] dark:text-[#E8ECF4]">Jauna saruna</span>
             )}
           </button>
         </div>
@@ -166,7 +166,7 @@ export function Sidebar({
         {/* Subjects */}
         <div className="flex-1 overflow-y-auto mt-3 px-3 thin-scrollbar">
           {!collapsed && (
-            <p className="text-[11px] uppercase tracking-wider text-muted-custom mb-2 px-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#111827] dark:text-[#E8ECF4] mb-2 px-1">
               Priekšmeti
             </p>
           )}
@@ -177,12 +177,12 @@ export function Sidebar({
                 <button
                   key={s.value}
                   onClick={() => handleSubjectClick(s.value)}
-                  className={`flex items-center gap-2.5 w-full rounded-lg transition-colors text-sm ${
+                  className={`flex items-center font-medium gap-2.5 w-full rounded-lg transition-colors text-sm ${
                     collapsed ? "p-2 justify-center" : "px-3 py-2"
                   } ${
                     active
-                      ? "bg-muted text-primary-custom"
-                      : "text-muted-custom hover:bg-muted/50 hover:text-primary-custom"
+                      ? "bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white"
+                      : "text-[#111827] dark:text-[#E8ECF4] hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033]/50"
                   }`}
                 >
                   <s.icon className="h-4 w-4 shrink-0" />
@@ -195,7 +195,7 @@ export function Sidebar({
           {/* Recent chats */}
           {!collapsed && (
             <>
-              <p className="text-[11px] uppercase tracking-wider text-muted-custom mb-2 px-1 mt-6">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#111827] dark:text-[#E8ECF4] mb-2 px-1 mt-6">
                 Pēdējās sarunas
               </p>
               <div className="space-y-0.5">
@@ -203,10 +203,10 @@ export function Sidebar({
                   recentChats.map((chat) => (
                     <div
                       key={chat.id}
-                      className={`group flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm transition-colors ${
+                      className={`group flex items-center font-medium gap-2.5 w-full rounded-lg px-3 py-2 text-sm transition-colors ${
                         activeChatId === chat.id
-                          ? "bg-muted text-primary-custom"
-                          : "text-muted-custom hover:bg-muted/50 hover:text-primary-custom"
+                          ? "bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white"
+                          : "text-[#111827] dark:text-[#E8ECF4] hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033]/50"
                       }`}
                     >
                       <button
@@ -237,13 +237,13 @@ export function Sidebar({
                   ))
                 ) : (
                   <div className="flex flex-col items-center py-5 px-2 text-center">
-                    <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-xl bg-muted/50">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-muted-custom">
+                    <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-xl bg-[#D1D5DB]/50 dark:bg-[#1A2033]/50">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-[#374151] dark:text-[#8B95A8]">
                         <path fillRule="evenodd" d="M10 2c-2.236 0-4.43.18-6.57.524C1.993 2.755 1 3.997 1 5.402v5.196c0 1.405.993 2.647 2.43 2.878a49.143 49.143 0 0 0 3.57.42V17.5a.75.75 0 0 0 1.234.577l3.733-3.154a49.38 49.38 0 0 0 2.603-.27c1.437-.23 2.43-1.472 2.43-2.878V5.402c0-1.405-.993-2.647-2.43-2.878A49.024 49.024 0 0 0 10 2Z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <p className="text-sm font-medium text-muted-custom">Vēl nav sarunu</p>
-                    <p className="mt-1 text-[11px] text-muted-custom/70">Uzdod pirmo jautājumu, lai sāktu</p>
+                    <p className="text-sm font-medium text-[#374151] dark:text-[#8B95A8]">Vēl nav sarunu</p>
+                    <p className="mt-1 text-[11px] text-[#374151]/70 dark:text-[#8B95A8]/70">Uzdod pirmo jautājumu, lai sāktu</p>
                   </div>
                 )}
               </div>
@@ -252,16 +252,16 @@ export function Sidebar({
         </div>
 
         {/* User profile at bottom */}
-        <div className="border-t border-subtle px-3 py-3 relative">
+        <div className="border-t border-[#D1D5DB] dark:border-white/7 px-3 py-3 relative">
           {/* Popup menu — renders above the button */}
           {menuOpen && (
             <div
               ref={menuRef}
-              className="absolute bottom-full left-3 right-3 mb-2 rounded-xl border border-subtle bg-sidebar shadow-lg overflow-hidden z-50"
+              className="absolute bottom-full left-3 right-3 mb-2 rounded-xl border border-[#D1D5DB] dark:border-white/7 bg-white dark:bg-[#0D1117] shadow-lg overflow-hidden z-50"
             >
               {/* Email header */}
-              <div className="px-4 py-3 border-b border-subtle">
-                <p className="text-xs text-muted-custom truncate">
+              <div className="px-4 py-3 border-b border-[#D1D5DB] dark:border-white/7">
+                <p className="text-xs text-[#374151] dark:text-[#8B95A8] truncate">
                   {userEmail ?? userName ?? "Lietotājs"}
                 </p>
               </div>
@@ -269,9 +269,9 @@ export function Sidebar({
               <div className="py-1">
                 <button
                   onClick={() => { setMenuOpen(false); onSettingsOpen?.(); }}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-primary-custom hover:bg-muted/50 transition-colors"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-[#111827] dark:text-[#E8ECF4] hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033]/50 transition-colors"
                 >
-                  <Settings className="h-4 w-4 text-muted-custom" />
+                  <Settings className="h-4 w-4 text-[#374151] dark:text-[#8B95A8]" />
                   Iestatījumi
                 </button>
 
@@ -286,12 +286,12 @@ export function Sidebar({
                 )}
               </div>
 
-              <div className="border-t border-subtle py-1">
+              <div className="border-t border-[#D1D5DB] dark:border-white/7 py-1">
                 <button
                   onClick={() => { setMenuOpen(false); onSignOut?.(); }}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-primary-custom hover:bg-muted/50 transition-colors"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-[#111827] dark:text-[#E8ECF4] hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033]/50 transition-colors"
                 >
-                  <LogOut className="h-4 w-4 text-muted-custom" />
+                  <LogOut className="h-4 w-4 text-[#374151] dark:text-[#8B95A8]" />
                   Izrakstīties
                 </button>
               </div>
@@ -301,25 +301,25 @@ export function Sidebar({
           <button
             ref={buttonRef}
             onClick={() => setMenuOpen((v) => !v)}
-            className={`flex items-center gap-2 w-full rounded-lg px-2 py-1.5 transition-colors hover:bg-muted/50 ${collapsed ? "justify-center" : ""}`}
+            className={`flex items-center gap-2 w-full rounded-lg px-2 py-1.5 transition-colors hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033]/50 ${collapsed ? "justify-center" : ""}`}
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-              <span className="text-xs font-medium text-primary-custom">{initials}</span>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D1D5DB] dark:bg-[#1A2033]">
+              <span className="text-xs font-medium text-[#111827] dark:text-[#E8ECF4]">{initials}</span>
             </div>
             {!collapsed && (
               <div className="min-w-0 flex-1 text-left">
-                <p className="text-sm font-medium text-primary-custom truncate">
+                <p className="text-sm font-medium text-[#111827] dark:text-[#E8ECF4] truncate">
                   {userName ?? "Lietotājs"}
                 </p>
                 {userGrade && (
-                  <p className="text-[11px] text-muted-custom">
+                  <p className="text-[11px] text-[#374151] dark:text-[#8B95A8]">
                     {userGrade}. klase
                   </p>
                 )}
               </div>
             )}
             {!collapsed && (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 text-muted-custom">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 text-[#374151] dark:text-[#8B95A8]">
                 <path fillRule="evenodd" d="M10 3a.75.75 0 0 1 .55.24l3.25 3.5a.75.75 0 1 1-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 0 1-1.1-1.02l3.25-3.5A.75.75 0 0 1 10 3Zm-3.76 9.2a.75.75 0 0 1 1.06.04l2.7 2.908 2.7-2.908a.75.75 0 1 1 1.1 1.02l-3.25 3.5a.75.75 0 0 1-1.1 0l-3.25-3.5a.75.75 0 0 1 .04-1.06Z" clipRule="evenodd" />
               </svg>
             )}
