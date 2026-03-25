@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, JetBrains_Mono } from "next/font/google";
+import { DM_Sans, JetBrains_Mono, Sora } from "next/font/google";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import { SettingsProvider } from "@/lib/context/settings-context";
@@ -15,6 +15,12 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains",
   subsets: ["latin", "latin-ext"],
   weight: ["400", "500"],
+});
+
+const sora = Sora({
+  variable: "--font-sora",
+  subsets: ["latin"],
+  weight: ["300", "600"],
 });
 
 export const viewport: Viewport = {
@@ -39,7 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="lv"
-      className={`${dmSans.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
+      className={`${dmSans.variable} ${jetbrainsMono.variable} ${sora.variable} dark h-full antialiased`}
     >
       <body className="h-full bg-base font-sans text-text-primary">
         <AuthProvider>

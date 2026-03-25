@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/auth-context";
+import { LogoWordmark } from "@/components/LogoWordmark";
 
 export default function LoginPage() {
   const { signInWithEmail, signInWithGoogle, getIdToken } = useAuth();
@@ -54,13 +55,13 @@ export default function LoginPage() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="white" className="h-6 w-6">
             <path d="M10.362 1.093a.75.75 0 0 0-.724 0L2.523 5.018 10 9.143l7.477-4.125-7.115-3.925ZM18 6.443l-7.25 4v8.25l6.862-3.786A.75.75 0 0 0 18 14.25V6.443ZM9.25 18.693v-8.25l-7.25-4v7.807a.75.75 0 0 0 .388.657l6.862 3.786Z" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-text-primary">
-          Skolnieks<span className="text-primary">AI</span>
+        <h1 className="flex justify-center">
+          <LogoWordmark size="lg" />
         </h1>
         <p className="mt-1 text-sm text-text-secondary">Ienāc savā kontā</p>
       </div>

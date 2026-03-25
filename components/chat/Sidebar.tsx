@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Settings, Zap, LogOut } from "lucide-react";
+import { LogoWordmark } from "@/components/LogoWordmark";
 import { SUBJECTS } from "./SubjectGradeSelector";
 
 export interface RecentChat {
@@ -114,11 +115,7 @@ export function Sidebar({
               />
             </svg>
           </div>
-          {!collapsed && (
-            <span className="text-sm font-semibold tracking-tight text-primary-custom">
-              Skolnieks<span className="text-primary">AI</span>
-            </span>
-          )}
+          {!collapsed && <LogoWordmark size="sm" />}
           {/* Mobile close button — visible only on small screens */}
           <button
             onClick={onMobileClose}

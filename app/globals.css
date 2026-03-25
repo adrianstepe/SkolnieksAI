@@ -7,8 +7,8 @@
   /* Primary palette */
   --color-primary: #4F8EF7;
   --color-primary-hover: #3D7CE5;
-  --color-accent: #7B5CF7;
-  --color-accent-hover: #6A4BE6;
+  --color-accent: #1a56db;
+  --color-accent-hover: #1648c0;
 
   /* Surfaces */
   --color-base: #0F1117;
@@ -130,7 +130,7 @@ html[data-font="lg"] { font-size: 18px; }
 }
 
 .glow-accent {
-  box-shadow: 0 0 20px rgba(123, 92, 247, 0.3), 0 0 40px rgba(123, 92, 247, 0.1);
+  box-shadow: 0 0 20px rgba(26, 86, 219, 0.3), 0 0 40px rgba(26, 86, 219, 0.1);
 }
 
 /* ── Animations (design-studio parity) ── */

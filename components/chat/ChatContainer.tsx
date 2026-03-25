@@ -494,11 +494,6 @@ export function ChatContainer() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Skola2030 badge */}
-            <span className="hidden px-2 py-1 rounded bg-success/10 text-success text-[11px] font-medium sm:inline-block">
-              Skola2030
-            </span>
-
             {/* Usage meter */}
             {usage && <UsageMeter percent={usage.budgetPercentUsed} queriesCount={usage.queriesCount} />}
 
@@ -755,7 +750,7 @@ function WelcomeScreen({
 
         {/* Trust Badges */}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-[11px] text-muted-custom">
-          <span className="inline-flex items-center gap-1">📚 Atbilst Skola2030 standartiem</span>
+          <span className="inline-flex items-center gap-1">📚 Balstīts uz OpenStax</span>
           <span className="inline-flex items-center gap-1">🔒 Privāts un drošs</span>
           <span className="inline-flex items-center gap-1">🇱🇻 Latviski</span>
         </div>
@@ -863,7 +858,7 @@ function OnboardingModal({
           </select>
         </div>
 
-        {/* CTA - Brand purple solid color, no gradient */}
+        {/* CTA - Solid blue, no gradient */}
         <button
           onClick={handleSave}
           disabled={loading}

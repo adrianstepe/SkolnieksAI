@@ -93,7 +93,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative mx-4 w-full max-w-2xl animate-fade-up rounded-2xl border border-border bg-base p-6 sm:p-8">
+      <div className="relative mx-4 w-full max-w-2xl animate-fade-up rounded-2xl border border-border bg-base p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -135,18 +135,18 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
         </div>
 
         {/* Plans */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-start">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
-              className={`relative flex flex-col rounded-xl border p-5 transition-colors ${
+              className={`relative flex flex-col rounded-xl border px-5 py-[20px] transition-colors ${
                 plan.popular
-                  ? "border-accent/40 bg-accent/5"
+                  ? "border-[#0e7a4f]/40 bg-[#0e7a4f]/5"
                   : "border-border bg-surface/50"
               }`}
             >
               {plan.popular && (
-                <span className="absolute -top-2.5 left-4 rounded-full bg-accent px-3 py-0.5 text-xs font-semibold text-white">
+                <span className="absolute -top-2.5 left-4 rounded-full bg-[#0e7a4f] px-3 py-0.5 text-xs font-semibold text-white">
                   Populārākais
                 </span>
               )}
@@ -164,7 +164,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
                 </span>
               </div>
 
-              <ul className="mt-4 flex-1 space-y-2">
+              <ul className="mt-4 flex-1 space-y-[8px]">
                 {plan.features.map((feature) => (
                   <li
                     key={feature}
