@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
 import { sendStreakReminderEmail } from "@/lib/email/resend";
-import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
+import type { QueryDocumentSnapshot, Query, DocumentData } from "firebase-admin/firestore";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
       .limit(PAGE_SIZE);
 
     while (true) {
-      const pageQuery =
+      const pageQuery: Query<DocumentData> =
         lastDoc !== null ? baseQuery.startAfter(lastDoc) : baseQuery;
 
       const snapshot = await pageQuery.get();
