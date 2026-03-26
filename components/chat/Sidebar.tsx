@@ -99,14 +99,14 @@ export function Sidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#E5E7EB] dark:bg-[#0D1117] border-r border-[#D1D5DB] dark:border-white/7 transition-all duration-300 ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#F9FAFB] dark:bg-[#0D1117] border-r border-[#E5E7EB] dark:border-white/7 transition-all duration-300 ${
           collapsed ? "w-16" : "w-64"
         } ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:z-30`}
       >
         {/* Logo + collapse */}
-        <div className="flex items-center gap-3 px-4 h-14 border-b border-[#D1D5DB] dark:border-white/7">
+        <div className="flex items-center gap-3 px-4 h-14 border-b border-[#E5E7EB] dark:border-white/7">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg gradient-primary">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
               <path
@@ -150,7 +150,7 @@ export function Sidebar({
               onNewChat?.();
               onMobileClose?.();
             }}
-            className={`flex items-center gap-2 w-full rounded-lg border border-[#D1D5DB] dark:border-white/7 transition-colors hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033]/50 ${
+            className={`flex items-center gap-2 w-full rounded-lg border border-[#E5E7EB] dark:border-white/7 transition-colors hover:bg-[#E5E7EB] dark:hover:bg-[#1A2033]/50 ${
               collapsed ? "p-2 justify-center" : "px-3 py-2"
             }`}
           >
@@ -185,7 +185,7 @@ export function Sidebar({
                       : "text-[#111827] dark:text-[#E8ECF4] hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033]/50"
                   }`}
                 >
-                  <s.icon className="h-4 w-4 shrink-0" />
+                  <s.icon className={`h-4 w-4 shrink-0 ${active ? "text-white" : "text-[#6B7280] dark:text-[#8B95A8]"}`} />
                   {!collapsed && <span>{s.shortLabel}</span>}
                 </button>
               );
@@ -216,7 +216,7 @@ export function Sidebar({
                         }}
                         className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0 opacity-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`h-3.5 w-3.5 shrink-0 ${activeChatId === chat.id ? "text-white/80" : "text-[#6B7280] dark:text-[#8B95A8]"}`}>
                           <path fillRule="evenodd" d="M10 2c-2.236 0-4.43.18-6.57.524C1.993 2.755 1 3.997 1 5.402v5.196c0 1.405.993 2.647 2.43 2.878a49.143 49.143 0 0 0 3.57.42V17.5a.75.75 0 0 0 1.234.577l3.733-3.154a49.38 49.38 0 0 0 2.603-.27c1.437-.23 2.43-1.472 2.43-2.878V5.402c0-1.405-.993-2.647-2.43-2.878A49.024 49.024 0 0 0 10 2Z" clipRule="evenodd" />
                         </svg>
                         <span className="truncate">{chat.title}</span>
@@ -252,7 +252,7 @@ export function Sidebar({
         </div>
 
         {/* User profile at bottom */}
-        <div className="border-t border-[#D1D5DB] dark:border-white/7 px-3 py-3 relative">
+        <div className="border-t border-[#E5E7EB] dark:border-white/7 px-3 py-3 relative">
           {/* Popup menu — renders above the button */}
           {menuOpen && (
             <div

@@ -47,3 +47,14 @@ Router in `lib/ai/router.ts` selects by user tier.
 - Usage tracking: `users/{uid}/usage/{YYYY-MM}` — token counts
 - Conversations: `conversations/{id}` with `messages` subcollection
 - Security rules: users can only read/write their own documents
+
+### Algorithmic Streak Mechanics
+
+The `users/{uid}` document must include these streak fields:
+
+- `currentStreak` (integer) — consecutive active days
+- `longestStreak` (integer) — all-time best streak
+- `lastActiveDate` (timestamp) — last day the user completed a session
+- `streakFreeze` (boolean) — protects streak from breaking; only available to paid subscribers
+
+Daily inactivity sweeps run via **Vercel cron jobs**: at midnight UTC, any user whose `lastActiveDate` is more than 24h ago and has no active `streakFreeze` has their `currentStreak` reset to 0. The cron handler lives in `src/app/api/cron/streak-sweep/route.ts` and must be authenticated via a `CRON_SECRET` env var.

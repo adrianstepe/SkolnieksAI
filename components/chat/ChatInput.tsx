@@ -50,7 +50,7 @@ export function ChatInput({ onSend, disabled, isGenerating, onStop }: ChatInputP
     <div className="border-t border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB]/80 dark:bg-[#0B0E14]/80 backdrop-blur-sm px-4 py-3">
       <div className="max-w-3xl mx-auto">
         {/* Card-style input container */}
-        <div className="flex items-end gap-2 bg-white dark:bg-[#151926] rounded-xl border border-[#E5E7EB] dark:border-white/7 px-4 py-3 transition-all duration-150 focus-within:border-[#2563EB]/50 dark:focus-within:border-[#4F8EF7]/50 focus-within:ring-2 focus-within:ring-[#2563EB]/15 dark:focus-within:ring-[#4F8EF7]/15 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.08)] dark:focus-within:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]">
+        <div className="flex items-end gap-2 bg-white dark:bg-[#151926] rounded-xl border border-[#E5E7EB] dark:border-white/7 shadow-sm dark:shadow-none px-4 py-3 transition-all duration-150 focus-within:border-[#2563EB]/50 dark:focus-within:border-[#4F8EF7]/50 focus-within:ring-2 focus-within:ring-[#2563EB]/15 dark:focus-within:ring-[#4F8EF7]/15 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.08)] dark:focus-within:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]">
           {/* Paperclip button */}
           <button
             disabled

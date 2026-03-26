@@ -36,6 +36,16 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...  # Client-side
 # --- Anthropic (paid tier) ---
 ANTHROPIC_API_KEY=sk-ant-...         # Claude API key for premium users
 
+# --- Transactional Email ---
+RESEND_API_KEY=re_...                # Resend API key (resend.com)
+                                     # Free tier: 3 000 emails/month, 100/day
+                                     # Verify skolnieks.ai as sending domain first
+
+# --- Cron Security ---
+CRON_SECRET=...                      # Random hex secret for Vercel Cron auth
+                                     # Generate: openssl rand -hex 32
+                                     # Vercel sends this as: Authorization: Bearer <secret>
+
 # --- App Config ---
 NEXT_PUBLIC_APP_URL=https://skolnieks.ai  # Production URL
 NODE_ENV=production

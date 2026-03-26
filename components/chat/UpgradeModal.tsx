@@ -116,7 +116,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
             Uzlabo savu plānu
           </h2>
           <p className="mt-2 text-base text-[#6B7280] dark:text-[#8B95A8]">
-            Sasniedz augstākus rezultātus ar SkolnieksAI Premium
+            Izvēlies sev piemērotāko SkolnieksAI plānu
           </p>
         </div>
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthToken } from "@/lib/firebase/auth";
 import { adminDb } from "@/lib/firebase/admin";
+import { evaluateAndUpdateStreak } from "@/lib/firebase/streak";
 
 /** Free tier: ~150,000 tokens/month ≈ 60 questions */
 const FREE_TOKEN_BUDGET = 150_000;
@@ -36,6 +37,11 @@ export async function GET(request: NextRequest) {
 
   const userData = userDoc.data() as Record<string, unknown>;
   const tier = (userData.tier as string) ?? "free";
+  const isPaidTier = tier !== "free";
+
+  // Evaluate and update streak atomically. Runs inside a transaction so
+  // concurrent requests cannot double-increment or double-consume a freeze.
+  const streak = await evaluateAndUpdateStreak(decoded.uid, isPaidTier);
 
   // Get current month usage
   const now = new Date();
@@ -62,6 +68,10 @@ export async function GET(request: NextRequest) {
       tier,
       grade: userData.grade ?? null,
       onboardingComplete: userData.onboardingComplete === true,
+      currentStreak: streak.currentStreak,
+      longestStreak: streak.longestStreak,
+      lastActiveDate: streak.lastActiveDate,
+      streakFreeze: streak.streakFreeze,
     },
     usage: {
       tokensUsed,

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAuthToken } from "@/lib/firebase/auth";
 import { adminDb } from "@/lib/firebase/admin";
+import { DEFAULT_STREAK_FIELDS } from "@/lib/firebase/streak";
 
 const RegisterSchema = z.object({
   grade: z.number().int().min(6).max(12).optional(),
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
     createdAt: now.toISOString(),
     referralCode: generateReferralCode(),
     referredBy: inviteCode ?? null,
+    ...DEFAULT_STREAK_FIELDS,
   };
 
   const usageData = {

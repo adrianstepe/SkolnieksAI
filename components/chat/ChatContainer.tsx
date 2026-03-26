@@ -6,6 +6,9 @@ import { ChatInput } from "./ChatInput";
 import { Sidebar, type RecentChat } from "./Sidebar";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { UpgradeModal } from "./UpgradeModal";
+import { StreakIndicator } from "@/components/streak/StreakIndicator";
+import { MilestoneCelebration } from "@/components/streak/MilestoneCelebration";
+import { StreakBrokenModal } from "@/components/streak/StreakBrokenModal";
 import { useSettings } from "@/lib/context/settings-context";
 import { useAuth } from "@/lib/context/auth-context";
 import { detectSubject } from "@/lib/utils/detect-subject";
@@ -50,6 +53,30 @@ export function ChatContainer() {
 
   const [systemError, setSystemError] = useState<SystemError>(null);
   const [detectedSubjectLabel, setDetectedSubjectLabel] = useState<string | null>(null);
+
+  // Streak-broken modal: show once per session when a notable streak resets to 1
+  const [showStreakBroken, setShowStreakBroken] = useState(false);
+  const [lostStreak, setLostStreak] = useState(0);
+  const profileFirstLoadRef = useRef(false);
+
+  useEffect(() => {
+    // Fire only once, on the first profile load after login
+    if (!profile || profileFirstLoadRef.current) return;
+    profileFirstLoadRef.current = true;
+
+    const { currentStreak, longestStreak } = profile;
+    const sessionKey = "streak-broken-shown";
+
+    if (
+      currentStreak === 1 &&
+      longestStreak >= 3 &&
+      !sessionStorage.getItem(sessionKey)
+    ) {
+      sessionStorage.setItem(sessionKey, "true");
+      setLostStreak(longestStreak);
+      setShowStreakBroken(true);
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (!detectedSubjectLabel) return;
@@ -494,6 +521,9 @@ export function ChatContainer() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Streak indicator */}
+            <StreakIndicator />
+
             {/* Usage meter */}
             {usage && <UsageMeter percent={usage.budgetPercentUsed} queriesCount={usage.queriesCount} />}
 
@@ -501,9 +531,9 @@ export function ChatContainer() {
             {!isPremium && (
               <button
                 onClick={() => setShowUpgrade(true)}
-                className="font-bold text-[#111827] dark:text-[#E8ECF4] hover:text-[#1D4ED8] dark:hover:text-[#3D7CE5] flex items-center gap-1 transition-colors text-xs sm:text-sm"
+                className="flex items-center gap-1 border border-[#2563EB] dark:border-[#4F8EF7] rounded-lg px-3 py-1 text-[#2563EB] dark:text-[#4F8EF7] text-sm font-medium hover:bg-[#2563EB]/10 transition-colors"
               >
-                Paplašini
+                Uzlabot plānu
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
                   <path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" />
                 </svg>
@@ -681,6 +711,17 @@ export function ChatContainer() {
       {showUpgrade && (
         <UpgradeModal onClose={() => setShowUpgrade(false)} />
       )}
+
+      {/* Streak broken modal */}
+      {showStreakBroken && (
+        <StreakBrokenModal
+          lostStreak={lostStreak}
+          onClose={() => setShowStreakBroken(false)}
+        />
+      )}
+
+      {/* Milestone celebration toast */}
+      <MilestoneCelebration />
 
       {/* Onboarding modal */}
       {profile && !profile.onboardingComplete && (

@@ -27,6 +27,10 @@ export interface UserProfile {
   tier: UserTier;
   grade: number | null;
   onboardingComplete?: boolean;
+  currentStreak: number;
+  longestStreak: number;
+  lastActiveDate: string | null; // YYYY-MM-DD UTC
+  streakFreeze: boolean;
 }
 
 export interface UsageInfo {

@@ -47,3 +47,7 @@ Read these before starting:
 - Token budget indicator (subtle, not anxiety-inducing)
 - Pricing page with tier comparison
 - Auth forms (login, signup — Latvian labels)
+- Streak UI components: daily activity indicators, milestone badges (7 / 30 / 100 day), and animated streak counters
+- Streak Repair Upgrade modal: shown when a streak is lost and the user is on the free tier; prompts upgrade to re-activate streak freeze
+
+**Loss-aversion messaging guidance**: streak-loss warnings and repair prompts are effective but must be used sparingly. Never stack multiple guilt-inducing messages in a single session. Tone should be encouraging ("Turpini — tu vari to atgūt!") rather than punitive.
