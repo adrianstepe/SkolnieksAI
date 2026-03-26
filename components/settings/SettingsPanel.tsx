@@ -198,6 +198,42 @@ function AiModelSection() {
 
 function DefaultsSection() {
   const { settings, update } = useSettings();
+  const { getIdToken, refreshProfile } = useAuth();
+
+  const handleUpdatePreference = async (key: string, value: string | number) => {
+    // 1. Update securely via API
+    try {
+      const token = await getIdToken();
+      if (token) {
+        // Map local setting keys to backend expectation
+        const payload: Record<string, any> = {};
+        if (key === "defaultGrade") payload.grade = value;
+        if (key === "defaultSubject") payload.subject = value;
+
+        await fetch("/api/auth/update-profile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify(payload),
+        });
+        await refreshProfile();
+      }
+    } catch (err) {
+      console.error("Failed to sync preference with server", err);
+    }
+  };
+
+  const handleSubjectChange = (val: string) => {
+    update("defaultSubject", val);
+    handleUpdatePreference("defaultSubject", val);
+  };
+
+  const handleGradeChange = (g: number) => {
+    update("defaultGrade", g);
+    handleUpdatePreference("defaultGrade", g);
+  };
 
   return (
     <section>
@@ -210,7 +246,7 @@ function DefaultsSection() {
           <div className="relative">
             <select
               value={settings.defaultSubject}
-              onChange={(e) => update("defaultSubject", e.target.value)}
+              onChange={(e) => handleSubjectChange(e.target.value)}
               aria-label="Priekšmets Noklusējums"
               className="w-full appearance-none rounded-xl border border-[#D1D5DB] dark:border-white/7 bg-white dark:bg-[#0D1117] px-4 py-2.5 text-sm font-medium text-[#111827] dark:text-[#E8ECF4] focus-visible:border-[#1D4ED8]/40 dark:focus-visible:border-[#3D7CE5]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8]/20 dark:focus-visible:ring-[#3D7CE5]/20"
             >
@@ -244,7 +280,7 @@ function DefaultsSection() {
                    key={g}
                    role="radio"
                    aria-checked={isSelected}
-                   onClick={() => update("defaultGrade", g)}
+                   onClick={() => handleGradeChange(g)}
                    className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] dark:focus-visible:ring-[#3D7CE5] ${
                      isSelected
                        ? "bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white shadow-sm"
