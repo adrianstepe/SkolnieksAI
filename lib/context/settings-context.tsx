@@ -29,7 +29,7 @@ const DEFAULTS: Settings = {
   fontSize: "md",
   chatWidth: "normal",
   aiModel: "deepseek",
-  defaultSubject: "math",
+  defaultSubject: "general",
   defaultGrade: 9,
   showSources: true,
   sendOnEnter: true,

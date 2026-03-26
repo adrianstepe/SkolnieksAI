@@ -216,7 +216,7 @@ export function Sidebar({
                         }}
                         className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0 opacity-50">
                           <path fillRule="evenodd" d="M10 2c-2.236 0-4.43.18-6.57.524C1.993 2.755 1 3.997 1 5.402v5.196c0 1.405.993 2.647 2.43 2.878a49.143 49.143 0 0 0 3.57.42V17.5a.75.75 0 0 0 1.234.577l3.733-3.154a49.38 49.38 0 0 0 2.603-.27c1.437-.23 2.43-1.472 2.43-2.878V5.402c0-1.405-.993-2.647-2.43-2.878A49.024 49.024 0 0 0 10 2Z" clipRule="evenodd" />
                         </svg>
                         <span className="truncate">{chat.title}</span>

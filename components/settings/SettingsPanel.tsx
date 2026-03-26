@@ -21,7 +21,7 @@ interface SettingsPanelProps {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-text-muted">
+    <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-[#6B7280] dark:text-[#8B95A8]">
       {children}
     </h3>
   );
@@ -35,8 +35,8 @@ function Row({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-2.5">
-      <span className="text-sm text-text-secondary">{label}</span>
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-sm font-medium text-[#374151] dark:text-[#8B95A8]">{label}</span>
       {children}
     </div>
   );
@@ -45,17 +45,20 @@ function Row({
 function Toggle({
   checked,
   onChange,
+  ariaLabel,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
+  ariaLabel?: string;
 }) {
   return (
     <button
       role="switch"
       aria-checked={checked}
+      aria-label={ariaLabel}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-        checked ? "bg-primary" : "bg-surface-hover"
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] dark:focus-visible:ring-[#3D7CE5] ${
+        checked ? "bg-[#1D4ED8] dark:bg-[#3D7CE5]" : "bg-[#D1D5DB] dark:bg-[#1A2033]"
       }`}
     >
       <span
@@ -71,36 +74,221 @@ function SegmentedControl<T extends string>({
   options,
   value,
   onChange,
+  ariaLabel,
 }: {
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; subLabel?: string }[];
   value: T;
   onChange: (v: T) => void;
+  ariaLabel?: string;
 }) {
   return (
-    <div className="flex overflow-hidden rounded-lg border border-border">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
-          className={`flex-1 px-3 py-1.5 text-sm font-medium transition-colors ${
-            value === opt.value
-              ? "bg-primary text-white"
-              : "bg-surface text-text-secondary hover:bg-surface-hover hover:text-text-primary"
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
+    <div 
+      className="flex rounded-xl bg-[#F3F4F6] dark:bg-[#1A2033]/50 p-1"
+      role="radiogroup" 
+      aria-label={ariaLabel}
+    >
+      {options.map((opt) => {
+        const isSelected = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            role="radio"
+            aria-checked={isSelected}
+            onClick={() => onChange(opt.value)}
+            className={`flex flex-1 flex-col items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] dark:focus-visible:ring-[#3D7CE5] ${
+              isSelected
+                ? "bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white shadow-sm"
+                : "text-[#374151] dark:text-[#8B95A8] hover:text-[#111827] dark:hover:text-[#E8ECF4]"
+            }`}
+          >
+            <span className="text-center leading-tight whitespace-pre-line">
+              {opt.label}
+              {opt.subLabel && (
+                <span className="block text-[10px] font-normal opacity-80 mt-0.5 whitespace-pre-line">
+                  {opt.subLabel}
+                </span>
+              )}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Panel
+// Subcomponents
 // ---------------------------------------------------------------------------
 
-export function SettingsPanel({ onClose }: SettingsPanelProps) {
+function AppearanceSection() {
   const { settings, update } = useSettings();
+
+  return (
+    <section>
+      <SectionTitle>Izskats</SectionTitle>
+      <div className="flex flex-col gap-4">
+        <Row label="Krāsu tēma">
+          <SegmentedControl<Theme>
+            value={settings.theme}
+            onChange={(v) => update("theme", v)}
+            ariaLabel="Krāsu tēma"
+            options={[
+              { value: "light", label: "Gaišs" },
+              { value: "dark", label: "Tumšs" },
+              { value: "system", label: "Auto" },
+            ]}
+          />
+        </Row>
+        <Row label="Teksta izmērs">
+          <SegmentedControl<FontSize>
+            value={settings.fontSize}
+            onChange={(v) => update("fontSize", v)}
+            ariaLabel="Teksta izmērs"
+            options={[
+              { value: "sm", label: "Mazs" },
+              { value: "md", label: "Vidējs" },
+              { value: "lg", label: "Liels" },
+            ]}
+          />
+        </Row>
+        <Row label="Čata platums">
+          <SegmentedControl<ChatWidth>
+            value={settings.chatWidth}
+            onChange={(v) => update("chatWidth", v)}
+            ariaLabel="Čata platums"
+            options={[
+              { value: "compact", label: "Šaurs" },
+              { value: "normal", label: "Normāls" },
+              { value: "wide", label: "Plašs" },
+            ]}
+          />
+        </Row>
+      </div>
+    </section>
+  );
+}
+
+function AiModelSection() {
+  const { settings, update } = useSettings();
+
+  return (
+    <section>
+      <SectionTitle>AI modelis</SectionTitle>
+      <div className="flex flex-col gap-4">
+        <Row label="Modelis">
+          <SegmentedControl<AiModel>
+            value={settings.aiModel}
+            onChange={(v) => update("aiModel", v)}
+            ariaLabel="AI Modelis"
+            options={[
+              { value: "deepseek", label: "Standarta\npalīgs" },
+              { value: "claude", label: "Eksāmenu\neksperts" },
+            ]}
+          />
+        </Row>
+        <p className="mt-1 text-xs leading-relaxed text-[#6B7280] dark:text-[#8B95A8]">
+          {settings.aiModel === "claude"
+            ? "Eksāmenu eksperts — ātrāks, detalizētāks (maksas)"
+            : "Standarta palīgs — ikdienas jautājumiem (bezmaksas līmenis)"}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function DefaultsSection() {
+  const { settings, update } = useSettings();
+
+  return (
+    <section>
+      <SectionTitle>Noklusējuma iestatījumi</SectionTitle>
+      <div className="flex flex-col gap-4">
+        <div>
+          <label className="mb-2 block text-sm font-medium text-[#374151] dark:text-[#8B95A8]">
+            Priekšmets
+          </label>
+          <div className="relative">
+            <select
+              value={settings.defaultSubject}
+              onChange={(e) => update("defaultSubject", e.target.value)}
+              aria-label="Priekšmets Noklusējums"
+              className="w-full appearance-none rounded-xl border border-[#D1D5DB] dark:border-white/7 bg-white dark:bg-[#0D1117] px-4 py-2.5 text-sm font-medium text-[#111827] dark:text-[#E8ECF4] focus-visible:border-[#1D4ED8]/40 dark:focus-visible:border-[#3D7CE5]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8]/20 dark:focus-visible:ring-[#3D7CE5]/20"
+            >
+              {SUBJECTS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[#6B7280] dark:text-[#8B95A8]">
+               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                 <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+               </svg>
+            </div>
+          </div>
+        </div>
+
+        <div>
+           <label className="mb-2 block text-sm font-medium text-[#374151] dark:text-[#8B95A8]">
+            Klase
+           </label>
+           <div 
+             className="flex flex-wrap gap-2" 
+             role="radiogroup" 
+             aria-label="Noklusējuma klase"
+           >
+             {GRADES.map((g) => {
+               const isSelected = settings.defaultGrade === g;
+               return (
+                 <button
+                   key={g}
+                   role="radio"
+                   aria-checked={isSelected}
+                   onClick={() => update("defaultGrade", g)}
+                   className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] dark:focus-visible:ring-[#3D7CE5] ${
+                     isSelected
+                       ? "bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white shadow-sm"
+                       : "bg-white dark:bg-[#1A2033] border border-[#D1D5DB] dark:border-white/7 hover:bg-[#F3F4F6] dark:hover:bg-[#1A2033]/70 text-[#374151] dark:text-[#8B95A8] hover:text-[#111827] dark:hover:text-[#E8ECF4]"
+                   }`}
+                 >
+                   {g}.
+                 </button>
+               );
+             })}
+           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PreferencesSection() {
+  const { settings, update } = useSettings();
+
+  return (
+    <section>
+      <SectionTitle>Vēlmes</SectionTitle>
+      <div className="flex flex-col gap-4">
+        <Row label="Rādīt avotus">
+          <Toggle
+            checked={settings.showSources}
+            onChange={(v) => update("showSources", v)}
+            ariaLabel="Rādīt avotus"
+          />
+        </Row>
+        <Row label="Sūtīt ar Enter">
+          <Toggle
+            checked={settings.sendOnEnter}
+            onChange={(v) => update("sendOnEnter", v)}
+            ariaLabel="Sūtīt ar Enter"
+          />
+        </Row>
+      </div>
+    </section>
+  );
+}
+
+function SubscriptionSection() {
   const { profile, getIdToken } = useAuth();
   const [loadingPortal, setLoadingPortal] = useState(false);
 
@@ -108,6 +296,8 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     profile?.tier === "premium" ||
     profile?.tier === "exam_prep" ||
     profile?.tier === "school_pro";
+
+  if (!isPremium) return null;
 
   const handleManageSubscription = async () => {
     setLoadingPortal(true);
@@ -129,191 +319,84 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   };
 
   return (
+    <section>
+      <SectionTitle>Abonements</SectionTitle>
+      <div className="py-2.5">
+        <button
+          onClick={handleManageSubscription}
+          disabled={loadingPortal}
+          className="w-full rounded-xl bg-white dark:bg-[#1A2033] border border-[#D1D5DB] dark:border-white/7 px-4 py-2.5 text-sm font-medium text-[#111827] dark:text-[#E8ECF4] transition-colors hover:bg-[#F3F4F6] dark:hover:bg-[#1A2033]/70 disabled:opacity-50 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] dark:focus-visible:ring-[#3D7CE5]"
+        >
+          {loadingPortal ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#1D4ED8]/30 dark:border-[#3D7CE5]/30 border-t-[#1D4ED8] dark:border-t-[#3D7CE5]" />
+          ) : (
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-[#1D4ED8] dark:text-[#3D7CE5]">
+                <path fillRule="evenodd" d="M2.5 4A1.5 1.5 0 0 0 1 5.5V6h18v-.5A1.5 1.5 0 0 0 17.5 4h-15ZM19 8.5H1v6A1.5 1.5 0 0 0 2.5 16h15a1.5 1.5 0 0 0 1.5-1.5v-6ZM3 13.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" />
+             </svg>
+          )}
+          {loadingPortal ? "Notiek pāradresēšana..." : "Pārvaldīt abonementu"}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Panel
+// ---------------------------------------------------------------------------
+
+export function SettingsPanel({ onClose }: SettingsPanelProps) {
+  return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/50"
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Drawer */}
-      <aside className="fixed inset-y-0 right-0 z-50 flex w-80 flex-col bg-base shadow-2xl border-l border-border">
+      <aside 
+        className="fixed inset-y-0 right-0 z-50 flex w-[340px] flex-col bg-white dark:bg-[#0D1117] shadow-2xl border-l border-[#D1D5DB] dark:border-white/7"
+        role="dialog"
+        aria-label="Iestatījumi"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 className="text-base font-semibold text-text-primary">
+        <div className="flex items-center justify-between border-b border-[#D1D5DB] dark:border-white/7 px-6 py-5">
+          <h2 className="text-lg font-bold text-[#111827] dark:text-[#E8ECF4]">
             Iestatījumi
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface hover:text-text-secondary"
+            className="rounded-full p-2 text-[#6B7280] dark:text-[#8B95A8] transition-colors hover:bg-[#F3F4F6] dark:hover:bg-[#1A2033]/50 hover:text-[#111827] dark:hover:text-[#E8ECF4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] dark:focus-visible:ring-[#3D7CE5]"
             aria-label="Aizvērt"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
               className="h-5 w-5"
             >
-              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5 thin-scrollbar">
-          {/* ── Izskats ── */}
-          <section>
-            <SectionTitle>Izskats</SectionTitle>
-            <div className="divide-y divide-border">
-              <Row label="Krāsu tema">
-                <SegmentedControl<Theme>
-                  value={settings.theme}
-                  onChange={(v) => update("theme", v)}
-                  options={[
-                    { value: "light", label: "Gaišs" },
-                    { value: "dark", label: "Tumšs" },
-                    { value: "system", label: "Auto" },
-                  ]}
-                />
-              </Row>
-              <Row label="Teksta izmērs">
-                <SegmentedControl<FontSize>
-                  value={settings.fontSize}
-                  onChange={(v) => update("fontSize", v)}
-                  options={[
-                    { value: "sm", label: "Mazs" },
-                    { value: "md", label: "Vidējs" },
-                    { value: "lg", label: "Liels" },
-                  ]}
-                />
-              </Row>
-              <Row label="Čata platums">
-                <SegmentedControl<ChatWidth>
-                  value={settings.chatWidth}
-                  onChange={(v) => update("chatWidth", v)}
-                  options={[
-                    { value: "compact", label: "Šaurs" },
-                    { value: "normal", label: "Normāls" },
-                    { value: "wide", label: "Plašs" },
-                  ]}
-                />
-              </Row>
-            </div>
-          </section>
-
-          {/* ── AI modelis ── */}
-          <section>
-            <SectionTitle>AI modelis</SectionTitle>
-            <div className="divide-y divide-border">
-              <Row label="Modelis">
-                <SegmentedControl<AiModel>
-                  value={settings.aiModel}
-                  onChange={(v) => update("aiModel", v)}
-                  options={[
-                    { value: "deepseek", label: "Standarta palīgs" },
-                    { value: "claude", label: "Eksāmenu eksperts" },
-                  ]}
-                />
-              </Row>
-            </div>
-            <p className="mt-2 text-xs text-text-muted">
-              {settings.aiModel === "claude"
-                ? "Eksāmenu eksperts — ātrāks, detalizētāks (maksas)"
-                : "Standarta palīgs — ikdienas jautājumiem (bezmaksas līmenis)"}
-            </p>
-          </section>
-
-          {/* ── Noklusējums ── */}
-          <section>
-            <SectionTitle>Noklusējuma iestatījumi</SectionTitle>
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm text-text-secondary">
-                  Priekšmets
-                </label>
-                <select
-                  value={settings.defaultSubject}
-                  onChange={(e) => update("defaultSubject", e.target.value)}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                >
-                  {SUBJECTS.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm text-text-secondary">
-                  Klase
-                </label>
-                <div className="flex flex-wrap gap-1">
-                  {GRADES.map((g) => (
-                    <button
-                      key={g}
-                      onClick={() => update("defaultGrade", g)}
-                      className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                        settings.defaultGrade === g
-                          ? "bg-primary text-white"
-                          : "border border-border bg-surface text-text-secondary hover:bg-surface-hover hover:text-text-primary"
-                      }`}
-                    >
-                      {g}.
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── Vēlmes ── */}
-          <section>
-            <SectionTitle>Vēlmes</SectionTitle>
-            <div className="divide-y divide-border">
-              <Row label="Rādīt avotus">
-                <Toggle
-                  checked={settings.showSources}
-                  onChange={(v) => update("showSources", v)}
-                />
-              </Row>
-              <Row label="Sūtīt ar Enter">
-                <Toggle
-                  checked={settings.sendOnEnter}
-                  onChange={(v) => update("sendOnEnter", v)}
-                />
-              </Row>
-            </div>
-          </section>
-
-          {/* ── Abonements ── */}
-          {isPremium && (
-            <section>
-              <SectionTitle>Abonements</SectionTitle>
-              <div className="py-2.5">
-                <button
-                  onClick={handleManageSubscription}
-                  disabled={loadingPortal}
-                  className="w-full rounded-lg bg-surface border border-border px-4 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {loadingPortal ? (
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-primary">
-                      <path fillRule="evenodd" d="M2.5 4A1.5 1.5 0 0 0 1 5.5V6h18v-.5A1.5 1.5 0 0 0 17.5 4h-15ZM19 8.5H1v6A1.5 1.5 0 0 0 2.5 16h15a1.5 1.5 0 0 0 1.5-1.5v-6ZM3 13.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                  {loadingPortal ? "Notiek pāradresēšana..." : "Pārvaldīt abonementu"}
-                </button>
-              </div>
-            </section>
-          )}
+        <div className="flex-1 space-y-8 overflow-y-auto px-6 py-6 thin-scrollbar">
+          <AppearanceSection />
+          <AiModelSection />
+          <DefaultsSection />
+          <PreferencesSection />
+          <SubscriptionSection />
         </div>
 
         {/* Footer */}
-        <div className="border-t border-border px-5 py-3">
-          <p className="text-center text-xs text-text-muted">
-            SkolnieksAI · Skola2030
+        <div className="border-t border-[#D1D5DB] dark:border-white/7 px-6 py-4">
+          <p className="text-center text-xs font-medium text-[#6B7280] dark:text-[#8B95A8]">
+            SkolnieksAI
           </p>
         </div>
       </aside>
