@@ -38,6 +38,11 @@ export function ChatContainer() {
   const [isLoading, setIsLoading] = useState(false);
   const [subject, setSubject] = useState(settings.defaultSubject);
   const [grade, setGrade] = useState(settings.defaultGrade);
+
+  // Keep grade in sync when the user changes it in Settings
+  useEffect(() => {
+    setGrade(settings.defaultGrade);
+  }, [settings.defaultGrade]);
   const [showSettings, setShowSettings] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -440,7 +445,7 @@ export function ChatContainer() {
         onMobileClose={() => setSidebarOpen(false)}
         userName={profile?.displayName ?? user?.displayName ?? user?.email?.split("@")[0]}
         userEmail={user?.email ?? undefined}
-        userGrade={grade}
+        userGrade={profile?.grade ?? grade}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
         onSettingsOpen={() => setShowSettings(true)}
