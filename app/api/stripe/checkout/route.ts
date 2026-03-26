@@ -64,9 +64,18 @@ export async function POST(request: NextRequest) {
     sessionParams.customer_email = decoded.email ?? undefined;
   }
 
-  const session = await stripe.checkout.sessions.create(
-    sessionParams as Parameters<typeof stripe.checkout.sessions.create>[0],
-  );
+  let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
+  try {
+    session = await stripe.checkout.sessions.create(
+      sessionParams as Parameters<typeof stripe.checkout.sessions.create>[0],
+    );
+  } catch (err) {
+    console.error("[stripe/checkout] Stripe error:", err);
+    return NextResponse.json(
+      { error: "stripe_error", detail: String(err) },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ url: session.url });
 }
