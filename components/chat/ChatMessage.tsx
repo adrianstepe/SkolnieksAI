@@ -5,6 +5,8 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { SourcesBubble } from "@/components/SourcesBubble";
+import { useStreamingMarkdown } from "@/hooks/useStreamingMarkdown";
+import { MathErrorBoundary } from "@/components/chat/MathErrorBoundary";
 
 // ---------------------------------------------------------------------------
 // Thinking block parser
@@ -128,6 +130,36 @@ function ThinkingBlock({
 }
 
 // ---------------------------------------------------------------------------
+// Streaming-safe markdown renderer
+// ---------------------------------------------------------------------------
+
+/**
+ * Renders the assistant answer through react-markdown + KaTeX, but first
+ * passes the content through two safety layers:
+ *
+ * 1. `useStreamingMarkdown` — holds back any content from the last unclosed
+ *    `$` or `$$` delimiter so KaTeX never receives a partial math expression.
+ * 2. `MathErrorBoundary` — catches any KaTeX parse errors that slip through
+ *    (e.g. LLM hallucinated invalid LaTeX) and renders the raw string in a
+ *    <code> block instead of crashing the message bubble.
+ */
+function AssistantMessageContent({ answer }: { answer: string }) {
+  const normalized = normalizeLatex(answer);
+  const { safeContent } = useStreamingMarkdown(normalized);
+
+  return (
+    <MathErrorBoundary rawContent={safeContent}>
+      <ReactMarkdown
+        remarkPlugins={[remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+      >
+        {safeContent}
+      </ReactMarkdown>
+    </MathErrorBoundary>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Public types & components
 // ---------------------------------------------------------------------------
 
@@ -198,12 +230,7 @@ export function ChatMessage({ message }: { message: Message }) {
               {parsed && parsed.answer && (
                 <>
                   <div className="break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_p]:mb-2 [&_p:last-child]:mb-0 [&_code]:font-mono [&_code]:text-sm [&_code]:bg-[#F9FAFB] dark:[&_code]:bg-[#0F1117] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkMath]}
-                      rehypePlugins={[rehypeKatex]}
-                    >
-                      {normalizeLatex(parsed.answer)}
-                    </ReactMarkdown>
+                    <AssistantMessageContent answer={parsed.answer} />
                   </div>
 
                   {/* Web sources bubble — shown for Path B answers */}

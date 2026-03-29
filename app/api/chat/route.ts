@@ -5,6 +5,7 @@ import type { ChatMessage } from "@/lib/ai/deepseek";
 import { verifyAuthToken } from "@/lib/firebase/auth";
 import { adminDb } from "@/lib/firebase/admin";
 import { FieldValue } from "firebase-admin/firestore";
+import { evaluateAndUpdateStreak } from "@/lib/firebase/streak";
 
 /** Free tier: ~150,000 tokens/month ≈ 60 questions */
 const FREE_TOKEN_BUDGET = 150_000;
@@ -223,6 +224,13 @@ export async function POST(request: NextRequest) {
   }
 
   const { tier } = txnResult;
+
+  // Update streak now that the user has sent a real message. Fire-and-forget —
+  // a streak failure must never block the chat response.
+  const isPaidTier = tier !== "free";
+  evaluateAndUpdateStreak(decoded.uid, isPaidTier).catch((err) =>
+    console.error("Streak update failed:", err),
+  );
 
   const { subject, grade, model, conversationHistory, conversationId } = parsed.data;
 

@@ -314,3 +314,13 @@ html[data-font="lg"] { font-size: 18px; }
 /* ── Math/code rendering ── */
 .katex { font-family: var(--font-mono); }
 code, pre { font-family: var(--font-mono); }
+
+/* Prevent horizontal scroll on mobile from wide math blocks */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+}
+.katex {
+  font-size: 1em; /* prevent KaTeX from rendering too large on mobile */
+}

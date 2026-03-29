@@ -8,6 +8,7 @@ import { DEFAULT_STREAK_FIELDS } from "@/lib/firebase/streak";
 const RegisterSchema = z.object({
   grade: z.number().int().min(6).max(12).optional(),
   inviteCode: z.string().max(20).optional(),
+  birthYear: z.number().int().min(2006).max(2026).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { grade, inviteCode } = parsed.data;
+  const { grade, inviteCode, birthYear } = parsed.data;
   const userRef = adminDb.collection("users").doc(decoded.uid);
   const existing = await userRef.get();
 
@@ -45,6 +46,11 @@ export async function POST(request: NextRequest) {
   const now = new Date();
   const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
+  const currentYear = now.getFullYear();
+  const resolvedBirthYear = birthYear ?? null;
+  // isMinor: true = under 18 (DSA compliance: no behavioral profiling)
+  const isMinor = resolvedBirthYear !== null ? currentYear - resolvedBirthYear < 18 : null;
+
   const userData = {
     email: decoded.email ?? null,
     displayName: decoded.name ?? null,
@@ -53,6 +59,9 @@ export async function POST(request: NextRequest) {
     createdAt: now.toISOString(),
     referralCode: generateReferralCode(),
     referredBy: inviteCode ?? null,
+    // Age fields — written once at signup, read-only thereafter (see Firestore rules)
+    birthYear: resolvedBirthYear,
+    isMinor,
     ...DEFAULT_STREAK_FIELDS,
   };
 

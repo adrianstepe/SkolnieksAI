@@ -4,6 +4,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
       // Write access is explicitly disabled. Updates must route through the secure server APIs.
+      // Note: Age fields like birthYear and isMinor are written only at signup and are read-only thereafter.
       allow write: if false;
       
       match /usage/{monthId} {

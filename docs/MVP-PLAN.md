@@ -34,6 +34,7 @@ Target launch: Late April / Early May 2026
 - [ ] Conversation history (client-side state first, Firestore later)
 - [ ] Mobile-responsive design (most students on phones)
 - [ ] Deploy to Vercel — confirm it works on live URL
+- [x] KaTeX streaming buffer fix — prevents broken LaTeX flash during token streaming
 
 ### Acceptance Criteria
 - Chat works end-to-end on mobile Chrome
@@ -53,6 +54,7 @@ Target launch: Late April / Early May 2026
 - [x] Token tracking: log input/output tokens per query to `usage/{YYYY-MM}`
 - [x] Usage gate: check budget before calling LLM, return upgrade prompt if exhausted
 - [x] Firestore security rules: users own their data
+- [x] GDPR compliance: implement age gating and parental consent flow for users < 13
 
 ### Acceptance Criteria
 - Cannot access chat without auth

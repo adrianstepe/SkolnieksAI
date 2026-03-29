@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthToken } from "@/lib/firebase/auth";
 import { adminDb } from "@/lib/firebase/admin";
-import { evaluateAndUpdateStreak } from "@/lib/firebase/streak";
 
 /** Free tier: ~150,000 tokens/month ≈ 60 questions */
 const FREE_TOKEN_BUDGET = 150_000;
@@ -37,11 +36,15 @@ export async function GET(request: NextRequest) {
 
   const userData = userDoc.data() as Record<string, unknown>;
   const tier = (userData.tier as string) ?? "free";
-  const isPaidTier = tier !== "free";
 
-  // Evaluate and update streak atomically. Runs inside a transaction so
-  // concurrent requests cannot double-increment or double-consume a freeze.
-  const streak = await evaluateAndUpdateStreak(decoded.uid, isPaidTier);
+  // Read streak fields directly — streak is only incremented when the user
+  // actually sends a chat message (POST /api/chat), not on every page load.
+  const streak = {
+    currentStreak: (userData.currentStreak as number) ?? 0,
+    longestStreak: (userData.longestStreak as number) ?? 0,
+    lastActiveDate: (userData.lastActiveDate as string) ?? null,
+    streakFreeze: (userData.streakFreeze as boolean) ?? false,
+  };
 
   // Get current month usage
   const now = new Date();

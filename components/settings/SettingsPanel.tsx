@@ -9,7 +9,8 @@ import {
 } from "@/lib/context/settings-context";
 import { SUBJECTS, GRADES } from "@/components/chat/SubjectGradeSelector";
 import { useAuth } from "@/lib/context/auth-context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { UpgradeModal } from "@/components/chat/UpgradeModal";
 
 interface SettingsPanelProps {
   onClose: () => void;
@@ -170,28 +171,81 @@ function AppearanceSection() {
 
 function AiModelSection() {
   const { settings, update } = useSettings();
+  const { profile } = useAuth();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const canUseClaude =
+    profile?.tier === "exam_prep" || profile?.tier === "school_pro";
+
+  useEffect(() => {
+    if (!canUseClaude && settings.aiModel === "claude") {
+      update("aiModel", "deepseek");
+    }
+  }, [canUseClaude, settings.aiModel]);
+
+  const activeModel = canUseClaude ? settings.aiModel : "deepseek";
+
+  const btnBase =
+    "flex flex-1 flex-col items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] dark:focus-visible:ring-[#3D7CE5]";
+  const btnActive = "bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white shadow-sm";
+  const btnInactive =
+    "text-[#374151] dark:text-[#8B95A8] hover:text-[#111827] dark:hover:text-[#E8ECF4]";
 
   return (
     <section>
       <SectionTitle>AI modelis</SectionTitle>
       <div className="flex flex-col gap-4">
         <Row label="Modelis">
-          <SegmentedControl<AiModel>
-            value={settings.aiModel}
-            onChange={(v) => update("aiModel", v)}
-            ariaLabel="AI Modelis"
-            options={[
-              { value: "deepseek", label: "Standarta\npalīgs" },
-              { value: "claude", label: "Eksāmenu\neksperts" },
-            ]}
-          />
+          <div
+            className="flex rounded-xl bg-[#F3F4F6] dark:bg-[#1A2033]/50 p-1"
+            role="radiogroup"
+            aria-label="AI Modelis"
+          >
+            {/* DeepSeek — always selectable */}
+            <button
+              role="radio"
+              aria-checked={activeModel === "deepseek"}
+              onClick={() => update("aiModel", "deepseek")}
+              className={`${btnBase} ${activeModel === "deepseek" ? btnActive : btnInactive}`}
+            >
+              <span className="text-center leading-tight whitespace-pre-line">
+                Standarta{"\n"}palīgs
+              </span>
+            </button>
+
+            {/* Claude — gated by tier */}
+            <button
+              role="radio"
+              aria-checked={activeModel === "claude"}
+              onClick={() => {
+                if (canUseClaude) {
+                  update("aiModel", "claude");
+                } else {
+                  setShowUpgradeModal(true);
+                }
+              }}
+              className={`${btnBase} ${activeModel === "claude" ? btnActive : btnInactive} ${!canUseClaude ? "opacity-60" : ""}`}
+            >
+              <span className="text-center leading-tight whitespace-pre-line">
+                Eksāmenu{"\n"}eksperts
+                {!canUseClaude && (
+                  <span className="block text-[10px] font-normal opacity-80 mt-0.5">
+                    🔒 Premium
+                  </span>
+                )}
+              </span>
+            </button>
+          </div>
         </Row>
         <p className="mt-1 text-xs leading-relaxed text-[#6B7280] dark:text-[#8B95A8]">
-          {settings.aiModel === "claude"
+          {activeModel === "claude"
             ? "Eksāmenu eksperts — ātrāks, detalizētāks (maksas)"
             : "Standarta palīgs — ikdienas jautājumiem (bezmaksas līmenis)"}
         </p>
       </div>
+      {showUpgradeModal && (
+        <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
+      )}
     </section>
   );
 }

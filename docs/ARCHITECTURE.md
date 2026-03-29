@@ -41,7 +41,7 @@
 ```
 users/{uid}
   ├── email, displayName, tier (free|premium|exam_prep|school_pro)
-  ├── grade (6-12), school?, createdAt
+  ├── grade (6-12), school?, createdAt, birthYear, isMinor
   ├── stripeCustomerId?, stripeSubscriptionId?
   ├── referralCode, referredBy?
   └── usage/{YYYY-MM}
@@ -98,6 +98,66 @@ Document shape:
 | ChromaDB    | Hetzner VPS        | ~€5/mo      |
 | Firebase    | Spark → Blaze      | €0 → usage  |
 | Stripe      | Standard           | 1.4% + €0.25|
+
+## Math Rendering
+
+Assistant messages are rendered through **react-markdown** with **remark-math** and **rehype-katex** (KaTeX). Three layers work together to keep math stable during token streaming:
+
+### 1. LaTeX-only rule in the system prompt
+
+`buildSystemPrompt` in `lib/rag/chain.ts` appends a `MATEMĀTIKAS FORMATĒŠANA` rule to every LLM call. It instructs the model to use `$...$` for inline math and `$$...$$` for block math, and explicitly forbids placing math inside code fences. This reduces the rate of malformed LaTeX at the source.
+
+### 2. KaTeX streaming buffer (`hooks/useStreamingMarkdown.ts`)
+
+LLM tokens arrive one at a time. If a `$` delimiter has arrived but its closing `$` has not yet, passing the partial string to KaTeX throws a parse error. The `useStreamingMarkdown(rawContent)` hook solves this by scanning the accumulated stream and returning only the longest prefix that contains no unclosed `$` or `$$` span:
+
+- Characters outside any math block are flushed immediately.
+- On seeing `$` or `$$`, the hook freezes `safeContent` at the character before the opening delimiter.
+- `safeContent` advances past the closing delimiter only once it arrives.
+- `AssistantMessageContent` (inside `ChatMessage.tsx`) calls the hook and passes `safeContent` to `<ReactMarkdown>` instead of the raw stream.
+
+### 3. MathErrorBoundary (`components/chat/MathErrorBoundary.tsx`)
+
+A React class component wrapping `<ReactMarkdown>`. If KaTeX throws despite the buffer (e.g. the LLM produced structurally invalid LaTeX), the boundary catches the error and renders the raw string in a styled `<code>` block rather than crashing the message bubble. The boundary auto-resets when `rawContent` changes, so a corrected subsequent chunk retries rendering automatically.
+
+### KaTeX CSS
+
+`app/globals.css` sets `.katex-display { overflow-x: auto }` and `.katex { font-size: 1em }` to prevent wide display-math from causing horizontal scroll on mobile and to stop KaTeX's default 1.21em size from looking oversized on small screens.
+
+## Landing Page Architecture
+
+The root route (`/`) serves a dual purpose: authenticated users see the full chat app (`ChatContainer`), while unauthenticated visitors see a public marketing landing page — no login wall.
+
+### Pre-login Interactive Demo
+
+Visitors can interact with the product before signing up. This is implemented as a **constrained preview** with no API calls:
+
+- `components/landing/InteractiveDemo.tsx` renders 4 tappable question pills
+- Each pill maps to a **hardcoded Latvian response string** stored in the component
+- On tap, a typewriter animation (15 ms/char) simulates a streamed AI reply
+- After the animation completes, an inline signup CTA appears
+- Only one question is active at a time; selecting a new pill cancels the previous animation
+
+**Why no live API calls on the landing page:**
+1. Zero cost — no token spend on anonymous visitors
+2. Zero latency variance — demo is always instant regardless of backend load
+3. Controlled messaging — responses are reviewed and Socratic-style by design
+4. No auth required — ChromaDB/LLM stack is never exposed to unauthenticated traffic
+
+### Signup Gate Strategy
+
+The demo is designed to create curiosity, not to satisfy it:
+- Responses end with a guiding question back to the student
+- The post-typewriter CTA ("Uzdod savu jautājumu → Reģistrējies bez maksas") appears only after the full response renders, maximising engagement before the conversion ask
+- Sticky bottom CTA (mobile-only, `md:hidden`) ensures the signup prompt is always visible during scroll on small screens without overlapping desktop layout
+
+### Component Structure
+
+```
+app/page.tsx              — Entry point; auth-branch: ChatContainer vs LandingPage
+components/landing/
+  InteractiveDemo.tsx     — Question pills + typewriter + post-demo CTA
+```
 
 ## Security Checklist
 

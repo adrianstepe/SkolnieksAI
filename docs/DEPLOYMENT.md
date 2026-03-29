@@ -206,5 +206,6 @@ Do these two checklists in order. Checklist 1 can be done while still on Vercel.
 - [ ] Trigger the first deployment and verify it succeeds
 - [ ] Verify the RAG pipeline can reach Chroma Cloud from the VPS
 - [ ] Verify Firebase Auth, Firestore, and Stripe all work in production
+- [ ] Wire up parental consent email to a real email provider (Resend or SendGrid) to replace the console stub (`/api/auth/parental-consent/route.ts`)
 - [ ] Switch Stripe from test mode to live mode
 - [ ] Remove the Vercel project (optional — keep it a few days as a fallback before deleting)

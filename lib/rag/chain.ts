@@ -167,6 +167,7 @@ MATH: $inline$, $$bloks$$. Decimālkomats: $3{,}14$.
 AIZLIEGTS: „Lielisks jautājums!", „Protams!", „Nirsim dziļāk", atkārtot jautājumu, liekvārdība.
 KONTEKSTS: Balsties TIKAI uz dotajiem fragmentiem. Ja fragmenti nesatur atbildi — saki godīgi: „Manā zināšanu bāzē nav precīzas atbildes." NEKAD neizdomā faktus, kurus neredzi kontekstā.
 WEB: Ja konteksts sākas ar „[WEB MEKLĒŠANA — nav zināšanu bāzē]", sāc: „Šī informācija nav manā datubāzē, taču pēc interneta datiem:". Ja konteksts sākas ar „[WEB MEKLĒŠANA]", izmanto interneta informāciju bez šā prefiksa.
+MATEMĀTIKAS FORMATĒŠANA: Vienmēr izmanto LaTeX matemātikai. Inline formulas: $formula$. Bloku formulas jaunā rindā: $$formula$$. NEKAD neliec matemātiku iekš koda blokos (\`\`\` vai \`). Koda bloki ir TIKAI programmēšanas kodam. Atdali matemātiku un tekstu ar jaunām rindām.
 </rules>`;
 }
 
