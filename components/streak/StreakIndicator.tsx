@@ -11,17 +11,37 @@ import { useAuth } from "@/lib/context/auth-context";
 export function StreakIndicator() {
   const { profile } = useAuth();
   const [open, setOpen] = useState(false);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
 
   if (!profile || profile.currentStreak === 0) return null;
 
   const { currentStreak, longestStreak, streakFreeze } = profile;
 
+  const streakLabel = `${currentStreak}-dienu ugunskurs (bonusa attēlojums: nāc katru dienu)`;
+
   return (
     <div className="relative">
+      {/* Tooltip bubble */}
+      {tooltipVisible && !open && (
+        <div
+          role="tooltip"
+          className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 w-max max-w-[220px] rounded-lg border border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#1A2033] px-3 py-2 text-xs font-medium text-[#111827] dark:text-[#E8ECF4] shadow-xl animate-fade-up"
+        >
+          {streakLabel}
+          {/* Arrow */}
+          <span className="absolute -bottom-1.5 right-4 h-3 w-3 rotate-45 border-b border-r border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#1A2033]" />
+        </div>
+      )}
+
       <button
         onClick={() => setOpen((o) => !o)}
+        onMouseEnter={() => setTooltipVisible(true)}
+        onMouseLeave={() => setTooltipVisible(false)}
+        onFocus={() => setTooltipVisible(true)}
+        onBlur={() => setTooltipVisible(false)}
         aria-expanded={open}
-        aria-label={`Mācību sērija: ${currentStreak} dienas. Nospied, lai uzzinātu vairāk.`}
+        aria-label={streakLabel}
+        title={streakLabel}
         className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 bg-[#F59E0B]/10 dark:bg-[#F59E0B]/15 border border-[#F59E0B]/25 dark:border-[#F59E0B]/30 transition-colors hover:bg-[#F59E0B]/20 dark:hover:bg-[#F59E0B]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B]/50"
       >
         {/* Flame icon */}

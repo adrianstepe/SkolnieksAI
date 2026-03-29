@@ -122,7 +122,7 @@ export function ChatInput({
             placeholder="Uzdod jautājumu par mācību vielu..."
             disabled={disabled}
             rows={1}
-            className="flex-1 bg-transparent text-sm text-[#111827] dark:text-[#E8ECF4] placeholder:text-[#6B7280] dark:placeholder:text-[#8B95A8] resize-none outline-none min-h-[24px] max-h-[160px] disabled:opacity-50"
+            className="flex-1 bg-transparent dark:bg-white/5 text-sm text-[#111827] dark:text-[#E8ECF4] placeholder:text-[#6B7280] dark:placeholder:text-gray-400 resize-none outline-none min-h-[24px] max-h-[160px] rounded-lg border border-transparent dark:border-white/10 px-1 focus:ring-2 focus:ring-blue-600 dark:focus:bg-white/10 disabled:opacity-50 transition-colors"
           />
 
           {/* Book button */}

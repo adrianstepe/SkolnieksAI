@@ -566,13 +566,16 @@ export function ChatContainer() {
                   : daysRemaining <= 60
                   ? "bg-amber-500/15 border-amber-500/25 text-amber-600 dark:text-amber-400"
                   : "bg-emerald-500/15 border-emerald-500/25 text-emerald-600 dark:text-emerald-400";
+              const examTooltip = "Palicis laiks līdz eksāmenu sesijas sākumam";
               return (
-                <span
-                  className={`hidden sm:inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${colorClass}`}
-                  aria-label={countdown.label}
-                >
-                  {daysRemaining} dienas līdz eksāmeniem 📅
-                </span>
+                <div className="relative hidden sm:block">
+                  <ExamCountdownBadge
+                    daysRemaining={daysRemaining}
+                    colorClass={colorClass}
+                    label={countdown.label}
+                    tooltip={examTooltip}
+                  />
+                </div>
               );
             })()}
 
@@ -1017,6 +1020,34 @@ function ChatSkeleton() {
       <SkeletonBubble align="left"  widthClass="w-2/3" />
       <SkeletonBubble align="right" widthClass="w-36" />
       <SkeletonBubble align="left"  widthClass="w-4/5" />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Exam countdown badge
+// ---------------------------------------------------------------------------
+
+function ExamCountdownBadge({
+  daysRemaining,
+  colorClass,
+  label,
+  tooltip,
+}: {
+  daysRemaining: number;
+  colorClass: string;
+  label: string;
+  tooltip: string;
+}) {
+  return (
+    <div
+      title={tooltip}
+      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold cursor-default select-none ${colorClass}`}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0">
+        <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clipRule="evenodd" />
+      </svg>
+      <span>{label}: {daysRemaining}d</span>
     </div>
   );
 }

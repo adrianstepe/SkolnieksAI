@@ -98,14 +98,31 @@ function SegmentedControl<T extends string>({
             onClick={() => onChange(opt.value)}
             className={`flex flex-1 flex-col items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] dark:focus-visible:ring-[#3D7CE5] ${
               isSelected
-                ? "bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white shadow-sm"
+                ? "bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white shadow-sm ring-1 ring-inset ring-white/20"
                 : "text-[#374151] dark:text-[#8B95A8] hover:text-[#111827] dark:hover:text-[#E8ECF4]"
             }`}
           >
-            <span className="text-center leading-tight whitespace-pre-line">
-              {opt.label}
+            <span className="flex flex-col items-center leading-tight">
+              <span className="flex items-center gap-1">
+                {isSelected && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                    className="w-3 h-3 shrink-0"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+                <span className="whitespace-pre-line text-center">{opt.label}</span>
+              </span>
               {opt.subLabel && (
-                <span className="block text-[10px] font-normal opacity-80 mt-0.5 whitespace-pre-line">
+                <span className="block text-[10px] font-normal opacity-80 mt-0.5 whitespace-pre-line text-center">
                   {opt.subLabel}
                 </span>
               )}
@@ -226,20 +243,35 @@ function AiModelSection() {
               }}
               className={`${btnBase} ${activeModel === "claude" ? btnActive : btnInactive} ${!canUseClaude ? "opacity-60" : ""}`}
             >
-              <span className="text-center leading-tight whitespace-pre-line">
-                Eksāmenu{"\n"}eksperts
-                {!canUseClaude && (
-                  <span className="block text-[10px] font-normal opacity-80 mt-0.5">
-                    🔒 Premium
-                  </span>
-                )}
+              <span className="flex flex-col items-center leading-tight">
+                <span className="flex items-center gap-1 whitespace-nowrap">
+                  {!canUseClaude && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 16 16"
+                      fill="currentColor"
+                      className="w-3 h-3 shrink-0"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11 7V4.5A3.5 3.5 0 0 0 8 1Zm2 6V4.5a2 2 0 1 0-4 0V7h4Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                  <span className="whitespace-pre-line text-center">{"Eksāmenu\nEksperts"}</span>
+                </span>
+                <span className="block text-[10px] font-normal opacity-80 mt-0.5">
+                  Claude Sonnet 4.6
+                </span>
               </span>
             </button>
           </div>
         </Row>
         <p className="mt-1 text-xs leading-relaxed text-[#6B7280] dark:text-[#8B95A8]">
           {activeModel === "claude"
-            ? "Eksāmenu eksperts — ātrāks, detalizētāks (maksas)"
+            ? "Claude Sonnet 4.6 — augstāka precizitāte, eksāmenu sagatavošana"
             : "Standarta palīgs — ikdienas jautājumiem (bezmaksas līmenis)"}
         </p>
       </div>

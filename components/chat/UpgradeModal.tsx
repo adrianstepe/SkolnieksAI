@@ -43,16 +43,33 @@ const PLANS = [
     price: "€14.99",
     period: "/mēn.",
     features: [
-      "Maksimāls jautājumu skaits",
-      "Eksāmenu eksperts — ātrāks, detalizētāks",
-      "Eksāmenu simulācijas",
-      "Detalizēti paskaidrojumi",
-      "Prioritārs atbalsts",
+      "**Claude Sonnet 4.6** (Augstākā precizitāte)",
+      "Eksāmenu līmeņa uzdevumu ģenerēšana",
+      "Detalizēta soļu-pa-solim analīze",
+      "Pielāgots Latvijas izglītības standartiem",
     ],
     accent: "accent",
     popular: true,
   },
 ];
+
+/** Renders a feature string, converting **bold** segments to <strong>. */
+function FeatureText({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.startsWith("**") && part.endsWith("**") ? (
+          <strong key={i} className="font-semibold text-[#111827] dark:text-[#E8ECF4]">
+            {part.slice(2, -2)}
+          </strong>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
 
 export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
   const { getIdToken } = useAuth();
@@ -212,37 +229,72 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
                         clipRule="evenodd"
                       />
                     </svg>
-                    {feature}
+                    <FeatureText text={feature} />
                   </li>
                 ))}
               </ul>
 
-              <button
-                onClick={() => plan.id !== "free" && handleCheckout(plan.id as "premium" | "exam_prep")}
-                disabled={loading !== null || plan.id === "free"}
-                className={`mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
-                  plan.id === "free"
-                    ? "bg-[#F1F5F9] dark:bg-[#1A2033] text-[#6B7280] dark:text-[#8B95A8] border border-[#E5E7EB] dark:border-white/7"
-                    : plan.popular
-                    ? "bg-gradient-to-r from-[#10B981] to-[#059669] text-white hover:from-[#059669] hover:to-[#047857] shadow-lg shadow-[#10B981]/30 hover:shadow-xl hover:-translate-y-0.5"
-                    : "bg-[#2563EB] dark:bg-[#4F8EF7] text-white hover:bg-[#1D4ED8] dark:hover:bg-[#3D7CE5] shadow-md hover:shadow-xl hover:-translate-y-0.5"
-                }`}
-              >
-                {loading === plan.id ? (
-                  <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Notiek pāradresēšana...
-                  </>
-                ) : plan.id === "free" ? (
-                  "Pašreizējais plāns"
-                ) : plan.id === "exam_prep" && isExamGrade ? (
-                  "Sākt Exam Prep — €14.99/mēn"
-                ) : (
-                  `Izvēlēties ${plan.name}`
-                )}
-              </button>
+              {/* Individual card CTA only for Free tier */}
+              {plan.id === "free" && (
+                <button
+                  disabled
+                  className="mt-7 w-full rounded-xl py-3 text-sm font-bold disabled:opacity-50 bg-[#F1F5F9] dark:bg-[#1A2033] text-[#6B7280] dark:text-[#8B95A8] border border-[#E5E7EB] dark:border-white/7"
+                >
+                  Pašreizējais plāns
+                </button>
+              )}
             </div>
           ))}
+        </div>
+
+        {/* Side-by-side CTA row for paid plans */}
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Premium CTA */}
+          <div className="flex flex-col items-center gap-1.5">
+            <button
+              onClick={() => handleCheckout("premium")}
+              disabled={loading !== null}
+              className="w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-xl hover:-translate-y-0.5"
+            >
+              {loading === "premium" ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Notiek pāradresēšana...
+                </>
+              ) : (
+                "Izvēlēties Premium — €5.99/mēn"
+              )}
+            </button>
+            <p className="text-[11px] text-[#6B7280] dark:text-[#8B95A8]">
+              (Neierobežoti jautājumi, prioritāra atbilde)
+            </p>
+          </div>
+
+          {/* Exam Prep CTA */}
+          <div className="flex flex-col items-center gap-1.5">
+            <button
+              onClick={() => handleCheckout("exam_prep")}
+              disabled={loading !== null}
+              className="w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:-translate-y-0.5"
+            >
+              {loading === "exam_prep" ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Notiek pāradresēšana...
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                    <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clipRule="evenodd" />
+                  </svg>
+                  {isExamGrade ? "Sākt Exam Prep — €14.99/mēn" : "Izvēlēties Exam Prep — €14.99/mēn"}
+                </>
+              )}
+            </button>
+            <p className="text-[11px] text-[#6B7280] dark:text-[#8B95A8]">
+              Claude Sonnet 4.6 · Eksāmenu simulācijas
+            </p>
+          </div>
         </div>
 
         {/* Footer */}

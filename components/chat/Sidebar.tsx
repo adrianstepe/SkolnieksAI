@@ -99,7 +99,7 @@ export function Sidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#F9FAFB] dark:bg-[#0D1117] border-r border-[#E5E7EB] dark:border-white/7 transition-all duration-300 ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#F9FAFB] dark:bg-[#0D1117] border-r border-gray-200 dark:border-none transition-all duration-300 ${
           collapsed ? "w-16" : "w-64"
         } ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
