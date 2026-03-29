@@ -69,8 +69,9 @@ Target launch: Late April / Early May 2026.
 
 **Goal:** First real users. Tight token budget. Gather feedback.
 
-- [ ] Referral system: invite codes, reward logic
-- [ ] Landing page with value proposition + CTA
+- [-] Referral system: invite codes, reward logic (in progress)
+- [-] Landing page with value proposition + CTA (in progress)
+- [x] Exam countdown + contextual upgrade prompts for grades 9 and 12
 - [ ] Set free tier budget conservatively (~40 questions to start)
 - [ ] Share with 20-30 students for beta testing
 - [ ] Email IZM + VISC (partnership inquiry)

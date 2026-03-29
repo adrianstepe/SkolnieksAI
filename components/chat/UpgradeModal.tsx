@@ -3,9 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/context/auth-context";
+import { getExamCountdown } from "@/lib/exams/latvianExams";
 
 interface UpgradeModalProps {
   onClose: () => void;
+  /** Optional grade — when 9 or 12, shows exam-specific copy instead of the generic header */
+  grade?: number | null;
 }
 
 const PLANS = [
@@ -51,9 +54,12 @@ const PLANS = [
   },
 ];
 
-export function UpgradeModal({ onClose }: UpgradeModalProps) {
+export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
   const { getIdToken } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
+
+  const examCountdown = grade != null ? getExamCountdown(grade) : null;
+  const isExamGrade = examCountdown !== null;
 
   const handleCheckout = async (plan: "premium" | "exam_prep") => {
     setLoading(plan);
@@ -93,7 +99,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative mx-4 w-full max-w-3xl animate-fade-up rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB] dark:bg-[#0F1117] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+      <div className="relative mx-4 w-full max-w-3xl animate-fade-up rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB] dark:bg-[#0F1117] p-6 sm:p-8 max-h-[90vh] overflow-y-auto hide-scrollbar">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -112,12 +118,30 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
 
         {/* Header */}
         <div className="mb-6 text-center">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2563EB] to-[#10B981] bg-clip-text text-transparent sm:text-3xl">
-            Uzlabo savu plānu
-          </h2>
-          <p className="mt-2 text-base text-[#6B7280] dark:text-[#8B95A8]">
-            Izvēlies sev piemērotāko SkolnieksAI plānu
-          </p>
+          {isExamGrade ? (
+            <>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-[#10B981] to-[#059669] bg-clip-text text-transparent sm:text-3xl">
+                Sagatavojies eksāmenam bez stresa
+              </h2>
+              <p className="mt-2 text-base text-[#6B7280] dark:text-[#8B95A8]">
+                Tev ir{" "}
+                <span className="font-semibold text-[#111827] dark:text-[#E8ECF4]">
+                  {examCountdown.daysRemaining}
+                </span>{" "}
+                dienas līdz centralizētajiem eksāmeniem. Premium ietver eksāmenu
+                simulācijas, soli pa solim risinājumus un neierobežotas sarunas.
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2563EB] to-[#10B981] bg-clip-text text-transparent sm:text-3xl">
+                Uzlabo savu plānu
+              </h2>
+              <p className="mt-2 text-base text-[#6B7280] dark:text-[#8B95A8]">
+                Izvēlies sev piemērotāko SkolnieksAI plānu
+              </p>
+            </>
+          )}
         </div>
 
         {/* Social proof */}
@@ -211,6 +235,8 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
                   </>
                 ) : plan.id === "free" ? (
                   "Pašreizējais plāns"
+                ) : plan.id === "exam_prep" && isExamGrade ? (
+                  "Sākt Exam Prep — €14.99/mēn"
                 ) : (
                   `Izvēlēties ${plan.name}`
                 )}

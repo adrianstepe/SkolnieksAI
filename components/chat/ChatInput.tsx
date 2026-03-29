@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useSettings } from "@/lib/context/settings-context";
 
 interface ChatInputProps {
@@ -8,12 +8,44 @@ interface ChatInputProps {
   disabled?: boolean;
   isGenerating?: boolean;
   onStop?: () => void;
+  pendingPrompt?: string;
+  onPromptConsumed?: () => void;
 }
 
-export function ChatInput({ onSend, disabled, isGenerating, onStop }: ChatInputProps) {
+export function ChatInput({
+  onSend,
+  disabled,
+  isGenerating,
+  onStop,
+  pendingPrompt,
+  onPromptConsumed,
+}: ChatInputProps) {
   const { settings } = useSettings();
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showCameraHint, setShowCameraHint] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setShowCameraHint(!localStorage.getItem("hasSeenCameraHint"));
+    }
+  }, []);
+
+  // Populate textarea when a starter prompt card is tapped
+  useEffect(() => {
+    if (!pendingPrompt) return;
+    setValue(pendingPrompt);
+    onPromptConsumed?.();
+    // Resize textarea then focus
+    requestAnimationFrame(() => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        textarea.style.height = "auto";
+        textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
+        textarea.focus();
+      }
+    });
+  }, [pendingPrompt, onPromptConsumed]);
 
   const handleSubmit = useCallback(() => {
     const trimmed = value.trim();
@@ -23,7 +55,12 @@ export function ChatInput({ onSend, disabled, isGenerating, onStop }: ChatInputP
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [value, disabled, onSend]);
+    // Dismiss camera coach mark on first message sent
+    if (showCameraHint) {
+      localStorage.setItem("hasSeenCameraHint", "true");
+      setShowCameraHint(false);
+    }
+  }, [value, disabled, onSend, showCameraHint]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey && settings.sendOnEnter) {
@@ -51,15 +88,27 @@ export function ChatInput({ onSend, disabled, isGenerating, onStop }: ChatInputP
       <div className="max-w-3xl mx-auto">
         {/* Card-style input container */}
         <div className="flex items-end gap-2 bg-white dark:bg-[#151926] rounded-xl border border-[#E5E7EB] dark:border-white/7 shadow-sm dark:shadow-none px-4 py-3 transition-all duration-150 focus-within:border-[#2563EB]/50 dark:focus-within:border-[#4F8EF7]/50 focus-within:ring-2 focus-within:ring-[#2563EB]/15 dark:focus-within:ring-[#4F8EF7]/15 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.08)] dark:focus-within:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]">
-          {/* Paperclip button */}
+          {/* Camera button with coach mark */}
           <button
             disabled
-            className="p-1 text-[#6B7280] dark:text-[#8B95A8] shrink-0 mb-0.5 opacity-40 cursor-not-allowed"
-            aria-label="Pievienot failu"
-            title="Funkcija drīzumā būs pieejama!"
+            className={`p-1.5 text-[#6B7280] dark:text-[#8B95A8] shrink-0 mb-0.5 opacity-60 cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-opacity ${
+              showCameraHint ? "animate-camera-coach" : ""
+            }`}
+            aria-label="Pievienot attēlu"
+            title="Uzņem fotoattēlu vai augšupielādē uzdevumu"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-              <path fillRule="evenodd" d="M15.621 4.379a3 3 0 0 0-4.242 0l-7 7a3 3 0 0 0 4.241 4.243h.001l.497-.5a.75.75 0 0 1 1.064 1.057l-.498.501a4.5 4.5 0 0 1-6.364-6.364l7-7a4.5 4.5 0 0 1 6.368 6.36l-3.455 3.553A2.625 2.625 0 1 1 9.52 9.52l3.45-3.451a.75.75 0 1 1 1.061 1.06l-3.45 3.451a1.125 1.125 0 0 0 1.587 1.595l3.454-3.553a3 3 0 0 0 0-4.242Z" clipRule="evenodd" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="h-5 w-5"
+            >
+              <path d="M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z" />
+              <path
+                fillRule="evenodd"
+                d="M9.344 3.071a49.52 49.52 0 0 1 5.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 0 1-3 3h-15a3 3 0 0 1-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 0 0 1.11-.71l.822-1.315a2.942 2.942 0 0 1 2.332-1.39ZM6.75 12.75a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Zm12-1.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
+                clipRule="evenodd"
+              />
             </svg>
           </button>
 

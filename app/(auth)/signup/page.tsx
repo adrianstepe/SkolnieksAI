@@ -24,7 +24,7 @@ function birthYearOptions(): number[] {
 
 /** Calculate age based on birth year only (conservative: assume not yet had birthday). */
 function calcAge(birthYear: number): number {
-  return currentYear() - birthYear;
+  return currentYear() - birthYear - 1;
 }
 
 // ---------------------------------------------------------------------------

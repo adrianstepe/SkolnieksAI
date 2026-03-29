@@ -35,6 +35,7 @@ Target launch: Late April / Early May 2026
 - [ ] Mobile-responsive design (most students on phones)
 - [ ] Deploy to Vercel — confirm it works on live URL
 - [x] KaTeX streaming buffer fix — prevents broken LaTeX flash during token streaming
+- [x] Empty state: grade-aware starter prompts with camera coach mark
 
 ### Acceptance Criteria
 - Chat works end-to-end on mobile Chrome

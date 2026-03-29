@@ -236,6 +236,12 @@ html[data-font="lg"] { font-size: 18px; }
   50% { transform: translateY(-3px); }
 }
 
+@keyframes camera-coach-pulse {
+  0%, 55%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+  20% { box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.35); }
+  40% { box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
+}
+
 .animate-fade-up {
   animation: fade-up 200ms ease-out both;
 }
@@ -280,11 +286,21 @@ html[data-font="lg"] { font-size: 18px; }
   animation: bounce-subtle 2s ease-in-out infinite;
 }
 
+.animate-camera-coach {
+  animation: camera-coach-pulse 3s ease-in-out infinite;
+  border-radius: 9999px;
+}
+
 .skeleton {
   background: linear-gradient(90deg, var(--color-surface) 25%, var(--color-surface-hover) 50%, var(--color-surface) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
   border-radius: 8px;
+}
+
+/* ── Safe area (iPhone home indicator) ── */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* ── Source citation pills ── */

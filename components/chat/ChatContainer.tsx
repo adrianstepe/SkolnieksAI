@@ -12,6 +12,8 @@ import { StreakBrokenModal } from "@/components/streak/StreakBrokenModal";
 import { useSettings } from "@/lib/context/settings-context";
 import { useAuth } from "@/lib/context/auth-context";
 import { detectSubject } from "@/lib/utils/detect-subject";
+import { starterPrompts, type StarterPrompt } from "@/lib/chat/starterPrompts";
+import { getExamCountdown, EXAM_UPGRADE_KEYWORDS, normalizeLv } from "@/lib/exams/latvianExams";
 
 const SUBJECT_LABELS: Record<string, string> = {
   general: "Vispārīgi",
@@ -58,11 +60,15 @@ export function ChatContainer() {
 
   const [systemError, setSystemError] = useState<SystemError>(null);
   const [detectedSubjectLabel, setDetectedSubjectLabel] = useState<string | null>(null);
+  const [pendingPrompt, setPendingPrompt] = useState<string>("");
 
   // Streak-broken modal: show once per session when a notable streak resets to 1
   const [showStreakBroken, setShowStreakBroken] = useState(false);
   const [lostStreak, setLostStreak] = useState(0);
   const profileFirstLoadRef = useRef(false);
+
+  // Inline exam upgrade banner — shown once per session after a relevant response
+  const [showExamBanner, setShowExamBanner] = useState(false);
 
   useEffect(() => {
     // Fire only once, on the first profile load after login
@@ -351,6 +357,25 @@ export function ChatContainer() {
         refreshProfile();
         // Refresh sidebar after new message
         fetchRecentChats();
+
+        // Contextual exam upgrade banner: show once per session for eligible free users
+        const currentGrade = profile?.grade ?? grade;
+        const isFreeTier = !(
+          profile?.tier === "premium" ||
+          profile?.tier === "exam_prep" ||
+          profile?.tier === "school_pro"
+        );
+        if (
+          isFreeTier &&
+          (currentGrade === 9 || currentGrade === 12) &&
+          !sessionStorage.getItem("hasShownExamUpgrade") &&
+          EXAM_UPGRADE_KEYWORDS.some((kw) =>
+            normalizeLv(text).includes(normalizeLv(kw)),
+          )
+        ) {
+          sessionStorage.setItem("hasShownExamUpgrade", "true");
+          setShowExamBanner(true);
+        }
       } catch (err) {
         // User-initiated abort — keep partial content, show nothing
         if (err instanceof DOMException && err.name === "AbortError") {
@@ -401,7 +426,7 @@ export function ChatContainer() {
         setIsLoading(false);
       }
     },
-    [messages, subject, grade, settings.aiModel, conversationId, getIdToken, refreshProfile, fetchRecentChats],
+    [messages, subject, grade, settings.aiModel, conversationId, getIdToken, refreshProfile, fetchRecentChats, profile],
   );
 
   const handleOnboardingComplete = async () => {
@@ -529,6 +554,28 @@ export function ChatContainer() {
             {/* Streak indicator */}
             <StreakIndicator />
 
+            {/* Exam countdown badge — grades 9 and 12 only, within 90 days */}
+            {(() => {
+              const userGrade = profile?.grade ?? grade;
+              const countdown = getExamCountdown(userGrade);
+              if (!countdown || countdown.daysRemaining > 90) return null;
+              const { daysRemaining } = countdown;
+              const colorClass =
+                daysRemaining < 30
+                  ? "bg-red-500/15 border-red-500/25 text-red-600 dark:text-red-400"
+                  : daysRemaining <= 60
+                  ? "bg-amber-500/15 border-amber-500/25 text-amber-600 dark:text-amber-400"
+                  : "bg-emerald-500/15 border-emerald-500/25 text-emerald-600 dark:text-emerald-400";
+              return (
+                <span
+                  className={`hidden sm:inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${colorClass}`}
+                  aria-label={countdown.label}
+                >
+                  {daysRemaining} dienas līdz eksāmeniem 📅
+                </span>
+              );
+            })()}
+
             {/* Usage meter */}
             {usage && <UsageMeter percent={usage.budgetPercentUsed} queriesCount={usage.queriesCount} />}
 
@@ -574,9 +621,8 @@ export function ChatContainer() {
               className="flex-1 overflow-y-auto bg-[#F9FAFB] dark:bg-[#0B0E14] px-6 py-6 thin-scrollbar"
             >
               {!hasMessages && !loadingChat ? (
-                <WelcomeScreen 
-                  onSelectPrompt={handleSend} 
-                  currentSubject={subject}
+                <WelcomeScreen
+                  onPopulateInput={setPendingPrompt}
                   currentGrade={grade}
                 />
               ) : (
@@ -602,6 +648,30 @@ export function ChatContainer() {
                         const last = messages[messages.length - 1];
                         return last?.role === "user" || (last?.role === "assistant" && last.content === "");
                       })() && <TypingIndicator />}
+
+                      {/* Inline exam upgrade banner — shown once per session after a relevant free-tier response */}
+                      {showExamBanner && !isLoading && (
+                        <div className="animate-fade-up flex items-center justify-between gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm">
+                          <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                            Gatavojies eksāmenam ar AI simulācijām →{" "}
+                            <button
+                              onClick={() => setShowUpgrade(true)}
+                              className="underline underline-offset-2 hover:opacity-80 transition-opacity font-semibold"
+                            >
+                              Izmēģini Exam Prep
+                            </button>
+                          </span>
+                          <button
+                            onClick={() => setShowExamBanner(false)}
+                            className="shrink-0 text-emerald-600/60 dark:text-emerald-400/60 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+                            aria-label="Aizvērt"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -672,6 +742,8 @@ export function ChatContainer() {
               disabled={isLoading || loadingChat}
               isGenerating={isLoading}
               onStop={handleStop}
+              pendingPrompt={pendingPrompt}
+              onPromptConsumed={() => setPendingPrompt("")}
             />
           </>
         ) : (
@@ -714,7 +786,7 @@ export function ChatContainer() {
 
       {/* Upgrade modal */}
       {showUpgrade && (
-        <UpgradeModal onClose={() => setShowUpgrade(false)} />
+        <UpgradeModal onClose={() => setShowUpgrade(false)} grade={profile?.grade ?? grade} />
       )}
 
       {/* Streak broken modal */}
@@ -748,82 +820,85 @@ export function ChatContainer() {
 
 import { SUBJECTS, GRADES } from "./SubjectGradeSelector";
 
-const SUBJECT_TOPICS: Record<string, string> = {
-  general: "Kā tu man vari palīdzēt mācībās?",
-  math: "Paskaidro algebras objektus un to īpašības",
-  physics: "Kas ir Ņūtona pievilkšanās spēks?",
-  chemistry: "Kā darbojas ķīmiskās saites?",
-  biology: "Paskaidro fotosintēzes procesu",
-  history: "Paskaidro nozīmīgākos notikumus Latvijas vēsturē",
-  geography: "Kādi ir Latvijas dabas resursi?",
-  latvian: "Kad teikumā ir jālieto komati?",
-  english: "Explain the rules of Present Perfect tense",
-  informatics: "Kas ir mainīgais programmēšanā?",
-  art: "Kas ir perspektīva vizuālajā mākslā?",
-};
+function pickPrompts(grade: number, exclude?: StarterPrompt[]): StarterPrompt[] {
+  const filtered = starterPrompts.filter((p) => p.grades.includes(grade));
+  const pool = filtered.length >= 4 ? filtered : starterPrompts;
+  const excludeTexts = new Set(exclude?.map((p) => p.text) ?? []);
+  const available = pool.filter((p) => !excludeTexts.has(p.text));
+  const source = available.length >= 4 ? available : pool;
+  return [...source].sort(() => Math.random() - 0.5).slice(0, 4);
+}
 
 function WelcomeScreen({
-  onSelectPrompt,
-  currentSubject,
+  onPopulateInput,
   currentGrade,
 }: {
-  onSelectPrompt: (text: string) => void;
-  currentSubject: string;
+  onPopulateInput: (text: string) => void;
   currentGrade: number;
 }) {
-  const generatedPrompt = currentSubject === "general"
-    ? SUBJECT_TOPICS.general
-    : `${SUBJECT_TOPICS[currentSubject] || "Palīdzi man mācībās"} ${currentGrade}. klases līmenī.`;
+  const [displayed, setDisplayed] = useState<StarterPrompt[]>(() =>
+    pickPrompts(currentGrade)
+  );
+
+  const reshuffle = () => setDisplayed((prev) => pickPrompts(currentGrade, prev));
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 min-h-full animate-fade-in">
-      {/* Hero */}
-      <div className="text-center space-y-4 mb-10 w-full mt-[-10vh]">
-        <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto glow-primary animate-float">
-          <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8">
+    <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 min-h-full animate-fade-in">
+      {/* Greeting */}
+      <div className="text-center space-y-3 mb-8 w-full mt-[-8vh]">
+        <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto glow-primary animate-float">
+          <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7">
             <path
               d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
               fill="white"
             />
           </svg>
         </div>
-        <h1 className="text-[28px] font-semibold text-[#111827] dark:text-[#E8ECF4] tracking-tight">
-          Sveiki! Es esmu <span className="text-[#2563EB] dark:text-[#4F8EF7]">SkolnieksAI</span>
+        <h1 className="text-2xl font-semibold text-[#111827] dark:text-[#E8ECF4] tracking-tight">
+          Sveiki! Ko šodien mācāmies?
         </h1>
-        <p className="text-sm font-semibold text-[#111827] dark:text-[#E8ECF4] max-w-md mx-auto">
-          Tavs mācību palīgs. Ieraksti jautājumu zemāk vai izvēlies tēmu!
+        <p className="text-sm text-[#6B7280] dark:text-[#8B95A8] max-w-sm mx-auto">
+          Izvēlies tēmu vai ieraksti savu jautājumu zemāk
         </p>
-
-        {/* Trust Badges */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-[11px] font-semibold text-[#111827] dark:text-[#E8ECF4]">
-          <span className="inline-flex items-center gap-1">📚 Balstīts uz OpenStax</span>
-          <span className="inline-flex items-center gap-1">🔒 Privāts un drošs</span>
-          <span className="inline-flex items-center gap-1">🇱🇻 Latviski</span>
-        </div>
       </div>
 
-      {/* Suggested Prompt */}
-      <div className="w-full max-w-md animate-slide-up">
-        <button
-          onClick={() => onSelectPrompt(generatedPrompt)}
-          className="w-full rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-[#F1F5F9] dark:bg-[#1A2033] p-4 text-left transition-all hover:border-[#2563EB]/50 dark:hover:border-[#4F8EF7]/50 hover:shadow-sm"
-        >
-          <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563EB]/10 dark:bg-[#4F8EF7]/10 text-[#2563EB] dark:text-[#4F8EF7]">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                <path fillRule="evenodd" d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 2.45 3 3.414 3 4.517V17.25a.75.75 0 0 0 1.075.676L10 15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2Z" clipRule="evenodd" />
-              </svg>
+      {/* 4 starter prompt cards — 2×2 on mobile, 1×4 on md+ */}
+      <div className="w-full max-w-2xl grid grid-cols-2 md:grid-cols-4 gap-3 animate-slide-up">
+        {displayed.map((prompt, i) => (
+          <button
+            key={i}
+            onClick={() => onPopulateInput(prompt.text)}
+            className="group flex flex-col gap-2 rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-white dark:bg-[#151926] p-4 text-left transition-all min-h-[88px] hover:border-[#2563EB] dark:hover:border-[#4F8EF7] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] dark:focus-visible:ring-[#4F8EF7]"
+            aria-label={prompt.text}
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="text-base leading-none" aria-hidden="true">
+                {prompt.subjectEmoji}
+              </span>
+              <span className="text-[10px] font-semibold text-[#6B7280] dark:text-[#8B95A8] uppercase tracking-wider truncate">
+                {prompt.subject}
+              </span>
             </div>
-            <div>
-              <p className="text-xs font-medium text-[#6B7280] dark:text-[#8B95A8] uppercase tracking-wider mb-1">
-                Ieteikums
-              </p>
-              <p className="text-sm font-medium text-[#111827] dark:text-[#E8ECF4]">
-                {generatedPrompt}
-              </p>
-            </div>
-          </div>
-        </button>
+            <p className="text-sm font-medium text-[#111827] dark:text-[#E8ECF4] leading-snug line-clamp-3">
+              {prompt.text}
+            </p>
+          </button>
+        ))}
+      </div>
+
+      {/* Reshuffle */}
+      <button
+        onClick={reshuffle}
+        className="mt-4 text-xs text-[#6B7280] dark:text-[#8B95A8] hover:text-[#2563EB] dark:hover:text-[#4F8EF7] transition-colors underline underline-offset-2"
+      >
+        Rādīt citus jautājumus
+      </button>
+
+      {/* Trust badges */}
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-[11px] font-semibold text-[#6B7280] dark:text-[#8B95A8]">
+        <span className="inline-flex items-center gap-1">📚 Balstīts uz OpenStax</span>
+        <span className="inline-flex items-center gap-1">🔒 Privāts un drošs</span>
+        <span className="inline-flex items-center gap-1">🇱🇻 Latviski</span>
       </div>
     </div>
   );

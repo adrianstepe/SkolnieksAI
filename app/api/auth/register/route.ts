@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
   const currentYear = now.getFullYear();
   const resolvedBirthYear = birthYear ?? null;
   // isMinor: true = under 18 (DSA compliance: no behavioral profiling)
-  const isMinor = resolvedBirthYear !== null ? currentYear - resolvedBirthYear < 18 : null;
+  // Conservative: assume birthday has not yet occurred this year (matches calcAge logic)
+  const isMinor = resolvedBirthYear !== null ? currentYear - resolvedBirthYear - 1 < 18 : null;
 
   const userData = {
     email: decoded.email ?? null,

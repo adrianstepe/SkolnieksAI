@@ -35,6 +35,8 @@
 6. Route to LLM: free → DeepSeek V3.2, paid → Claude Sonnet 4.6
 7. Stream response via Vercel AI SDK (SSE)
 8. Post-response: log tokens to Firestore usage doc, append to conversation
+9. **Exam countdown** (client-side): `lib/exams/latvianExams.ts` computes days until nearest centralized exam date; a pill badge is rendered in the chat header for grades 9 and 12 when ≤90 days remain. Color: emerald (>60d), amber (30–60d), red (<30d).
+10. **Contextual upgrade trigger** (client-side): after each successful assistant response, if the user is on the free tier, is in grade 9 or 12, and their message matches any keyword in `EXAM_UPGRADE_KEYWORDS`, a soft inline banner ("Gatavojies eksāmenam ar AI simulācijām → Izmēģini Exam Prep") is shown below the response. Shown at most once per browser session via `sessionStorage`. The `UpgradeModal` also switches to exam-specific copy (heading, body, CTA) when `grade` is 9 or 12.
 
 ## Firestore Data Model
 
@@ -163,8 +165,8 @@ components/landing/
 
 - [ ] Firebase Auth tokens verified server-side on every request
 - [ ] Stripe webhook signature validation (never skip)
-- [ ] Rate limit `/api/chat`: 10 req/min (free), 30 req/min (paid)
-- [ ] Input sanitization: strip HTML, max 2000 chars
+- [ ] Rate limit `/api/chat`: 5 req/min (all tiers)
+- [ ] Input sanitization: max 2000 chars (HTML not stripped — see chat/route.ts L237-239)
 - [ ] No PII in ChromaDB — curriculum content only
 - [ ] Firestore rules: users read/write own docs only
 - [ ] CORS: restrict to production domain + localhost

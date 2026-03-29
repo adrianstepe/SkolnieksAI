@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChatContainer } from "@/components/chat/ChatContainer";
 import { InteractiveDemo } from "@/components/landing/InteractiveDemo";
@@ -239,7 +238,6 @@ function LandingPage() {
 
 export default function Home() {
   const { user, loading } = useAuth();
-  const router = useRouter();
 
   // Authenticated users: stay on "/" and see the chat app
   // No redirect needed — ChatContainer renders below
