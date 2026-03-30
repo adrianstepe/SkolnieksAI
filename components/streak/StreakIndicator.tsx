@@ -1,23 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, RefObject } from "react";
 import { useAuth } from "@/lib/context/auth-context";
 
 /**
  * Compact streak badge shown in the chat header.
  * Displays the flame icon, current streak count, and an ice badge if a freeze
  * is active. Clicking opens a small popover with more streak details.
+ *
+ * When `anchorRef` is provided (pointing to the welcome screen icon), the
+ * popover renders via fixed positioning centered above that element instead of
+ * anchored to the button itself.
  */
-export function StreakIndicator() {
+export function StreakIndicator({
+  anchorRef,
+}: {
+  anchorRef?: RefObject<HTMLDivElement | null>;
+}) {
   const { profile } = useAuth();
   const [open, setOpen] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({});
+
+  // Recompute fixed popover position whenever it opens with an anchor
+  useEffect(() => {
+    if (!open || !anchorRef?.current) {
+      setPopoverStyle({});
+      return;
+    }
+    const rect = anchorRef.current.getBoundingClientRect();
+    // Centre the 208px-wide (w-52) popover horizontally over the anchor icon,
+    // and place it 12px above the icon's top edge.
+    setPopoverStyle({
+      position: "fixed",
+      left: Math.max(8, rect.left + rect.width / 2 - 104),
+      top: rect.top - 12,
+      transform: "translateY(-100%)",
+      zIndex: 50,
+    });
+  }, [open, anchorRef]);
 
   if (!profile || profile.currentStreak === 0) return null;
 
   const { currentStreak, longestStreak, streakFreeze } = profile;
 
   const streakLabel = `${currentStreak}-dienu ugunskurs (bonusa attēlojums: nāc katru dienu)`;
+  const useAnchoredPopover = open && anchorRef?.current != null;
 
   return (
     <div className="relative">
@@ -93,7 +121,10 @@ export function StreakIndicator() {
             aria-hidden="true"
           />
 
-          <div className="absolute right-0 top-full z-40 mt-2 w-52 animate-fade-up rounded-xl border border-[#E5E7EB] dark:border-white/7 bg-white dark:bg-[#1A2033] p-4 shadow-xl">
+          <div
+            className={`${useAnchoredPopover ? "" : "absolute right-0 top-full mt-2"} w-52 animate-fade-up rounded-xl border border-[#E5E7EB] dark:border-white/7 bg-white dark:bg-[#1A2033] p-4 shadow-xl`}
+            style={useAnchoredPopover ? popoverStyle : { zIndex: 40 }}
+          >
             {/* Streak count */}
             <div className="flex items-center gap-2 mb-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F59E0B]/15">

@@ -52,6 +52,7 @@ export function ChatContainer() {
   const [activeTab, setActiveTab] = useState<NavTab>("learn");
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const welcomeIconRef = useRef<HTMLDivElement>(null);
 
   // Conversation state
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -552,7 +553,7 @@ export function ChatContainer() {
 
           <div className="flex items-center gap-3">
             {/* Streak indicator */}
-            <StreakIndicator />
+            <StreakIndicator anchorRef={!hasMessages && !loadingChat ? welcomeIconRef : undefined} />
 
             {/* Exam countdown badge — grades 9 and 12 only, within 90 days */}
             {(() => {
@@ -627,6 +628,7 @@ export function ChatContainer() {
                 <WelcomeScreen
                   onPopulateInput={setPendingPrompt}
                   currentGrade={grade}
+                  iconRef={welcomeIconRef}
                 />
               ) : (
                 <div className="mx-auto max-w-3xl space-y-6">
@@ -835,9 +837,11 @@ function pickPrompts(grade: number, exclude?: StarterPrompt[]): StarterPrompt[] 
 function WelcomeScreen({
   onPopulateInput,
   currentGrade,
+  iconRef,
 }: {
   onPopulateInput: (text: string) => void;
   currentGrade: number;
+  iconRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   const [displayed, setDisplayed] = useState<StarterPrompt[]>(() =>
     pickPrompts(currentGrade)
@@ -849,7 +853,7 @@ function WelcomeScreen({
     <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 min-h-full animate-fade-in">
       {/* Greeting */}
       <div className="text-center space-y-3 mb-8 w-full mt-[-8vh]">
-        <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto glow-primary animate-float">
+        <div ref={iconRef} className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto glow-primary animate-float">
           <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7">
             <path
               d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
