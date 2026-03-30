@@ -362,8 +362,8 @@ export function ChatContainer() {
         // Contextual exam upgrade banner: show once per session for eligible free users
         const currentGrade = profile?.grade ?? grade;
         const isFreeTier = !(
+          profile?.tier === "pro" ||
           profile?.tier === "premium" ||
-          profile?.tier === "exam_prep" ||
           profile?.tier === "school_pro"
         );
         if (
@@ -449,8 +449,8 @@ export function ChatContainer() {
   };
 
   const isPremium =
+    profile?.tier === "pro" ||
     profile?.tier === "premium" ||
-    profile?.tier === "exam_prep" ||
     profile?.tier === "school_pro";
 
   const hasMessages = messages.length > 0;
@@ -663,7 +663,7 @@ export function ChatContainer() {
                               onClick={() => setShowUpgrade(true)}
                               className="underline underline-offset-2 hover:opacity-80 transition-opacity font-semibold"
                             >
-                              Izmēģini Exam Prep
+                              Izmēģini Premium
                             </button>
                           </span>
                           <button

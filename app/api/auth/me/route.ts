@@ -4,18 +4,18 @@ import { adminDb } from "@/lib/firebase/admin";
 
 /** Free tier: ~150,000 tokens/month ≈ 60 questions */
 const FREE_TOKEN_BUDGET = 150_000;
-/** Premium: 1,500,000 tokens/month */
-const PREMIUM_TOKEN_BUDGET = 1_500_000;
-/** Exam prep: 3,000,000 tokens/month */
-const EXAM_PREP_TOKEN_BUDGET = 3_000_000;
+/** Pro: 1,500,000 tokens/month */
+const PRO_TOKEN_BUDGET = 1_500_000;
+/** Premium: 3,000,000 tokens/month */
+const PREMIUM_TOKEN_BUDGET = 3_000_000;
 
 function getBudgetForTier(tier: string): number {
   switch (tier) {
+    case "pro":
+      return PRO_TOKEN_BUDGET;
     case "premium":
-      return PREMIUM_TOKEN_BUDGET;
-    case "exam_prep":
     case "school_pro":
-      return EXAM_PREP_TOKEN_BUDGET;
+      return PREMIUM_TOKEN_BUDGET;
     default:
       return FREE_TOKEN_BUDGET;
   }

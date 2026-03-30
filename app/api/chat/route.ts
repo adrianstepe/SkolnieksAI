@@ -9,43 +9,43 @@ import { evaluateAndUpdateStreak } from "@/lib/firebase/streak";
 
 /** Free tier: ~150,000 tokens/month ≈ 60 questions */
 const FREE_TOKEN_BUDGET = 150_000;
-const PREMIUM_TOKEN_BUDGET = 1_500_000;
-const EXAM_PREP_TOKEN_BUDGET = 3_000_000;
+const PRO_TOKEN_BUDGET = 1_500_000;
+const PREMIUM_TOKEN_BUDGET = 3_000_000;
 
 /** Daily hard limits (queries per calendar day UTC) */
 const FREE_DAILY_LIMIT = 15;
-const PREMIUM_DAILY_LIMIT = 40;
-const EXAM_PREP_DAILY_LIMIT = 80;
+const PRO_DAILY_LIMIT = 40;
+const PREMIUM_DAILY_LIMIT = 80;
 
 /** Rate window: max queries per 1-minute rolling window */
 const FREE_RATE_LIMIT = 5;
+const PRO_RATE_LIMIT = 5;
 const PREMIUM_RATE_LIMIT = 5;
-const EXAM_PREP_RATE_LIMIT = 5;
 const RATE_WINDOW_MS = 60_000; // 1 minute in ms
 
 function getBudgetForTier(tier: string): number {
   switch (tier) {
-    case "premium": return PREMIUM_TOKEN_BUDGET;
-    case "exam_prep":
-    case "school_pro": return EXAM_PREP_TOKEN_BUDGET;
+    case "pro": return PRO_TOKEN_BUDGET;
+    case "premium":
+    case "school_pro": return PREMIUM_TOKEN_BUDGET;
     default: return FREE_TOKEN_BUDGET;
   }
 }
 
 function getDailyLimitForTier(tier: string): number {
   switch (tier) {
-    case "premium": return PREMIUM_DAILY_LIMIT;
-    case "exam_prep":
-    case "school_pro": return EXAM_PREP_DAILY_LIMIT;
+    case "pro": return PRO_DAILY_LIMIT;
+    case "premium":
+    case "school_pro": return PREMIUM_DAILY_LIMIT;
     default: return FREE_DAILY_LIMIT;
   }
 }
 
 function getRateLimitForTier(tier: string): number {
   switch (tier) {
-    case "premium": return PREMIUM_RATE_LIMIT;
-    case "exam_prep":
-    case "school_pro": return EXAM_PREP_RATE_LIMIT;
+    case "pro": return PRO_RATE_LIMIT;
+    case "premium":
+    case "school_pro": return PREMIUM_RATE_LIMIT;
     default: return FREE_RATE_LIMIT;
   }
 }
@@ -239,9 +239,9 @@ export async function POST(request: NextRequest) {
   // such as math inequalities and is trivially bypassed anyway).
   const message = parsed.data.message;
 
-  // Tier-based model routing: only exam_prep and school_pro may use Claude
+  // Tier-based model routing: only premium and school_pro may use Claude
   const effectiveModel =
-    tier === "exam_prep" || tier === "school_pro" ? model : "deepseek";
+    tier === "premium" || tier === "school_pro" ? model : "deepseek";
 
   // Max output tokens: 800 for all tiers
   const maxTokens = 800;

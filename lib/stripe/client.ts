@@ -15,8 +15,8 @@ export const stripe: Stripe = new Proxy({} as Stripe, {
 });
 
 export const PRICE_IDS = {
-  premium: process.env.STRIPE_PRICE_PREMIUM ?? "",
-  exam_prep: process.env.STRIPE_PRICE_EXAM_PREP ?? "",
+  pro: process.env.STRIPE_PRICE_PREMIUM ?? "",
+  premium: process.env.STRIPE_PRICE_EXAM_PREP ?? "",
 } as const;
 
 export type PlanId = keyof typeof PRICE_IDS;

@@ -5,7 +5,7 @@ import { verifyAuthToken } from "@/lib/firebase/auth";
 import { adminDb } from "@/lib/firebase/admin";
 
 const CheckoutSchema = z.object({
-  plan: z.enum(["premium", "exam_prep"]),
+  plan: z.enum(["pro", "premium"]),
 });
 
 export async function POST(request: NextRequest) {

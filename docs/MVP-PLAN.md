@@ -69,13 +69,13 @@ Target launch: Late April / Early May 2026
 ### Tasks
 - [x] Register SIA with Stepe Digital (~€280) — REQUIRED before live payments
 - [x] Create Stripe account, get live API keys
-- [x] Build pricing page: Free / Premium (€5.99) / Exam Prep (€14.99)
+- [x] Build pricing page: Free / Pro (€4.99) / Premium (€14.99)
 - [x] Stripe Checkout session creation from pricing page
 - [x] Webhook handler: `checkout.session.completed` → update Firestore tier
 - [x] Webhook handler: `customer.subscription.deleted` → downgrade to free
 - [x] Webhook signature validation (critical security)
-- [x] Premium users routed to Claude Sonnet 4.6 instead of DeepSeek
-- [x] Test full flow: signup → free use → hit limit → pay → premium access
+- [x] Premium users (€14.99 tier) routed to Claude Sonnet 4.6 instead of DeepSeek
+- [x] Test full flow: signup → free use → hit limit → pay → pro/premium access
 
 ### Acceptance Criteria
 - Payment flow works end-to-end in Stripe test mode
@@ -93,7 +93,7 @@ Target launch: Late April / Early May 2026
 - [ ] Create landing page with clear value prop
 - [ ] TikTok content: 3 vids/week, ChatGPT vs SkolnieksAI side-by-side
 - [ ] Post in teacher Facebook groups with free dashboard teaser
-- [ ] Referral system: 3 invites → 1 week free Exam Prep
+- [ ] Referral system: 3 invites → 1 week free Premium
 - [ ] Monitor: error rates, API costs, user feedback
 
 ### Acceptance Criteria

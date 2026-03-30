@@ -64,8 +64,8 @@ export async function POST(request: NextRequest) {
           : session.customer?.id ?? "";
 
       const tierMap: Record<string, string> = {
+        pro: "pro",
         premium: "premium",
-        exam_prep: "exam_prep",
       };
 
       const periodEnd = (subscriptionData as Record<string, unknown>)

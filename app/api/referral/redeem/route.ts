@@ -87,10 +87,10 @@ export async function POST(request: NextRequest) {
       };
 
       if (newInviteCount === 3) {
-        const examPrepExpiresAt = new Date();
-        examPrepExpiresAt.setDate(examPrepExpiresAt.getDate() + 7);
-        referrerUpdate.tier = "exam_prep";
-        referrerUpdate.examPrepExpiresAt = examPrepExpiresAt.toISOString();
+        const premiumExpiresAt = new Date();
+        premiumExpiresAt.setDate(premiumExpiresAt.getDate() + 7);
+        referrerUpdate.tier = "premium";
+        referrerUpdate.premiumExpiresAt = premiumExpiresAt.toISOString();
       }
 
       tx.update(referrerRef, referrerUpdate);

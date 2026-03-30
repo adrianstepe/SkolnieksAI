@@ -192,7 +192,7 @@ function AiModelSection() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const canUseClaude =
-    profile?.tier === "exam_prep" || profile?.tier === "school_pro";
+    profile?.tier === "premium" || profile?.tier === "school_pro";
 
   useEffect(() => {
     if (!canUseClaude && settings.aiModel === "claude") {
@@ -415,8 +415,8 @@ function SubscriptionSection() {
   const [loadingPortal, setLoadingPortal] = useState(false);
 
   const isPremium =
+    profile?.tier === "pro" ||
     profile?.tier === "premium" ||
-    profile?.tier === "exam_prep" ||
     profile?.tier === "school_pro";
 
   if (!isPremium) return null;

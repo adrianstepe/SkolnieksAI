@@ -25,8 +25,8 @@ const PLANS = [
     accent: "muted",
   },
   {
-    id: "premium" as const,
-    name: "Premium",
+    id: "pro" as const,
+    name: "Pro",
     price: "€5.99",
     period: "/mēn.",
     features: [
@@ -38,8 +38,8 @@ const PLANS = [
     accent: "primary",
   },
   {
-    id: "exam_prep" as const,
-    name: "Eksāmenu sagatavošana",
+    id: "premium" as const,
+    name: "Premium",
     price: "€14.99",
     period: "/mēn.",
     features: [
@@ -78,7 +78,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
   const examCountdown = grade != null ? getExamCountdown(grade) : null;
   const isExamGrade = examCountdown !== null;
 
-  const handleCheckout = async (plan: "premium" | "exam_prep") => {
+  const handleCheckout = async (plan: "pro" | "premium") => {
     setLoading(plan);
     try {
       const token = await getIdToken();
@@ -249,20 +249,20 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
 
         {/* Side-by-side CTA row for paid plans */}
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Premium CTA */}
+          {/* Pro CTA */}
           <div className="flex flex-col items-center gap-1.5">
             <button
-              onClick={() => handleCheckout("premium")}
+              onClick={() => handleCheckout("pro")}
               disabled={loading !== null}
               className="w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-xl hover:-translate-y-0.5"
             >
-              {loading === "premium" ? (
+              {loading === "pro" ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   Notiek pāradresēšana...
                 </>
               ) : (
-                "Izvēlēties Premium — €5.99/mēn"
+                "Izvēlēties Pro — €4.99/mēn"
               )}
             </button>
             <p className="text-[11px] text-[#6B7280] dark:text-[#8B95A8]">
@@ -270,14 +270,14 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
             </p>
           </div>
 
-          {/* Exam Prep CTA */}
+          {/* Premium CTA */}
           <div className="flex flex-col items-center gap-1.5">
             <button
-              onClick={() => handleCheckout("exam_prep")}
+              onClick={() => handleCheckout("premium")}
               disabled={loading !== null}
               className="w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:-translate-y-0.5"
             >
-              {loading === "exam_prep" ? (
+              {loading === "premium" ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   Notiek pāradresēšana...
@@ -287,7 +287,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
                     <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clipRule="evenodd" />
                   </svg>
-                  {isExamGrade ? "Sākt Exam Prep — €14.99/mēn" : "Izvēlēties Exam Prep — €14.99/mēn"}
+                  {isExamGrade ? "Sākt Premium — €14.99/mēn" : "Izvēlēties Premium — €14.99/mēn"}
                 </>
               )}
             </button>

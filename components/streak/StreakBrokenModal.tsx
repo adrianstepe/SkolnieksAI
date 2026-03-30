@@ -57,7 +57,7 @@ export function StreakBrokenModal({ lostStreak, onClose }: StreakBrokenModalProp
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan: "premium" }),
+        body: JSON.stringify({ plan: "pro" }),
       });
 
       if (!res.ok) throw new Error("checkout_failed");

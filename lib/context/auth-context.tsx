@@ -18,7 +18,7 @@ import {
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase/client";
 
-export type UserTier = "free" | "premium" | "exam_prep" | "school_pro";
+export type UserTier = "free" | "pro" | "premium" | "school_pro";
 
 export interface UserProfile {
   uid: string;
