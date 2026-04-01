@@ -55,6 +55,7 @@
 
   /* Fonts */
   --font-sans: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sora), "Sora", ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
 }
 
@@ -301,6 +302,13 @@ html[data-font="lg"] { font-size: 18px; }
 /* ── Safe area (iPhone home indicator) ── */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── Glass card ── */
+.glass-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(8px);
 }
 
 /* ── Source citation pills ── */

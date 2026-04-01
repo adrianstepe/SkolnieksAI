@@ -128,17 +128,35 @@ A React class component wrapping `<ReactMarkdown>`. If KaTeX throws despite the 
 
 ## Landing Page Architecture
 
-The root route (`/`) serves a dual purpose: authenticated users see the full chat app (`ChatContainer`), while unauthenticated visitors see a public marketing landing page — no login wall.
+The root route (`/`) serves a dual purpose: authenticated users see the full chat app (`ChatContainer`), while unauthenticated visitors see a full marketing landing page — no login wall.
+
+### Sections
+
+The landing page is composed of discrete section components, each in its own file under `components/landing/`:
+
+| Component              | Client? | Description |
+|------------------------|---------|-------------|
+| `Navbar.tsx`           | Yes     | Sticky nav with LogoWordmark; collapses on scroll, transparent → blurred bg |
+| `Hero.tsx`             | Yes     | Animated headline, badge, dual CTA (desktop) + fixed bottom CTA (mobile) |
+| `InteractiveDemo.tsx`  | Yes     | 4 hardcoded question cards + typewriter response + post-demo signup CTA |
+| `HowItWorks.tsx`       | No      | 3-step "how it works" cards (ask → AI explains → you understand) |
+| `SubjectGrid.tsx`      | No      | Subject pill grid (Matemātika, Fizika, etc.) for grades 6–12 |
+| `Pricing.tsx`          | No      | 3-tier pricing cards (Bezmaksas / Pro / Premium) with signup links |
+| `FAQ.tsx`              | Yes     | Accordion FAQ with AnimatePresence expand/collapse |
+| `FinalCTA.tsx`         | No      | Full-width glass-card CTA block |
+| `Footer.tsx`           | No      | LogoWordmark + legal links (terms, privacy) |
+
+Entry point: `app/page.tsx` — auth-branches between `ChatContainer` (logged in) and the landing page composition (anonymous).
 
 ### Pre-login Interactive Demo
 
-Visitors can interact with the product before signing up. This is implemented as a **constrained preview** with no API calls:
+Visitors can interact with the product before signing up. This is implemented as a **constrained preview** with zero API calls:
 
-- `components/landing/InteractiveDemo.tsx` renders 4 tappable question pills
-- Each pill maps to a **hardcoded Latvian response string** stored in the component
-- On tap, a typewriter animation (15 ms/char) simulates a streamed AI reply
+- `InteractiveDemo.tsx` renders 4 tappable question cards in a 2×2 grid
+- Each card maps to a **hardcoded Latvian response string** stored in the component
+- On tap, a typewriter animation (15 ms/char interval) simulates a streamed AI reply
 - After the animation completes, an inline signup CTA appears
-- Only one question is active at a time; selecting a new pill cancels the previous animation
+- `AnimatePresence` handles mount/unmount transitions between different answers
 
 **Why no live API calls on the landing page:**
 1. Zero cost — no token spend on anonymous visitors
@@ -150,16 +168,15 @@ Visitors can interact with the product before signing up. This is implemented as
 
 The demo is designed to create curiosity, not to satisfy it:
 - Responses end with a guiding question back to the student
-- The post-typewriter CTA ("Uzdod savu jautājumu → Reģistrējies bez maksas") appears only after the full response renders, maximising engagement before the conversion ask
+- The post-typewriter CTA ("Reģistrējies bez maksas") appears only after the full response renders, maximising engagement before the conversion ask
 - Sticky bottom CTA (mobile-only, `md:hidden`) ensures the signup prompt is always visible during scroll on small screens without overlapping desktop layout
 
-### Component Structure
+### CSS Utilities
 
-```
-app/page.tsx              — Entry point; auth-branch: ChatContainer vs LandingPage
-components/landing/
-  InteractiveDemo.tsx     — Question pills + typewriter + post-demo CTA
-```
+- `glass-card`: surface-colored card with subtle border and backdrop-blur (defined in `globals.css`)
+- `glow-primary`: box-shadow halo using the primary colour for CTA buttons
+- `font-heading`: Sora font family for section headings
+- All colours reference existing CSS custom properties (`--color-primary`, `--color-surface`, etc.) — no new colour values introduced
 
 ## Security Checklist
 

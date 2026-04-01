@@ -2,47 +2,44 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "motion/react";
+import { Sparkles, ChevronRight } from "lucide-react";
 
 interface Question {
   id: number;
-  pill: string;
   grade: string;
-  subject: string;
-  response: string;
+  question: string;
+  answer: string;
 }
 
 const QUESTIONS: Question[] = [
   {
     id: 1,
-    pill: "Izskaidro Ņūtona 2. likumu vienkāršiem vārdiem",
     grade: "9. klase",
-    subject: "Fizika",
-    response:
-      "Iedomājies, ka stumj ratiņus — jo stiprāk stumj, jo ātrāk tie kustas. Ņūtona 2. likums saka tieši to: spēks vienāds ar masu, reizinātu ar paātrinājumu (F = ma). Tas nozīmē, ka smagāks priekšmets prasa lielāku spēku, lai paātrinātos tikpat ātri kā vieglāks. Ko domā — ja dubulto masu, bet saglabā to pašu spēku, kā mainīsies paātrinājums?",
+    question: "Izskaidro Ņūtona 2. likumu vienkāršiem vārdiem",
+    answer:
+      "Ņūtona 2. likums saka: jo lielāku spēku tu piemēro objektam, jo ātrāk tas paātrinās. Bet — jo smagāks objekts, jo vairāk spēka vajag.\n\nFormula: F = m · a\n\nIedomājies — tu stumj iepirkumu ratiņus. Tukšus — viegli. Pilnus ar produktiem — grūtāk. Masa (m) ir lielāka, bet tavs spēks (F) paliek tāds pats — tāpēc paātrinājums (a) ir mazāks.\n\nPamēģini: kāds būtu paātrinājums, ja F = 10 N un m = 2 kg?",
   },
   {
     id: 2,
-    pill: "Kā atrisināt kvadrātvienādojumu?",
     grade: "10. klase",
-    subject: "Matemātika",
-    response:
-      "Kvadrātvienādojumu ax² + bx + c = 0 vienmēr var atrisināt ar diskriminanta formulu: D = b² − 4ac. Ja D > 0, ir divi atrisinājumi; ja D = 0 — viens; ja D < 0 — reālu atrisinājumu nav. Saknes aprēķina pēc formulas x = (−b ± √D) / 2a. Padomā — kāpēc formula dod divas ± iespējas, nevis vienu?",
+    question: "Kā atrisināt kvadrātvienādojumu?",
+    answer:
+      "Kvadrātvienādojumam ax² + bx + c = 0 izmanto diskriminanta formulu.\n\n1. Aprēķini diskriminantu: D = b² - 4ac\n2. Ja D > 0 → divas saknes: x = (-b ± √D) / 2a\n3. Ja D = 0 → viena sakne: x = -b / 2a\n4. Ja D < 0 → nav reālu sakņu\n\nPiemērs: x² - 5x + 6 = 0\na=1, b=-5, c=6\nD = 25 - 24 = 1\nx₁ = (5+1)/2 = 3, x₂ = (5-1)/2 = 2\n\nTagad pamēģini pats: 2x² + 3x - 2 = 0",
   },
   {
     id: 3,
-    pill: "Kas bija Latvijas neatkarības pasludināšanas nozīme?",
     grade: "8. klase",
-    subject: "Vēsture",
-    response:
-      "1918. gada 18. novembrī Latvija pasludināja neatkarību kā suverēna valsts — pirmoreiz vēsturē. Tas bija vairāk nekā politisks akts: latvju tauta apliecināja savas tiesības uz pašnoteikšanos pēc gadsimtiem ilgas vācu un krievu valdīšanas. Neatkarība deva pamatu valsts institūcijām, izglītībai latviešu valodā un kultūras uzplaukumam. Kādas, tavuprāt, bija lielākās grūtības, ar ko jaunā valsts saskārās uzreiz pēc 1918. gada?",
+    question: "Kas bija Latvijas neatkarības pasludināšanas nozīme?",
+    answer:
+      'Latvijas neatkarības pasludināšana 1918. gada 18. novembrī bija vēsturisks pavērsiens.\n\nGalvenie iemesli:\n• Pirmā pasaules kara beigas sagrāva Krievijas un Vācijas impērijas\n• Latvieši jau bija izveidojuši nacionālo identitāti (Atmoda, dziesmu svētki)\n• Tautu pašnoteikšanās princips — Vilsona 14 punkti\n\nKārlis Ulmanis un Latvijas Tautas padome pasludināja neatkarību Rīgas Nacionālajā teātrī.\n\nKā tu domā — kāpēc tieši teātris tika izvēlēts šim notikumam?',
   },
   {
     id: 4,
-    pill: "Kāda ir fotosintēzes formula?",
     grade: "7. klase",
-    subject: "Bioloģija",
-    response:
-      "Fotosintēze ir process, kurā augi izmanto saules gaismu, lai no oglekļa dioksīda un ūdens ražotu glikozi un skābekli. Formula: 6CO₂ + 6H₂O + gaisma → C₆H₁₂O₆ + 6O₂. Vienkārši sakot — augi \"apēd\" gaisu un ūdeni, un \"izelpot\" tīro skābekli, ko mēs elpojam. Kāpēc, domā, fotosintēze nevar notikt pilnīgā tumsā?",
+    question: "Kāda ir fotosintēzes formula?",
+    answer:
+      "Fotosintēze ir process, kurā augi pārvērš saules gaismu enerģijā.\n\nFormula: 6CO₂ + 6H₂O + gaisma → C₆H₁₂O₆ + 6O₂\n\nVienkārši:\n• Augs paņem ogļskābo gāzi (CO₂) no gaisa\n• Paņem ūdeni (H₂O) no zemes\n• Izmanto saules gaismu kā enerģiju\n• Rezultāts: glikoze (cukurs) + skābeklis (ko mēs elpojam)\n\nTas notiek hloroplastos — zaļajās daļiņās auga šūnās.\n\nKāpēc, tavuprāt, augi ir zaļi?",
   },
 ];
 
@@ -52,9 +49,7 @@ export function InteractiveDemo() {
   const [activeId, setActiveId] = useState<number | null>(null);
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [showCta, setShowCta] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const responseRef = useRef<HTMLDivElement>(null);
 
   function clearTyping() {
     if (intervalRef.current) {
@@ -66,7 +61,6 @@ export function InteractiveDemo() {
   function startTypewriter(text: string) {
     clearTyping();
     setDisplayedText("");
-    setShowCta(false);
     setIsTyping(true);
 
     let i = 0;
@@ -76,7 +70,6 @@ export function InteractiveDemo() {
       if (i >= text.length) {
         clearTyping();
         setIsTyping(false);
-        setShowCta(true);
       }
     }, TYPEWRITER_DELAY_MS);
   }
@@ -84,120 +77,88 @@ export function InteractiveDemo() {
   function handleSelect(q: Question) {
     if (activeId === q.id && isTyping) return;
     setActiveId(q.id);
-    setShowCta(false);
-    startTypewriter(q.response);
-    // Scroll response into view on mobile after short delay
-    setTimeout(() => {
-      responseRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }, 100);
+    startTypewriter(q.answer);
   }
 
   useEffect(() => {
     return () => clearTyping();
   }, []);
 
-  const activeQuestion = QUESTIONS.find((q) => q.id === activeId) ?? null;
-
   return (
-    <section className="w-full max-w-2xl mx-auto px-4">
-      {/* Section heading */}
-      <h2 className="text-xl font-semibold text-text-primary mb-1 text-center">
-        Izmēģini tagad — bez reģistrācijas
-      </h2>
-      <p className="text-sm text-text-secondary text-center mb-6">
-        Izvēlies jautājumu un redzi, kā SkolnieksAI palīdz saprast
-      </p>
+    <section className="py-20 bg-surface/30">
+      <div className="max-w-4xl mx-auto px-6">
+        <h2 className="text-3xl md:text-4xl font-heading font-bold text-center text-white mb-12">
+          Izmēģini tagad — bez reģistrācijas
+        </h2>
 
-      {/* Question pills */}
-      <div className="flex flex-col gap-3">
-        {QUESTIONS.map((q) => {
-          const isActive = activeId === q.id;
-          return (
-            <button
-              key={q.id}
-              onClick={() => handleSelect(q)}
-              className={[
-                "w-full text-left rounded-xl border px-4 py-3 transition-all duration-200",
-                "min-h-[56px] flex items-start gap-3 cursor-pointer",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                isActive
-                  ? "border-primary bg-primary/10 shadow-[0_0_0_1px_rgba(79,142,247,0.4)]"
-                  : "border-border bg-surface hover:bg-surface-hover hover:border-[rgba(255,255,255,0.14)]",
-              ].join(" ")}
-              aria-pressed={isActive}
-            >
-              {/* Subject badge */}
-              <span
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {QUESTIONS.map((q) => {
+            const isActive = activeId === q.id;
+            return (
+              <button
+                key={q.id}
+                onClick={() => handleSelect(q)}
                 className={[
-                  "mt-0.5 shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium leading-tight",
+                  "text-left p-4 rounded-xl border transition-all cursor-pointer",
                   isActive
-                    ? "bg-primary/20 text-primary"
-                    : "bg-surface-hover text-text-secondary",
+                    ? "bg-[#1a2040] border-primary shadow-lg"
+                    : "bg-[#1A2033] border-white/10 hover:border-primary/30",
                 ].join(" ")}
               >
-                {q.grade}
-              </span>
-              <span className="text-sm text-text-primary leading-snug">{q.pill}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Response area */}
-      {activeId !== null && (
-        <div
-          ref={responseRef}
-          className="mt-5 rounded-xl border border-border bg-surface/60 p-5 animate-fade-up"
-        >
-          {/* Header row */}
-          <div className="flex items-center gap-2 mb-3">
-            {/* AI avatar dot */}
-            <span className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
-              <span className="w-2 h-2 rounded-full bg-primary block" />
-            </span>
-            <span className="text-xs font-medium text-primary">SkolnieksAI</span>
-            {activeQuestion && (
-              <span className="ml-auto text-[11px] text-text-muted">
-                {activeQuestion.subject} · {activeQuestion.grade}
-              </span>
-            )}
-          </div>
-
-          {/* Typewriter text */}
-          <p className="text-sm text-text-primary leading-relaxed min-h-[4rem] whitespace-pre-wrap">
-            {displayedText}
-            {isTyping && (
-              <span className="inline-block w-0.5 h-4 bg-primary ml-0.5 align-middle animate-pulse" />
-            )}
-          </p>
-
-          {/* Post-typewriter CTA */}
-          {showCta && (
-            <div className="mt-4 pt-4 border-t border-border animate-fade-up">
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-hover transition-colors"
-              >
-                Uzdod savu jautājumu → Reģistrējies bez maksas
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-          )}
+                <span className="inline-block px-2 py-0.5 rounded bg-[#222940] text-[10px] font-bold uppercase !text-white/70 mb-2">
+                  {q.grade}
+                </span>
+                <p className="font-medium text-sm md:text-base !text-white">
+                  {q.question}
+                </p>
+              </button>
+            );
+          })}
         </div>
-      )}
+
+        <AnimatePresence mode="wait">
+          {activeId !== null && (
+            <motion.div
+              key={activeId}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="glass-card p-6 md:p-8 rounded-2xl min-h-[200px] relative overflow-hidden"
+            >
+              <div className="flex items-center gap-2 mb-4 text-primary">
+                <Sparkles size={18} />
+                <span className="text-xs font-bold uppercase tracking-widest">
+                  SkolnieksAI atbilde
+                </span>
+              </div>
+              <p className="whitespace-pre-wrap text-white/90 leading-relaxed">
+                {displayedText}
+                {isTyping && (
+                  <span className="inline-block w-1 h-4 bg-primary ml-1 animate-pulse" />
+                )}
+              </p>
+
+              {!isTyping && activeId !== null && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-8 pt-6 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4"
+                >
+                  <p className="text-sm text-white/60 italic">
+                    Vēlies uzdot savu jautājumu?
+                  </p>
+                  <Link
+                    href="/signup"
+                    className="text-primary font-bold flex items-center gap-1 hover:gap-2 transition-all"
+                  >
+                    Reģistrējies bez maksas <ChevronRight size={18} />
+                  </Link>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </section>
   );
 }
