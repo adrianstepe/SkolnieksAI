@@ -13,6 +13,7 @@ import { useSettings } from "@/lib/context/settings-context";
 import { useAuth } from "@/lib/context/auth-context";
 import { detectSubject } from "@/lib/utils/detect-subject";
 import { starterPrompts, type StarterPrompt } from "@/lib/chat/starterPrompts";
+import { LogoWordmark } from "@/components/LogoWordmark";
 import { getExamCountdown, EXAM_UPGRADE_KEYWORDS, normalizeLv } from "@/lib/exams/latvianExams";
 
 const SUBJECT_LABELS: Record<string, string> = {
@@ -749,8 +750,6 @@ export function ChatContainer() {
               onStop={handleStop}
               pendingPrompt={pendingPrompt}
               onPromptConsumed={() => setPendingPrompt("")}
-              subject={subject}
-              onSubjectChange={setSubject}
             />
           </>
         ) : (
@@ -855,13 +854,8 @@ function WelcomeScreen({
     <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 min-h-full animate-fade-in">
       {/* Greeting */}
       <div className="text-center space-y-3 mb-8 w-full mt-[-8vh]">
-        <div ref={iconRef} className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto glow-primary animate-float">
-          <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7">
-            <path
-              d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-              fill="white"
-            />
-          </svg>
+        <div className="flex justify-center mb-4">
+          <LogoWordmark size="lg" />
         </div>
         <h1 className="text-2xl font-semibold text-[#111827] dark:text-[#E8ECF4] tracking-tight">
           Sveiki! Ko šodien mācāmies?

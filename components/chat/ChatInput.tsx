@@ -2,8 +2,14 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSettings } from "@/lib/context/settings-context";
-import { SUBJECTS } from "./SubjectGradeSelector";
-import { ChevronDown } from "lucide-react";
+import { useAuth } from "@/lib/context/auth-context";
+
+const CHAR_LIMIT: Record<string, number> = {
+  free: 4000,
+  pro: 12000,
+  premium: 32000,
+  school_pro: 32000,
+};
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -12,8 +18,6 @@ interface ChatInputProps {
   onStop?: () => void;
   pendingPrompt?: string;
   onPromptConsumed?: () => void;
-  subject?: string;
-  onSubjectChange?: (subject: string) => void;
 }
 
 export function ChatInput({
@@ -23,29 +27,13 @@ export function ChatInput({
   onStop,
   pendingPrompt,
   onPromptConsumed,
-  subject = "general",
-  onSubjectChange,
 }: ChatInputProps) {
   const { settings } = useSettings();
+  const { profile } = useAuth();
+  const charLimit = CHAR_LIMIT[profile?.tier ?? "free"];
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showCameraHint, setShowCameraHint] = useState(false);
-  const [subjectOpen, setSubjectOpen] = useState(false);
-  const subjectRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    if (!subjectOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (subjectRef.current && !subjectRef.current.contains(e.target as Node)) {
-        setSubjectOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [subjectOpen]);
-
-  const activeSubject = SUBJECTS.find((s) => s.value === subject) ?? SUBJECTS[0];
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -63,7 +51,7 @@ export function ChatInput({
       const textarea = textareaRef.current;
       if (textarea) {
         textarea.style.height = "auto";
-        textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
+        textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
         textarea.focus();
       }
     });
@@ -95,25 +83,25 @@ export function ChatInput({
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = "auto";
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
     }
   };
 
   const charCount = value.length;
   const trimmedLength = value.trim().length;
   const hasText = trimmedLength > 0;
-  const isOverLimit = trimmedLength > 2000;
-  const showCounter = charCount > 1500;
+  const isOverLimit = trimmedLength > charLimit;
+  const showCounter = charCount > charLimit * 0.75;
 
   return (
     <div className="border-t border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB]/80 dark:bg-[#0B0E14]/80 backdrop-blur-sm px-4 py-3">
       <div className="max-w-3xl mx-auto">
         {/* Card-style input container */}
-        <div className="flex items-end gap-2 bg-white dark:bg-[#151926] rounded-xl border border-[#E5E7EB] dark:border-white/7 shadow-sm dark:shadow-none px-4 py-3 transition-all duration-150 focus-within:border-[#2563EB]/50 dark:focus-within:border-[#4F8EF7]/50 focus-within:ring-2 focus-within:ring-[#2563EB]/15 dark:focus-within:ring-[#4F8EF7]/15 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.08)] dark:focus-within:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]">
+        <div className="flex items-center gap-2 bg-white dark:bg-[#151926] rounded-xl border border-[#E5E7EB] dark:border-white/7 shadow-sm dark:shadow-none px-4 py-3 transition-all duration-150 focus-within:border-[#2563EB]/50 dark:focus-within:border-[#4F8EF7]/50 focus-within:ring-2 focus-within:ring-[#2563EB]/15 dark:focus-within:ring-[#4F8EF7]/15 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.08)] dark:focus-within:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]">
           {/* Camera button with coach mark */}
           <button
             disabled
-            className={`p-1.5 text-[#6B7280] dark:text-[#8B95A8] shrink-0 mb-0.5 opacity-60 cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-opacity ${
+            className={`p-1.5 text-[#6B7280] dark:text-[#8B95A8] shrink-0 opacity-60 cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-opacity ${
               showCameraHint ? "animate-camera-coach" : ""
             }`}
             aria-label="Pievienot attēlu"
@@ -143,14 +131,14 @@ export function ChatInput({
             onInput={handleInput}
             placeholder="Uzdod jautājumu par mācību vielu..."
             disabled={disabled}
-            rows={1}
-            className="flex-1 bg-transparent dark:bg-white/5 text-sm text-[#111827] dark:text-[#E8ECF4] placeholder:text-[#6B7280] dark:placeholder:text-gray-400 resize-none outline-none min-h-[24px] max-h-[160px] rounded-lg border border-transparent dark:border-white/10 px-1 focus:ring-2 focus:ring-blue-600 dark:focus:bg-white/10 disabled:opacity-50 transition-colors"
+            rows={2}
+            className="flex-1 bg-transparent dark:bg-white/5 text-sm text-[#111827] dark:text-[#E8ECF4] placeholder:text-[#6B7280] dark:placeholder:text-gray-400 resize-none outline-none max-h-[200px] rounded-lg border border-transparent dark:border-white/10 px-1 focus:ring-2 focus:ring-blue-600 dark:focus:bg-white/10 disabled:opacity-50 transition-colors overflow-y-auto thin-scrollbar"
           />
 
           {/* Book button */}
           <button
             disabled
-            className="p-1 text-[#6B7280] dark:text-[#8B95A8] shrink-0 mb-0.5 opacity-40 cursor-not-allowed"
+            className="p-1 text-[#6B7280] dark:text-[#8B95A8] shrink-0 opacity-40 cursor-not-allowed"
             aria-label="Mācību materiāli"
             title="Funkcija drīzumā būs pieejama!"
           >
@@ -163,7 +151,7 @@ export function ChatInput({
           {isGenerating ? (
             <button
               onClick={onStop}
-              className="p-2 rounded-lg transition-all duration-150 shrink-0 mb-0.5 bg-red-500/15 text-red-400 hover:bg-red-500/25 hover:scale-105"
+              className="p-2 rounded-lg transition-all duration-150 shrink-0 bg-red-500/15 text-red-400 hover:bg-red-500/25 hover:scale-105"
               aria-label="Apturēt"
               title="Apturēt ģenerēšanu"
             >
@@ -175,7 +163,7 @@ export function ChatInput({
             <button
               onClick={handleSubmit}
               disabled={disabled || !hasText || isOverLimit}
-              className={`p-2 rounded-lg transition-all duration-150 shrink-0 mb-0.5 ${
+              className={`p-2 rounded-lg transition-all duration-150 shrink-0 ${
                 hasText && !isOverLimit
                   ? "bg-[#2563EB] dark:bg-[#4F8EF7] text-white shadow-md shadow-[#2563EB]/25 dark:shadow-[#4F8EF7]/25 hover:bg-[#1D4ED8] dark:hover:bg-[#3D7CE5] hover:shadow-lg hover:shadow-[#2563EB]/35 dark:hover:shadow-[#4F8EF7]/35 hover:scale-105"
                   : "bg-[#F1F5F9] dark:bg-[#1A2033] text-[#6B7280] dark:text-[#8B95A8]"
@@ -189,53 +177,10 @@ export function ChatInput({
           )}
         </div>
 
-        {/* Subject picker row */}
-        {onSubjectChange && (
-          <div className="flex items-center gap-2 mt-2 px-1">
-            <div ref={subjectRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setSubjectOpen((o) => !o)}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors bg-[#F1F5F9] dark:bg-[#1A2033] text-[#374151] dark:text-[#CBD5E1] hover:bg-[#E2E8F0] dark:hover:bg-[#222840] border border-transparent hover:border-[#CBD5E1] dark:hover:border-white/10"
-              >
-                <activeSubject.icon className="h-3.5 w-3.5 shrink-0" />
-                <span>{activeSubject.shortLabel}</span>
-                <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${subjectOpen ? "rotate-180" : ""}`} />
-              </button>
-
-              {subjectOpen && (
-                <div className="absolute bottom-full mb-1.5 left-0 z-50 w-44 rounded-xl border border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#151926] shadow-lg overflow-hidden">
-                  {/* 5 items visible, rest scrollable */}
-                  <div className="overflow-y-auto max-h-[200px] py-1 thin-scrollbar">
-                    {SUBJECTS.map((s) => {
-                      const active = s.value === subject;
-                      return (
-                        <button
-                          key={s.value}
-                          type="button"
-                          onClick={() => { onSubjectChange(s.value); setSubjectOpen(false); }}
-                          className={`flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium transition-colors text-left ${
-                            active
-                              ? "bg-[#EFF6FF] dark:bg-[#1E3A5F] text-[#2563EB] dark:text-[#60A5FA]"
-                              : "text-[#374151] dark:text-[#CBD5E1] hover:bg-[#F9FAFB] dark:hover:bg-[#1A2033]"
-                          }`}
-                        >
-                          <s.icon className="h-3.5 w-3.5 shrink-0" />
-                          {s.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Character counter */}
         {showCounter && (
           <p className={`text-[11px] text-right mt-1 tabular-nums ${isOverLimit ? "text-red-400" : "text-[#F59E0B]"}`}>
-            {charCount} / 2000
+            {charCount} / {charLimit.toLocaleString()}
           </p>
         )}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Settings, Zap, LogOut } from "lucide-react";
+import { Settings, Zap, LogOut, ChevronDown } from "lucide-react";
 import { LogoWordmark } from "@/components/LogoWordmark";
 import { SUBJECTS } from "./SubjectGradeSelector";
 
@@ -55,6 +55,8 @@ export function Sidebar({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const [subjectOpen, setSubjectOpen] = useState(false);
+  const subjectDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
   useEffect(() => {
@@ -73,18 +75,33 @@ export function Sidebar({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
 
+  // Close subject dropdown on outside click
+  useEffect(() => {
+    if (!subjectOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (subjectDropdownRef.current && !subjectDropdownRef.current.contains(e.target as Node)) {
+        setSubjectOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [subjectOpen]);
+
   const handleSubjectClick = (value: string) => {
     onSubjectChange(value);
+    setSubjectOpen(false);
     onMobileClose?.();
   };
 
+  const activeSubjectObj = SUBJECTS.find((s) => s.value === activeSubject) ?? SUBJECTS[0];
+
   const initials = userName
     ? userName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : "U";
 
   return (
@@ -99,22 +116,12 @@ export function Sidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#F9FAFB] dark:bg-[#0D1117] border-r border-gray-200 dark:border-none transition-all duration-300 ${
-          collapsed ? "w-16" : "w-64"
-        } ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 lg:z-30`}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#F9FAFB] dark:bg-[#0D1117] border-r border-gray-200 dark:border-none transition-all duration-300 ${collapsed ? "w-16" : "w-64"
+          } ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:translate-x-0 lg:z-30`}
       >
         {/* Logo + collapse */}
         <div className="flex items-center gap-3 px-4 h-14 border-b border-[#E5E7EB] dark:border-white/7">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg gradient-primary">
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-              <path
-                d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                fill="white"
-              />
-            </svg>
-          </div>
           {!collapsed && <LogoWordmark size="sm" />}
           {/* Mobile close button — visible only on small screens */}
           <button
@@ -150,9 +157,8 @@ export function Sidebar({
               onNewChat?.();
               onMobileClose?.();
             }}
-            className={`flex items-center gap-2 w-full rounded-lg border border-[#E5E7EB] dark:border-white/7 transition-colors hover:bg-[#E5E7EB] dark:hover:bg-[#1A2033]/50 ${
-              collapsed ? "p-2 justify-center" : "px-3 py-2"
-            }`}
+            className={`flex items-center gap-2 w-full rounded-lg border border-[#E5E7EB] dark:border-white/7 transition-colors hover:bg-[#E5E7EB] dark:hover:bg-[#1A2033]/50 ${collapsed ? "p-2 justify-center" : "px-3 py-2"
+              }`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-[#2563EB] dark:text-[#4F8EF7]">
               <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
@@ -170,32 +176,58 @@ export function Sidebar({
               Priekšmeti
             </p>
           )}
-          <nav className="space-y-0.5">
-            {SUBJECTS.map((s) => {
-              const active = activeSubject === s.value;
-              return (
-                <button
-                  key={s.value}
-                  onClick={() => handleSubjectClick(s.value)}
-                  className={`flex items-center font-medium gap-2.5 w-full rounded-lg transition-colors text-sm ${
-                    collapsed ? "p-2 justify-center" : "px-3 py-2"
-                  } ${
-                    active
-                      ? "bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white"
-                      : "text-[#111827] dark:text-[#E8ECF4] hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033]/50"
-                  }`}
-                >
-                  <s.icon className={`h-4 w-4 shrink-0 ${active ? "text-white" : "text-[#6B7280] dark:text-[#8B95A8]"}`} />
-                  {!collapsed && <span>{s.shortLabel}</span>}
-                </button>
-              );
-            })}
-          </nav>
+
+          {/* Subject dropdown */}
+          <div ref={subjectDropdownRef} className="relative mb-3">
+            {collapsed ? (
+              <button
+                onClick={() => setSubjectOpen((o) => !o)}
+                className="flex items-center p-2 justify-center w-full rounded-lg transition-colors bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white"
+                aria-label={activeSubjectObj.label}
+              >
+                <activeSubjectObj.icon className="h-4 w-4 shrink-0" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSubjectOpen((o) => !o)}
+                className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white hover:bg-[#1e4fdb] dark:hover:bg-[#4a88f0]"
+              >
+                <activeSubjectObj.icon className="h-4 w-4 shrink-0 text-white" />
+                <span className="flex-1 text-left">{activeSubjectObj.shortLabel}</span>
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${subjectOpen ? "rotate-180" : ""}`} />
+              </button>
+            )}
+
+            {subjectOpen && (
+              <div className="absolute top-full mt-1 left-0 right-0 z-50 rounded-xl border border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#151926] shadow-lg overflow-hidden">
+                <div className="overflow-y-auto max-h-[260px] py-1 thin-scrollbar">
+                  {SUBJECTS.map((s) => {
+                    const active = s.value === activeSubject;
+                    return (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => handleSubjectClick(s.value)}
+                        className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm font-medium transition-colors text-left ${active
+                          ? "bg-[#EFF6FF] dark:bg-[#1E3A5F] text-[#2563EB] dark:text-[#60A5FA]"
+                          : "text-[#111827] dark:text-[#E8ECF4] hover:bg-[#F9FAFB] dark:hover:bg-[#1A2033]"
+                          }`}
+                      >
+                        <s.icon className={`h-4 w-4 shrink-0 ${active ? "text-[#2563EB] dark:text-[#60A5FA]" : "text-[#6B7280] dark:text-[#8B95A8]"}`} />
+                        {s.shortLabel}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Recent chats */}
           {!collapsed && (
             <>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#111827] dark:text-[#E8ECF4] mb-2 px-1 mt-6">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#111827] dark:text-[#E8ECF4] mb-2 px-1 mt-75">
                 Pēdējās sarunas
               </p>
               <div className="space-y-0.5">
@@ -203,11 +235,10 @@ export function Sidebar({
                   recentChats.map((chat) => (
                     <div
                       key={chat.id}
-                      className={`group flex items-center font-medium gap-2.5 w-full rounded-lg px-3 py-2 text-sm transition-colors ${
-                        activeChatId === chat.id
-                          ? "bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white"
-                          : "text-[#111827] dark:text-[#E8ECF4] hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033]/50"
-                      }`}
+                      className={`group flex items-center font-medium gap-2.5 w-full rounded-lg px-3 py-2 text-sm transition-colors ${activeChatId === chat.id
+                        ? "bg-[#1D4ED8] dark:bg-[#3D7CE5] text-white"
+                        : "text-[#111827] dark:text-[#E8ECF4] hover:bg-[#D1D5DB] dark:hover:bg-[#1A2033]/50"
+                        }`}
                     >
                       <button
                         onClick={() => {

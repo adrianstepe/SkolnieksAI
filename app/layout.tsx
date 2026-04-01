@@ -34,7 +34,9 @@ export const metadata: Metadata = {
   title: "SkolnieksAI \u2014 Tavs m\u0101c\u012Bbu pal\u012Bgs",
   description:
     "AI m\u0101c\u012Bbu pal\u012Bgs, kas balst\u012Bts uz Latvijas Skola2030 m\u0101c\u012Bbu programmu. Pal\u012Bdz saprast, nevis dara m\u0101jas darbus tav\u0101 viet\u0101.",
-  icons: { icon: "/favicon.ico" },
+  icons: {
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111827'/><text y='72' x='50' text-anchor='middle' font-size='65' font-family='sans-serif' fill='white' font-weight='700'>S</text><circle cx='68' cy='32' r='10' fill='%232563EB'/></svg>",
+  },
 };
 
 export default function RootLayout({
