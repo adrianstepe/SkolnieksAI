@@ -182,6 +182,8 @@ export interface RagInput {
   model?: "deepseek" | "claude";
   maxTokens?: number;
   conversationHistory?: ChatMessage[];
+  /** Max web search results passed to the LLM context. Tier-gated: free=3, pro=6, premium=12. */
+  maxWebSources?: number;
 }
 
 export interface RagResult extends DeepSeekResponse {
@@ -250,10 +252,10 @@ interface WebContext {
   sources: WebSource[];
 }
 
-async function fetchWebContext(query: string, ragEmpty: boolean): Promise<WebContext | null> {
+async function fetchWebContext(query: string, ragEmpty: boolean, maxSources = 3): Promise<WebContext | null> {
   let results: WebSearchResult[] = [];
   try {
-    results = await webSearch(query, 3);
+    results = await webSearch(query, maxSources);
   } catch (err) {
     console.warn(`[chain] Web search threw: ${err instanceof Error ? err.message : String(err)}`);
     return null;
@@ -305,7 +307,7 @@ function buildMessages(
 // ---------------------------------------------------------------------------
 
 export async function runRagChain(input: RagInput): Promise<RagResult> {
-  const { query, grade, model = "deepseek", maxTokens = 800, conversationHistory = [] } = input;
+  const { query, grade, model = "deepseek", maxTokens = 800, conversationHistory = [], maxWebSources = 3 } = input;
   const subject = normalizeSubjectToRagKey(input.subject) ?? input.subject;
 
   const topK = getTopK(query);
@@ -321,7 +323,7 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
     console.log(`[chain] Path A — RAG confident for: "${query}"`);
     context = formatRagContext(texts, sources);
   } else {
-    const web = await fetchWebContext(query, raw.texts.length === 0);
+    const web = await fetchWebContext(query, raw.texts.length === 0, maxWebSources);
     if (web !== null) {
       // Path B
       console.log(`[chain] Path B — web search fallback for: "${query}"`);
@@ -370,7 +372,7 @@ const ZERO_USAGE = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 export async function* runRagChainStream(
   input: RagInput,
 ): AsyncGenerator<StreamEvent> {
-  const { query, grade, model = "deepseek", maxTokens = 800, conversationHistory = [] } = input;
+  const { query, grade, model = "deepseek", maxTokens = 800, conversationHistory = [], maxWebSources = 3 } = input;
 
   // Normalize subject via VIIS lookup → correct RAG filter key
   const normalizedSubject = normalizeSubjectToRagKey(input.subject) ?? input.subject;
@@ -416,7 +418,7 @@ export async function* runRagChainStream(
     context = formatRagContext(texts, sources);
   } else {
     // RAG not confident — try web search
-    const web = await fetchWebContext(query, raw.texts.length === 0);
+    const web = await fetchWebContext(query, raw.texts.length === 0, maxWebSources);
 
     if (web !== null) {
       // ── Path B: web search returned results ─────────────────────────────

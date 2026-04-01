@@ -8,6 +8,9 @@
  *   2. DuckDuckGo HTML  — zero-cost scrape, no API key required
  *
  * Queries are scoped to Latvian educational domains so results stay on-topic.
+ * Results are post-filtered: blocklist domains are always removed; only
+ * allowlist domains are kept (applied after fetch so we don't lose coverage
+ * when the scoped query returns nothing).
  */
 
 export interface WebSearchResult {
@@ -18,37 +21,86 @@ export interface WebSearchResult {
 }
 
 /**
+ * Approved Latvian educational sources.
+ * Results from any other domain are discarded.
+ */
+const ALLOW_DOMAINS = [
+  "izm.gov.lv",
+  "skola2030.lv",
+  "visc.gov.lv",
+  "viaa.gov.lv",
+  "maciunmaci.lv",
+  "likumi.lv",
+  "wikipedia.org", // covers lv.wikipedia.org, en.wikipedia.org, etc.
+];
+
+/**
+ * Homework-answer / cheating sites — never surface these to students.
+ */
+const BLOCK_DOMAINS = ["uzdevumi.lv", "brainly.com"];
+
+/**
  * Latvian educational domains to prioritise in search queries.
  * Appended as a site-scoped hint so results are relevant.
+ * Blocklist domains are also negated in the query string.
  */
 const EDU_SCOPE =
-  "site:visc.gov.lv OR site:skola2030.lv OR site:izm.gov.lv OR site:macibusatura.lv";
+  "site:visc.gov.lv OR site:skola2030.lv OR site:izm.gov.lv OR site:viaa.gov.lv OR site:maciunmaci.lv OR site:likumi.lv OR site:wikipedia.org";
+
+const BLOCK_SCOPE = BLOCK_DOMAINS.map((d) => `-site:${d}`).join(" ");
+
+/** Returns the eTLD+1-style hostname (e.g. "lv.wikipedia.org" → "wikipedia.org"). */
+function rootDomain(url: string): string {
+  try {
+    const parts = new URL(url).hostname.split(".");
+    return parts.length >= 2 ? parts.slice(-2).join(".") : parts.join(".");
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Keep only results from ALLOW_DOMAINS; drop any from BLOCK_DOMAINS.
+ * If the allowlist produces 0 results (e.g. scoped query returned unfiltered
+ * results on a broad retry) we return an empty array so the chain falls to
+ * Path C rather than surfacing off-topic content.
+ */
+function filterByDomainPolicy(results: WebSearchResult[]): WebSearchResult[] {
+  return results.filter((r) => {
+    const domain = rootDomain(r.url);
+    if (BLOCK_DOMAINS.some((b) => domain === b || domain.endsWith(`.${b}`))) return false;
+    return ALLOW_DOMAINS.some((a) => domain === a || domain.endsWith(`.${a}`));
+  });
+}
 
 /**
  * Run a web search and return up to `maxResults` snippets.
  * Tries Brave Search first (if key configured), falls back to DuckDuckGo.
  * First attempts a scoped query (Latvian edu sites); if that returns nothing,
  * retries with a broader query so Path C is only hit when truly no info exists.
+ * All results are filtered through the domain allowlist/blocklist before return.
  * Returns an empty array on any failure — web search is best-effort.
  */
 export async function webSearch(
   query: string,
   maxResults = 3,
 ): Promise<WebSearchResult[]> {
-  const scopedQuery = `${query} ${EDU_SCOPE}`;
+  // Ask for extra results before filtering so we hit maxResults after the domain policy trim
+  const fetchCount = Math.min(maxResults * 3, 30);
+  const scopedQuery = `${query} ${EDU_SCOPE} ${BLOCK_SCOPE}`;
 
   const braveKey = process.env.BRAVE_SEARCH_API_KEY;
   if (braveKey) {
     try {
-      const scoped = await searchBrave(scopedQuery, braveKey, maxResults);
-      if (scoped.length > 0) return scoped;
+      const scoped = filterByDomainPolicy(await searchBrave(scopedQuery, braveKey, fetchCount));
+      if (scoped.length > 0) return scoped.slice(0, maxResults);
     } catch (err) {
       console.warn("[web-search] Brave Search (scoped) failed:", err);
     }
-    // Scoped returned nothing — retry broadly
+    // Scoped returned nothing — retry broadly (domain filter still applied)
     try {
-      const broad = await searchBrave(query, braveKey, maxResults);
-      if (broad.length > 0) return broad;
+      const broad = filterByDomainPolicy(await searchBrave(query, braveKey, fetchCount));
+      if (broad.length > 0) return broad.slice(0, maxResults);
     } catch (err) {
       console.warn("[web-search] Brave Search (broad) failed, falling back to DuckDuckGo:", err);
     }
@@ -56,10 +108,11 @@ export async function webSearch(
 
   // DuckDuckGo: try scoped first, then broad
   try {
-    const scoped = await searchDuckDuckGo(scopedQuery, maxResults);
-    if (scoped.length > 0) return scoped;
-    console.log("[web-search] Scoped DDG returned 0 results — retrying broadly");
-    return await searchDuckDuckGo(query, maxResults);
+    const scoped = filterByDomainPolicy(await searchDuckDuckGo(scopedQuery, fetchCount));
+    if (scoped.length > 0) return scoped.slice(0, maxResults);
+    console.log("[web-search] Scoped DDG returned 0 results after domain filter — retrying broadly");
+    const broad = filterByDomainPolicy(await searchDuckDuckGo(query, fetchCount));
+    return broad.slice(0, maxResults);
   } catch (err) {
     console.warn("[web-search] DuckDuckGo scrape failed:", err);
     return [];

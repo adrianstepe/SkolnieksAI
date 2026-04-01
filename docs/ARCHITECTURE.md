@@ -178,6 +178,43 @@ The demo is designed to create curiosity, not to satisfy it:
 - `font-heading`: Sora font family for section headings
 - All colours reference existing CSS custom properties (`--color-primary`, `--color-surface`, etc.) — no new colour values introduced
 
+## Web Search Domain Policy
+
+When RAG retrieval is not confident (Path B), the chain falls back to `lib/search/web.ts`. Results are subject to a strict domain policy applied **post-fetch** before any content reaches the LLM context.
+
+### Allowlist (only these domains are accepted)
+
+| Domain | Purpose |
+|---|---|
+| `izm.gov.lv` | Ministry of Education and Science |
+| `skola2030.lv` | Skola2030 curriculum framework |
+| `visc.gov.lv` | State Education Content Centre |
+| `viaa.gov.lv` | State Education Development Agency |
+| `maciunmaci.lv` | Latvian open learning materials |
+| `likumi.lv` | Latvian legislation database |
+| `wikipedia.org` | Wikipedia (all subdomains, e.g. lv, en) |
+
+### Blocklist (always excluded)
+
+| Domain | Reason |
+|---|---|
+| `uzdevumi.lv` | Homework-answer site |
+| `brainly.com` | Homework-answer site |
+
+Both lists are enforced in `filterByDomainPolicy()` inside `lib/search/web.ts`. The blocklist terms are also negated in the query string (`-site:...`) to bias search-engine ranking away from them before results are even fetched.
+
+### Tier-based max web sources
+
+The number of web snippets surfaced per query is gated by subscription tier:
+
+| Tier | Max web sources |
+|---|---|
+| bezmaksas (free) | 3 |
+| pro | 6 |
+| premium / school_pro | 12 |
+
+`getWebSourcesForTier(tier)` in `app/api/chat/route.ts` computes the limit and passes it through `RagInput.maxWebSources` → `fetchWebContext` → `webSearch`.
+
 ## Security Checklist
 
 - [ ] Firebase Auth tokens verified server-side on every request

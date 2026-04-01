@@ -749,6 +749,8 @@ export function ChatContainer() {
               onStop={handleStop}
               pendingPrompt={pendingPrompt}
               onPromptConsumed={() => setPendingPrompt("")}
+              subject={subject}
+              onSubjectChange={setSubject}
             />
           </>
         ) : (

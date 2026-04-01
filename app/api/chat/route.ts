@@ -50,6 +50,15 @@ function getRateLimitForTier(tier: string): number {
   }
 }
 
+function getWebSourcesForTier(tier: string): number {
+  switch (tier) {
+    case "pro": return 6;
+    case "premium":
+    case "school_pro": return 12;
+    default: return 3; // bezmaksas
+  }
+}
+
 const ChatRequestSchema = z.object({
   message: z.string().min(1).max(2000),
   subject: z.string().min(1),
@@ -310,6 +319,7 @@ export async function POST(request: NextRequest) {
           model: effectiveModel,
           maxTokens,
           conversationHistory: (conversationHistory ?? []) as ChatMessage[],
+          maxWebSources: getWebSourcesForTier(tier),
         });
 
         for await (const event of ragStream) {

@@ -76,6 +76,8 @@ Target launch: Late April / Early May 2026
 - [x] Webhook signature validation (critical security)
 - [x] Premium users (€14.99 tier) routed to Claude Sonnet 4.6 instead of DeepSeek
 - [x] Test full flow: signup → free use → hit limit → pay → pro/premium access
+- [x] Web search domain allowlist (izm.gov.lv, skola2030.lv, visc.gov.lv, viaa.gov.lv, maciunmaci.lv, likumi.lv, wikipedia.org) + blocklist (uzdevumi.lv, brainly.com) enforced via post-fetch filter in `lib/search/web.ts`
+- [x] Tier-based web source limits: bezmaksas=3, pro=6, premium/school_pro=12 (`getWebSourcesForTier` in `app/api/chat/route.ts`)
 
 ### Acceptance Criteria
 - Payment flow works end-to-end in Stripe test mode

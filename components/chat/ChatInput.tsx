@@ -2,6 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSettings } from "@/lib/context/settings-context";
+import { SUBJECTS } from "./SubjectGradeSelector";
+import { ChevronDown } from "lucide-react";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -10,6 +12,8 @@ interface ChatInputProps {
   onStop?: () => void;
   pendingPrompt?: string;
   onPromptConsumed?: () => void;
+  subject?: string;
+  onSubjectChange?: (subject: string) => void;
 }
 
 export function ChatInput({
@@ -19,11 +23,29 @@ export function ChatInput({
   onStop,
   pendingPrompt,
   onPromptConsumed,
+  subject = "general",
+  onSubjectChange,
 }: ChatInputProps) {
   const { settings } = useSettings();
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showCameraHint, setShowCameraHint] = useState(false);
+  const [subjectOpen, setSubjectOpen] = useState(false);
+  const subjectRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!subjectOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (subjectRef.current && !subjectRef.current.contains(e.target as Node)) {
+        setSubjectOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [subjectOpen]);
+
+  const activeSubject = SUBJECTS.find((s) => s.value === subject) ?? SUBJECTS[0];
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -166,6 +188,49 @@ export function ChatInput({
             </button>
           )}
         </div>
+
+        {/* Subject picker row */}
+        {onSubjectChange && (
+          <div className="flex items-center gap-2 mt-2 px-1">
+            <div ref={subjectRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setSubjectOpen((o) => !o)}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors bg-[#F1F5F9] dark:bg-[#1A2033] text-[#374151] dark:text-[#CBD5E1] hover:bg-[#E2E8F0] dark:hover:bg-[#222840] border border-transparent hover:border-[#CBD5E1] dark:hover:border-white/10"
+              >
+                <activeSubject.icon className="h-3.5 w-3.5 shrink-0" />
+                <span>{activeSubject.shortLabel}</span>
+                <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${subjectOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {subjectOpen && (
+                <div className="absolute bottom-full mb-1.5 left-0 z-50 w-44 rounded-xl border border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#151926] shadow-lg overflow-hidden">
+                  {/* 5 items visible, rest scrollable */}
+                  <div className="overflow-y-auto max-h-[200px] py-1 thin-scrollbar">
+                    {SUBJECTS.map((s) => {
+                      const active = s.value === subject;
+                      return (
+                        <button
+                          key={s.value}
+                          type="button"
+                          onClick={() => { onSubjectChange(s.value); setSubjectOpen(false); }}
+                          className={`flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium transition-colors text-left ${
+                            active
+                              ? "bg-[#EFF6FF] dark:bg-[#1E3A5F] text-[#2563EB] dark:text-[#60A5FA]"
+                              : "text-[#374151] dark:text-[#CBD5E1] hover:bg-[#F9FAFB] dark:hover:bg-[#1A2033]"
+                          }`}
+                        >
+                          <s.icon className="h-3.5 w-3.5 shrink-0" />
+                          {s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Character counter */}
         {showCounter && (
