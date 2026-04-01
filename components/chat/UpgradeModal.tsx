@@ -161,20 +161,6 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
           )}
         </div>
 
-        {/* Social proof */}
-        <div className="mb-8 flex items-center justify-center gap-2">
-          <div className="flex -space-x-2">
-            {["A", "M", "K"].map((l) => (
-              <div key={l} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F1F5F9] dark:bg-[#1A2033] border-2 border-[#F9FAFB] dark:border-[#0F1117] text-[10px] font-semibold text-[#6B7280] dark:text-[#8B95A8]">
-                {l}
-              </div>
-            ))}
-          </div>
-          <p className="text-sm text-[#6B7280] dark:text-[#8B95A8]">
-            Jau <span className="font-semibold text-[#111827] dark:text-[#E8ECF4]">2 400+</span> skolēni mācās ar SkolnieksAI Premium
-          </p>
-        </div>
-
         {/* Plans */}
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 items-start relative z-10">
           {PLANS.map((plan) => (
@@ -234,72 +220,54 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
                 ))}
               </ul>
 
-              {/* Individual card CTA only for Free tier */}
+              {/* Per-card CTA */}
               {plan.id === "free" && (
                 <button
-                  disabled
-                  className="mt-7 w-full rounded-xl py-3 text-sm font-bold disabled:opacity-50 bg-[#F1F5F9] dark:bg-[#1A2033] text-[#6B7280] dark:text-[#8B95A8] border border-[#E5E7EB] dark:border-white/7"
+                  onClick={onClose}
+                  className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all bg-transparent text-[#6B7280] dark:text-[#8B95A8] border border-[#D1D5DB] dark:border-white/10 hover:bg-[#F1F5F9] dark:hover:bg-[#1A2033]"
                 >
-                  Pašreizējais plāns
+                  Sākt bezmaksas
+                </button>
+              )}
+              {plan.id === "pro" && (
+                <button
+                  onClick={() => handleCheckout("pro")}
+                  disabled={loading !== null}
+                  className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-[#2563EB] text-white hover:bg-blue-700 shadow-md hover:shadow-xl hover:-translate-y-0.5"
+                >
+                  {loading === "pro" ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Notiek pāradresēšana...
+                    </>
+                  ) : (
+                    "Izvēlēties Pro — €5.99/mēn."
+                  )}
+                </button>
+              )}
+              {plan.id === "premium" && (
+                <button
+                  onClick={() => handleCheckout("premium")}
+                  disabled={loading !== null}
+                  className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-[#10B981] text-white hover:bg-emerald-600 shadow-lg shadow-[#10B981]/25 hover:shadow-xl hover:-translate-y-0.5"
+                >
+                  {loading === "premium" ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Notiek pāradresēšana...
+                    </>
+                  ) : (
+                    "★ Sākt Premium — €14.99/mēn."
+                  )}
                 </button>
               )}
             </div>
           ))}
         </div>
 
-        {/* Side-by-side CTA row for paid plans */}
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Pro CTA */}
-          <div className="flex flex-col items-center gap-1.5">
-            <button
-              onClick={() => handleCheckout("pro")}
-              disabled={loading !== null}
-              className="w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-xl hover:-translate-y-0.5"
-            >
-              {loading === "pro" ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Notiek pāradresēšana...
-                </>
-              ) : (
-                "Izvēlēties Pro — €4.99/mēn"
-              )}
-            </button>
-            <p className="text-[11px] text-[#6B7280] dark:text-[#8B95A8]">
-              (Neierobežoti jautājumi, prioritāra atbilde)
-            </p>
-          </div>
-
-          {/* Premium CTA */}
-          <div className="flex flex-col items-center gap-1.5">
-            <button
-              onClick={() => handleCheckout("premium")}
-              disabled={loading !== null}
-              className="w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:-translate-y-0.5"
-            >
-              {loading === "premium" ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Notiek pāradresēšana...
-                </>
-              ) : (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                    <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clipRule="evenodd" />
-                  </svg>
-                  {isExamGrade ? "Sākt Premium — €14.99/mēn" : "Izvēlēties Premium — €14.99/mēn"}
-                </>
-              )}
-            </button>
-            <p className="text-[11px] text-[#6B7280] dark:text-[#8B95A8]">
-              Claude Sonnet 4.6 · Eksāmenu simulācijas
-            </p>
-          </div>
-        </div>
-
         {/* Footer */}
         <p className="mt-5 text-center text-xs text-[#6B7280] dark:text-[#8B95A8] leading-relaxed">
-          Droši maksājumi caur Stripe. Atcelšana jebkurā laikā.{" "}
+          Droši maksājumi ar Stripe. Atcelšana jebkurā laikā.{" "}
           <Link href="/terms" className="underline hover:text-text-secondary ml-1">Lietošanas noteikumi</Link>.
         </p>
       </div>
