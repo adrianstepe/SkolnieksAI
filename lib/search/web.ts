@@ -27,6 +27,8 @@ const EDU_SCOPE =
 /**
  * Run a web search and return up to `maxResults` snippets.
  * Tries Brave Search first (if key configured), falls back to DuckDuckGo.
+ * First attempts a scoped query (Latvian edu sites); if that returns nothing,
+ * retries with a broader query so Path C is only hit when truly no info exists.
  * Returns an empty array on any failure — web search is best-effort.
  */
 export async function webSearch(
@@ -38,15 +40,26 @@ export async function webSearch(
   const braveKey = process.env.BRAVE_SEARCH_API_KEY;
   if (braveKey) {
     try {
-      const results = await searchBrave(scopedQuery, braveKey, maxResults);
-      if (results.length > 0) return results;
+      const scoped = await searchBrave(scopedQuery, braveKey, maxResults);
+      if (scoped.length > 0) return scoped;
     } catch (err) {
-      console.warn("[web-search] Brave Search failed, falling back to DuckDuckGo:", err);
+      console.warn("[web-search] Brave Search (scoped) failed:", err);
+    }
+    // Scoped returned nothing — retry broadly
+    try {
+      const broad = await searchBrave(query, braveKey, maxResults);
+      if (broad.length > 0) return broad;
+    } catch (err) {
+      console.warn("[web-search] Brave Search (broad) failed, falling back to DuckDuckGo:", err);
     }
   }
 
+  // DuckDuckGo: try scoped first, then broad
   try {
-    return await searchDuckDuckGo(scopedQuery, maxResults);
+    const scoped = await searchDuckDuckGo(scopedQuery, maxResults);
+    if (scoped.length > 0) return scoped;
+    console.log("[web-search] Scoped DDG returned 0 results — retrying broadly");
+    return await searchDuckDuckGo(query, maxResults);
   } catch (err) {
     console.warn("[web-search] DuckDuckGo scrape failed:", err);
     return [];
