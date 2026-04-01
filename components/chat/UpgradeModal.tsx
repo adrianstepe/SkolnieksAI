@@ -137,7 +137,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
         <div className="mb-6 text-center">
           {isExamGrade ? (
             <>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-[#10B981] to-[#059669] bg-clip-text text-transparent sm:text-3xl">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-[#F59E0B] to-[#d97706] bg-clip-text text-transparent sm:text-3xl">
                 Sagatavojies eksāmenam bez stresa
               </h2>
               <p className="mt-2 text-base text-[#6B7280] dark:text-[#8B95A8]">
@@ -168,13 +168,13 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
               key={plan.id}
               className={`relative flex flex-col rounded-2xl border px-5 py-6 transition-all duration-300 ${
                 plan.popular
-                  ? "border-transparent bg-gradient-to-b from-[#10B981]/15 to-transparent dark:from-[#10B981]/25 ring-2 ring-[#10B981] shadow-xl shadow-[#10B981]/20 dark:shadow-[#10B981]/10 sm:-translate-y-2 z-20"
+                  ? "border-transparent bg-gradient-to-b from-[#F59E0B]/15 to-transparent dark:from-[#F59E0B]/25 ring-2 ring-[#F59E0B]/40 shadow-xl shadow-[#F59E0B]/40 dark:shadow-[#F59E0B]/40 sm:-translate-y-2 z-20"
                   : "border-[#D1D5DB] dark:border-white/7 bg-white dark:bg-[#1A2033]/50 sm:mt-2"
               }`}
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-0 right-0 flex justify-center">
-                  <span className="rounded-full bg-gradient-to-r from-[#10B981] to-[#059669] px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-white shadow-lg whitespace-nowrap flex items-center gap-1.5">
+                  <span className="rounded-full bg-[#F59E0B] px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-[#111827] shadow-lg shadow-[#F59E0B]/40 whitespace-nowrap flex items-center gap-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
                       <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clipRule="evenodd" />
                     </svg>
@@ -183,7 +183,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
                 </div>
               )}
 
-              <h3 className={`text-lg font-semibold ${plan.popular ? "text-[#059669] dark:text-[#34D399]" : "text-[#111827] dark:text-[#E8ECF4]"}`}>
+              <h3 className={`text-lg font-semibold ${plan.popular ? "text-[#F59E0B]" : "text-[#111827] dark:text-[#E8ECF4]"}`}>
                 {plan.name}
               </h3>
 
@@ -204,7 +204,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
                   >
                     <svg
                       className={`mt-0.5 h-4 w-4 shrink-0 ${
-                        plan.popular ? "text-[#10B981] dark:text-[#34D399]" : "text-[#2563EB] dark:text-[#4F8EF7]"
+                        plan.popular ? "text-[#F59E0B]" : "text-[#2563EB] dark:text-[#4F8EF7]"
                       }`}
                       fill="currentColor"
                       viewBox="0 0 20 20"
@@ -249,7 +249,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
                 <button
                   onClick={() => handleCheckout("premium")}
                   disabled={loading !== null}
-                  className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-[#10B981] text-white hover:bg-emerald-600 shadow-lg shadow-[#10B981]/25 hover:shadow-xl hover:-translate-y-0.5"
+                  className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-[#F59E0B] text-[#111827] hover:bg-[#F59E0B]/90 shadow-lg shadow-[#F59E0B]/40 hover:shadow-xl hover:-translate-y-0.5"
                 >
                   {loading === "premium" ? (
                     <>

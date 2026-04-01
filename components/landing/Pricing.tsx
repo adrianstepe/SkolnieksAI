@@ -109,7 +109,7 @@ export function Pricing() {
               )}
               {isExam && (
                 <div className="absolute -top-4 left-0 right-0 flex justify-center">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-black shadow-lg shadow-amber-500/30">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F59E0B] px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-[#111827] shadow-lg shadow-[#F59E0B]/40">
                     🏆 Eksāmenu Tops
                   </span>
                 </div>
@@ -141,7 +141,7 @@ export function Pricing() {
                     ? "border border-border text-white hover:bg-surface-hover"
                     : plan.ctaStyle === "primary"
                     ? "bg-primary hover:bg-primary-hover text-white glow-primary shadow-lg shadow-primary/30"
-                    : "bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-black shadow-lg shadow-amber-500/25",
+                    : "bg-[#F59E0B] hover:bg-[#F59E0B]/90 text-[#111827] shadow-lg shadow-[#F59E0B]/40",
                 ].join(" ")}
               >
                 {plan.cta}
