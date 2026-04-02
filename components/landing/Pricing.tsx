@@ -66,7 +66,7 @@ export function Pricing() {
   return (
     <section className="py-24 max-w-7xl mx-auto px-6">
       <h2 className="text-3xl md:text-5xl font-heading font-bold text-center text-white mb-4">
-        Sagatavojies eksāmenam bez stresa
+        Sagatavojies eksāmeniem bez stresa
       </h2>
       <p className="text-center text-white/70 text-lg mb-16 max-w-2xl mx-auto">
         {daysToExam !== null ? (

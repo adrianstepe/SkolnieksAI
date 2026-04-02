@@ -107,16 +107,14 @@ export function Sidebar({
   return (
     <>
       {/* Mobile backdrop */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={onMobileClose}
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className={`fixed inset-0 z-40 bg-black/50 lg:hidden transition-opacity duration-300 ease-in-out ${mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        onClick={onMobileClose}
+        aria-hidden="true"
+      />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#F9FAFB] dark:bg-[#0D1117] border-r border-gray-200 dark:border-none transition-all duration-300 ${collapsed ? "w-16" : "w-64"
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#F9FAFB] dark:bg-[#0D1117] border-r border-gray-200 dark:border-none shadow-2xl lg:shadow-none transition-[transform,width] duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"
           } ${mobileOpen ? "translate-x-0" : "-translate-x-full"
           } lg:translate-x-0 lg:z-30`}
       >

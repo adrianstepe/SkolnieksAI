@@ -185,14 +185,13 @@ export function ChatInput({
         )}
 
         {/* Disclaimer text below input */}
-        <p className="text-[11px] text-[#6B7280] dark:text-[#8B95A8] text-center mt-2 flex items-center justify-center gap-1">
-          <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
-            <path
-              d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-              fill="currentColor"
-            />
+        <p className="text-[11px] text-[#6B7280] dark:text-[#8B95A8] text-center mt-2 flex items-center justify-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-3.5 w-3.5 shrink-0 rounded-[3px]">
+            <rect width="100" height="100" rx="20" fill="#111827"/>
+            <text y="72" x="50" textAnchor="middle" fontSize="65" fontFamily="sans-serif" fill="white" fontWeight="700">S</text>
+            <circle cx="68" cy="32" r="10" fill="#2563EB"/>
           </svg>
-          SkolnieksAI palīdz saprast, nevis atrisina tavā vietā
+          Tavs AI mācību palīgs.
         </p>
       </div>
     </div>

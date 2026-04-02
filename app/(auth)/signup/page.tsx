@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useRef, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/auth-context";
@@ -43,6 +43,21 @@ export default function SignupPage() {
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // --- Birth year dropdown state ---
+  const [yearOpen, setYearOpen] = useState(false);
+  const yearDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!yearOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (yearDropdownRef.current && !yearDropdownRef.current.contains(e.target as Node)) {
+        setYearOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [yearOpen]);
 
   // --- Parental consent flow state ---
   const [showParentalFlow, setShowParentalFlow] = useState(false);
@@ -310,23 +325,55 @@ export default function SignupPage() {
       <form onSubmit={handleEmailSignup} className="space-y-4">
         {/* Birth year — FIRST field, required for GDPR age gating */}
         <div>
-          <label htmlFor="birth-year" className="block text-sm font-medium text-text-secondary">
+          <label className="block text-sm font-medium text-text-secondary">
             Dzimšanas gads <span className="text-red-500">*</span>
           </label>
-          <select
-            id="birth-year"
-            required
-            value={birthYear}
-            onChange={(e) => setBirthYear(e.target.value === "" ? "" : Number(e.target.value))}
-            className={inputClass}
-          >
-            <option value="">— Izvēlies gadu —</option>
-            {birthYearOptions().map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+          <div ref={yearDropdownRef} className="relative mt-1">
+            <button
+              type="button"
+              onClick={() => setYearOpen((o) => !o)}
+              className="flex items-center justify-between w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
+            >
+              <span className={birthYear === "" ? "text-text-muted" : "text-text-primary"}>
+                {birthYear === "" ? "— Izvēlies gadu —" : String(birthYear)}
+              </span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className={`h-4 w-4 text-text-muted transition-transform ${yearOpen ? "rotate-180" : ""}`}
+              >
+                <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+              </svg>
+            </button>
+
+            {yearOpen && (
+              <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-surface shadow-lg overflow-hidden">
+                <div className="overflow-y-auto max-h-[216px]">
+                  <button
+                    type="button"
+                    onClick={() => { setBirthYear(""); setYearOpen(false); }}
+                    className="w-full px-3 py-2.5 text-left text-sm text-text-muted hover:bg-surface-hover transition-colors"
+                  >
+                    — Izvēlies gadu —
+                  </button>
+                  {birthYearOptions().map((y) => (
+                    <button
+                      key={y}
+                      type="button"
+                      onClick={() => { setBirthYear(y); setYearOpen(false); }}
+                      className={`w-full px-3 py-2.5 text-left text-sm transition-colors ${birthYear === y
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-text-primary hover:bg-surface-hover"
+                        }`}
+                    >
+                      {y}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div>
