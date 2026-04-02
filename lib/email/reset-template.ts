@@ -70,7 +70,7 @@ export async function sendPasswordResetEmail(
   const resend = getResendClient();
 
   const { error } = await resend.emails.send({
-    from: "SkolnieksAI <noreply@skolnieks.ai>",
+    from: "SkolnieksAI <noreply@send.skolnieksai.lv>",
     to,
     subject: "Paroles atiestatīšana — SkolnieksAI",
     html: buildResetEmailHtml(resetUrl),

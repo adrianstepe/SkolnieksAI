@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Resend } from "resend";
 import { z } from "zod";
 
 const ParentalConsentSchema = z.object({
@@ -55,22 +56,24 @@ SkolnieksAI komanda
 https://skolnieks.ai
 `.trim();
 
-  // TODO: Wire this up to a real email provider (Resend or SendGrid) before go-live.
-  // See DEPLOYMENT.md — parental consent email must be sent via a transactional
-  // email service. The full email content is logged below for local testing.
-  console.log("[parental-consent] Would send email:");
-  console.log("  To:", parentEmail);
-  console.log("  Subject:", emailSubject);
-  console.log("  Body:\n", emailBody);
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    console.error("[parental-consent] RESEND_API_KEY is not set");
+    return NextResponse.json({ error: "email_unavailable" }, { status: 503 });
+  }
 
-  // --- Resend integration stub ---
-  // const resend = new Resend(process.env.RESEND_API_KEY);
-  // await resend.emails.send({
-  //   from: "SkolnieksAI <noreply@skolnieks.ai>",
-  //   to: parentEmail,
-  //   subject: emailSubject,
-  //   text: emailBody,
-  // });
+  const resend = new Resend(key);
+  const { error } = await resend.emails.send({
+    from: "SkolnieksAI <noreply@send.skolnieksai.lv>",
+    to: parentEmail,
+    subject: emailSubject,
+    text: emailBody,
+  });
+
+  if (error) {
+    console.error("[parental-consent] Failed to send email to", parentEmail, error);
+    return NextResponse.json({ error: "email_failed" }, { status: 502 });
+  }
 
   return NextResponse.json({ success: true });
 }

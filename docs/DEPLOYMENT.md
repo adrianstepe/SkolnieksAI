@@ -111,6 +111,24 @@ ChromaDB must be reachable from Vercel Edge Functions. Options:
 
 Set `CHROMA_HOST` to the production URL.
 
+## Resend (Transactional Email)
+
+SkolnieksAI uses [Resend](https://resend.com) for all transactional email (password reset, parental consent).
+
+### Requirements
+
+- A verified **sending domain**: `send.skolnieksai.lv` — add the DNS records Resend provides (SPF, DKIM, DMARC) via your DNS provider.
+- `RESEND_API_KEY` — generate in the Resend dashboard and add to your environment variables.
+
+### Setup
+
+1. Sign up at resend.com.
+2. Add domain → `send.skolnieksai.lv` → follow the DNS verification steps.
+3. Once verified, create an API key and set `RESEND_API_KEY` in `.env.local` (and in Vercel / Coolify project settings for production).
+4. All emails are sent `from: "SkolnieksAI <noreply@send.skolnieksai.lv>"`.
+
+> **Note:** Without `RESEND_API_KEY` the parental-consent endpoint returns `503 email_unavailable`. The password-reset flow will throw at startup. Both are hard failures by design — transactional email is required for GDPR-compliant onboarding.
+
 ## Stripe
 
 ### Setup
@@ -206,6 +224,6 @@ Do these two checklists in order. Checklist 1 can be done while still on Vercel.
 - [ ] Trigger the first deployment and verify it succeeds
 - [ ] Verify the RAG pipeline can reach Chroma Cloud from the VPS
 - [ ] Verify Firebase Auth, Firestore, and Stripe all work in production
-- [ ] Wire up parental consent email to a real email provider (Resend or SendGrid) to replace the console stub (`/api/auth/parental-consent/route.ts`)
+- [ ] Verify `RESEND_API_KEY` and the `send.skolnieksai.lv` domain are configured in production (see Resend section above) — parental consent and password reset emails depend on this
 - [ ] Switch Stripe from test mode to live mode
 - [ ] Remove the Vercel project (optional — keep it a few days as a fallback before deleting)
