@@ -3,6 +3,7 @@ SkolnieksAI RAG API server — port 8001
 Run: uvicorn rag_server:app --port 8001 --reload
 """
 
+import logging
 import os
 from contextlib import asynccontextmanager
 from typing import Any
@@ -71,11 +72,15 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
 
 app = FastAPI(title="SkolnieksAI RAG API", lifespan=lifespan)
 
+_raw_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000")
+_allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_methods=["POST"],
-    allow_headers=["Content-Type"],
+    allow_origins=_allowed_origins,
+    allow_methods=["GET", "POST"],
+    allow_headers=["X-API-Key", "Content-Type"],
+    allow_credentials=False,
 )
 
 
@@ -196,10 +201,10 @@ def query_endpoint(req: QueryRequest, _: None = Depends(require_api_key)) -> Que
             chunk_index = int(meta.get("chunk_index", 0)),
         ))
 
-    q_preview    = req.question[:60]  # type: ignore[index]
-    dist_preview = [round(d, 3) for d in distances]  # type: ignore[call-overload]
-    subject_tag  = f"  subject_filter={req.where_subject!r}" if req.where_subject else ""
-    print(f"[query] q={q_preview!r}  returned={len(chunks)}  distances={dist_preview}{subject_tag}")
+    q_preview   = req.question[:20] + "..." if len(req.question) > 20 else req.question
+    subject_tag = f"  subject_filter={req.where_subject!r}" if req.where_subject else ""
+    print(f"[query] q={q_preview!r}  returned={len(chunks)}{subject_tag}")
+    logging.debug("[query] distances=%s", [round(d, 3) for d in distances])
 
     return QueryResponse(chunks=chunks, sources=sources, distances=distances, metadatas=metadatas)  # type: ignore[call-arg]
 
@@ -212,7 +217,7 @@ def embed_endpoint(req: EmbedRequest, _: None = Depends(require_api_key)) -> Emb
 
 
 @app.get("/health")
-def health() -> dict[str, Any]:
+def health(_: None = Depends(require_api_key)) -> dict[str, Any]:
     content_count = _content_collection.count() if _content_collection is not None else -1
     skola_count = _skola_collection.count() if _skola_collection is not None else None
     return {
@@ -225,7 +230,7 @@ def health() -> dict[str, Any]:
 
 
 @app.get("/audit")
-def audit() -> dict[str, Any]:
+def audit(_: None = Depends(require_api_key)) -> dict[str, Any]:
     """Show what sources are indexed in ChromaDB across both collections."""
     result: dict[str, Any] = {}
 

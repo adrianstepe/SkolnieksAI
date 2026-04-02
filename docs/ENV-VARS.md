@@ -46,6 +46,13 @@ CRON_SECRET=...                      # Random hex secret for Vercel Cron auth
                                      # Generate: openssl rand -hex 32
                                      # Vercel sends this as: Authorization: Bearer <secret>
 
+# --- Rate Limiting (Upstash Redis) ---
+UPSTASH_REDIS_REST_URL=...           # Upstash Redis REST URL (edge rate limiter)
+UPSTASH_REDIS_REST_TOKEN=...         # Upstash Redis REST token
+                                     # Create at console.upstash.com → New Database → REST API
+                                     # Middleware fails-open if these are missing (Firestore daily
+                                     # caps remain as the backstop)
+
 # --- App Config ---
 NEXT_PUBLIC_APP_URL=https://skolnieks.ai  # Production URL
 NODE_ENV=production
@@ -56,10 +63,6 @@ NODE_ENV=production
 ```bash
 # --- Analytics ---
 NEXT_PUBLIC_PLAUSIBLE_DOMAIN=skolnieks.ai  # If using Plausible
-
-# --- Rate Limiting ---
-UPSTASH_REDIS_REST_URL=...           # If using Upstash for rate limiting
-UPSTASH_REDIS_REST_TOKEN=...
 
 # --- Embedding Model ---
 EMBEDDING_MODEL=paraphrase-multilingual-MiniLM-L12-v2    # Sentence-transformers model name
@@ -75,6 +78,19 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ```
 
 Test card: `4242 4242 4242 4242`, any future expiry, any CVC.
+
+## RAG Server (rag_server.py)
+
+```bash
+# --- RAG API ---
+RAG_API_KEY=...                      # Secret key for X-API-Key header auth on all RAG endpoints
+                                     # Generate: openssl rand -hex 32
+
+ALLOWED_ORIGINS=https://skolnieksai.lv,https://www.skolnieksai.lv
+                                     # Comma-separated list of allowed CORS origins
+                                     # Dev default: http://localhost:3000
+                                     # NEVER set to * in production — credentials not allowed with wildcard
+```
 
 ## Notes
 

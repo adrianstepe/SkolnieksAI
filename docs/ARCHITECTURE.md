@@ -228,12 +228,47 @@ The number of web snippets surfaced per query is gated by subscription tier:
 
 `getWebSourcesForTier(tier)` in `app/api/chat/route.ts` computes the limit and passes it through `RagInput.maxWebSources` → `fetchWebContext` → `webSearch`.
 
+## Rate Limiting Architecture
+
+Two independent layers protect `/api/chat` from abuse:
+
+### Layer 1 — Edge (Upstash Redis, `middleware.ts`)
+
+| Property | Value |
+|---|---|
+| Algorithm | Sliding window |
+| Limit | 5 requests / 60 s per user |
+| Key | Firebase UID (decoded from JWT at edge); falls back to client IP |
+| Rejection | HTTP 429 with `Retry-After` header |
+| Fail behaviour | **Fail-open** — if Redis is unavailable the request proceeds |
+
+The sliding window eliminates boundary-burst attacks where a fixed-window reset allowed 2× intended load across two adjacent windows. JWT decoding at the edge uses `jose`'s `decodeJwt` (no signature verification — that still happens in the route handler). This layer runs before any Firestore read, so rejected requests incur zero database cost.
+
+Required env vars: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (see `docs/ENV-VARS.md`).
+
+### Layer 2 — Route handler (Firestore transaction, `app/api/chat/route.ts`)
+
+Business-logic limits enforced inside an atomic Firestore transaction:
+
+| Check | Free | Pro | Premium / school_pro |
+|---|---|---|---|
+| Monthly token budget | 150 k tokens | 1.5 M | 3 M |
+| Daily query hard cap | 15 | 40 | 80 |
+
+These limits survive a Redis outage and are the authoritative backstop against over-consumption. The old `rateWindowStart` / `rateWindowCount` fixed-window fields have been removed from Firestore — they are no longer written or read.
+
+### Why two layers?
+
+- Edge layer catches burst/DDoS before any cold-start or Firestore latency.
+- Firestore layer enforces per-user business quotas that must survive Redis failure and that carry subscription semantics (token budgets).
+
 ## Security Checklist
 
 - [ ] Firebase Auth tokens verified server-side on every request
 - [ ] Stripe webhook signature validation (never skip)
-- [ ] Rate limit `/api/chat`: 5 req/min (all tiers)
+- [ ] Rate limit `/api/chat`: 5 req/min sliding window via Upstash Redis edge middleware (fail-open; Firestore daily cap is backstop)
 - [ ] Input sanitization: max 2000 chars (HTML not stripped — see chat/route.ts L237-239)
 - [ ] No PII in ChromaDB — curriculum content only
 - [ ] Firestore rules: users read/write own docs only
 - [ ] CORS: restrict to production domain + localhost
+- [x] **CVE-2025-29927** (Next.js middleware bypass via `x-middleware-subrequest`): Not vulnerable — running Next.js 16.2.0 (patched ≥14.2.25 / ≥15.2.3). Defense-in-depth: `middleware.ts` rejects any request carrying that header with HTTP 400. Note: `/api/chat` auth must be verified independently in the route handler (do not rely solely on middleware), since middleware only covers `/admin-dashboard` paths.

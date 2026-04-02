@@ -17,12 +17,6 @@ const FREE_DAILY_LIMIT = 15;
 const PRO_DAILY_LIMIT = 40;
 const PREMIUM_DAILY_LIMIT = 80;
 
-/** Rate window: max queries per 1-minute rolling window */
-const FREE_RATE_LIMIT = 5;
-const PRO_RATE_LIMIT = 5;
-const PREMIUM_RATE_LIMIT = 5;
-const RATE_WINDOW_MS = 60_000; // 1 minute in ms
-
 function getBudgetForTier(tier: string): number {
   switch (tier) {
     case "pro": return PRO_TOKEN_BUDGET;
@@ -38,15 +32,6 @@ function getDailyLimitForTier(tier: string): number {
     case "premium":
     case "school_pro": return PREMIUM_DAILY_LIMIT;
     default: return FREE_DAILY_LIMIT;
-  }
-}
-
-function getRateLimitForTier(tier: string): number {
-  switch (tier) {
-    case "pro": return PRO_RATE_LIMIT;
-    case "premium":
-    case "school_pro": return PREMIUM_RATE_LIMIT;
-    default: return FREE_RATE_LIMIT;
   }
 }
 
@@ -83,10 +68,8 @@ type TxnDenied = {
   reason:
     | "user_not_found"
     | "token_budget_exceeded"
-    | "daily_limit_exceeded"
-    | "rate_limit_exceeded";
+    | "daily_limit_exceeded";
   dailyLimit?: number;
-  minutesRemaining?: number;
 };
 
 export async function POST(request: NextRequest) {
@@ -123,9 +106,10 @@ export async function POST(request: NextRequest) {
   const usageRef = userRef.collection("usage").doc(yearMonth);
 
   // --- Atomic limit check + slot reservation ---
-  // All three limits (monthly budget, daily hard cap, 1-min rate window) are
-  // evaluated and the counters are written inside a single Firestore transaction
-  // so that concurrent requests cannot both pass the same check simultaneously.
+  // Monthly budget and daily hard cap are evaluated inside a single Firestore
+  // transaction so concurrent requests cannot both pass the same check.
+  // Short-term burst protection (5 req/min sliding window) is handled upstream
+  // by Upstash Redis edge middleware before this code is reached.
   let txnResult: TxnOk | TxnDenied;
   try {
     txnResult = await adminDb.runTransaction(async (txn) => {
@@ -162,32 +146,12 @@ export async function POST(request: NextRequest) {
         return { ok: false, reason: "daily_limit_exceeded", dailyLimit } satisfies TxnDenied;
       }
 
-      // --- 1-minute rate window ---
-      const rateWindowStart = usageData.rateWindowStart as number | undefined;
-      const windowActive =
-        rateWindowStart !== undefined &&
-        now.getTime() - rateWindowStart < RATE_WINDOW_MS;
-      const currentRateWindowCount = windowActive
-        ? ((usageData.rateWindowCount as number) ?? 0)
-        : 0;
-      if (currentRateWindowCount >= getRateLimitForTier(tier)) {
-        const msRemaining =
-          RATE_WINDOW_MS - (now.getTime() - (rateWindowStart ?? 0));
-        return {
-          ok: false,
-          reason: "rate_limit_exceeded",
-          minutesRemaining: Math.ceil(msRemaining / 60_000),
-        } satisfies TxnDenied;
-      }
-
       // --- Reserve the slot: write updated counters atomically ---
+      // Short-term rate limiting (5 req/min sliding window) is now handled at
+      // the edge by Upstash Redis in middleware.ts. Only business-logic limits
+      // (daily cap, monthly budget) are tracked here in Firestore.
       const newDailyCount =
         storedDailyDate === today ? currentDailyCount + 1 : 1;
-      const isNewWindow = !windowActive;
-      const newRateWindowStart = isNewWindow
-        ? now.getTime()
-        : (rateWindowStart as number);
-      const newRateWindowCount = isNewWindow ? 1 : currentRateWindowCount + 1;
 
       txn.set(
         usageRef,
@@ -196,8 +160,6 @@ export async function POST(request: NextRequest) {
           lastQueryAt: now.toISOString(),
           dailyDate: today,
           dailyCount: newDailyCount,
-          rateWindowStart: newRateWindowStart,
-          rateWindowCount: newRateWindowCount,
         },
         { merge: true },
       );
@@ -222,11 +184,6 @@ export async function POST(request: NextRequest) {
       case "daily_limit_exceeded":
         return NextResponse.json(
           { error: "daily_limit_exceeded", limit: txnResult.dailyLimit },
-          { status: 429 },
-        );
-      case "rate_limit_exceeded":
-        return NextResponse.json(
-          { error: "rate_limit_exceeded", minutesRemaining: txnResult.minutesRemaining },
           { status: 429 },
         );
     }
@@ -267,6 +224,19 @@ export async function POST(request: NextRequest) {
   const convCollection = adminDb.collection("conversations");
 
   if (activeConversationId) {
+    // Verify the conversation exists and belongs to the authenticated user.
+    // Admin SDK bypasses Firestore security rules, so ownership must be checked
+    // explicitly here — otherwise any authenticated user could inject messages
+    // into another user's conversation by supplying their conversationId.
+    const convSnap = await convCollection.doc(activeConversationId).get();
+    if (!convSnap.exists) {
+      return NextResponse.json({ error: "conversation_not_found" }, { status: 404 });
+    }
+    const convData = convSnap.data() as Record<string, unknown>;
+    if (convData.userId !== decoded.uid) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+
     // Update existing conversation timestamp
     await convCollection.doc(activeConversationId).update({
       updatedAt: now.toISOString(),
