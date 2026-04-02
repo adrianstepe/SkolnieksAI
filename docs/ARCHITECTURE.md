@@ -126,6 +126,19 @@ A React class component wrapping `<ReactMarkdown>`. If KaTeX throws despite the 
 
 `app/globals.css` sets `.katex-display { overflow-x: auto }` and `.katex { font-size: 1em }` to prevent wide display-math from causing horizontal scroll on mobile and to stop KaTeX's default 1.21em size from looking oversized on small screens.
 
+## Auth Components
+
+Auth pages live under `app/(auth)/` and share a centered card layout via `app/(auth)/layout.tsx`.
+
+| Page                        | File                                    |
+|-----------------------------|-----------------------------------------|
+| Login                       | `app/(auth)/login/page.tsx`             |
+| Sign up                     | `app/(auth)/signup/page.tsx`            |
+| Forgot password             | `app/(auth)/forgot-password/page.tsx`   |
+| Reset password              | `app/(auth)/reset-password/page.tsx`    |
+
+Each auth page header displays the **"S" monogram** — a bold off-white (`#F9FAFB`) "S" character centered inside a Royal Blue (`#2563EB`) 48×48 px rounded square — instead of a generic icon. The monogram uses the Sora font to match the `LogoWordmark` component.
+
 ## Landing Page Architecture
 
 The root route (`/`) serves a dual purpose: authenticated users see the full chat app (`ChatContainer`), while unauthenticated visitors see a full marketing landing page — no login wall.
