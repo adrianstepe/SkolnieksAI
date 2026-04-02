@@ -31,7 +31,7 @@
    - Embed query with sentence-transformers (same model as ingest)
    - Query ChromaDB top-k=5 chunks, filtered by subject + grade metadata
    - Future: rerank step for quality
-5. Build prompt: system message (Latvian, Skola2030, grade) + retrieved chunks + user message
+5. Build prompt: system message (Latvian, Skola2030, grade) + retrieved chunks + user message. Response strategy: factual questions answered directly in the first sentence; math/calculations solved fully step-by-step; essay/homework structure guided with one concrete hint; student who explicitly requests a direct answer always receives one regardless of question type.
 6. Route to LLM: free → DeepSeek V3.2, paid → Claude Sonnet 4.6
 7. Stream response via Vercel AI SDK (SSE)
 8. Post-response: log tokens to Firestore usage doc, append to conversation

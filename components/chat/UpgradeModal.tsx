@@ -18,11 +18,12 @@ const PLANS = [
     price: "€0",
     period: "/mēn.",
     features: [
-      "Ierobežots jautājumu skaits (~60/mēn.)",
-      "Standarta palīgs",
-      "Visi priekšmeti, ierobežots jautājumu skaits",
+      "Visi priekšmeti no 6.–12. klasei",
+      "~2 jautājumi dienā (60 mēnesī)",
+      "Atbildes pielāgotas Latvijas mācību programmai",
     ],
     accent: "muted",
+    popular: false,
   },
   {
     id: "pro" as const,
@@ -30,26 +31,28 @@ const PLANS = [
     price: "€5.99",
     period: "/mēn.",
     features: [
-      "Vairāk jautājumu mēnesī",
-      "Pilns palīgs",
-      "Prioritāra atbilde",
-      "Pilns izglītības saturs",
+      "25 jautājumi dienā — pietiek jebkuram mājasdarbam",
+      "Pilns skaidrojums ar risinājuma soļiem",
+      "Ātrākas atbildes, bez gaidīšanas",
+      "Pilns izglītības saturs visos priekšmetos",
     ],
     accent: "primary",
+    popular: true,
   },
   {
     id: "premium" as const,
-    name: "Premium",
+    name: "Eksāmenu Plāns",
     price: "€14.99",
     period: "/mēn.",
     features: [
-      "**Claude Sonnet 4.6** (Augstākā precizitāte)",
+      "Viss, kas Pro plānā, plus:",
+      "Visprecīzākais AI modelis (augstākā atbilžu kvalitāte)",
       "Eksāmenu līmeņa uzdevumu ģenerēšana",
-      "Detalizēta soļu-pa-solim analīze",
-      "Pielāgots Latvijas izglītības standartiem",
+      "Detalizēta soļu-pa-soļim analīze",
+      "60 jautājumi dienā — neierobežota sagatavošanās",
     ],
     accent: "accent",
-    popular: true,
+    popular: false,
   },
 ];
 
@@ -145,8 +148,8 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
                 <span className="font-semibold text-[#111827] dark:text-[#E8ECF4]">
                   {examCountdown.daysRemaining}
                 </span>{" "}
-                dienas līdz centralizētajiem eksāmeniem. Premium ietver eksāmenu
-                simulācijas, soli pa solim risinājumus un neierobežotas sarunas.
+                dienas līdz centralizētajiem eksāmeniem. Eksāmenu Plāns ietver
+                eksāmenu simulācijas, soli pa solim risinājumus un neierobežotas sarunas.
               </p>
             </>
           ) : (
@@ -168,13 +171,13 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
               key={plan.id}
               className={`relative flex flex-col rounded-2xl border px-5 py-6 transition-all duration-300 ${
                 plan.popular
-                  ? "border-transparent bg-gradient-to-b from-[#F59E0B]/15 to-transparent dark:from-[#F59E0B]/25 ring-2 ring-[#F59E0B]/40 shadow-xl shadow-[#F59E0B]/40 dark:shadow-[#F59E0B]/40 sm:-translate-y-2 z-20"
+                  ? "border-transparent bg-gradient-to-b from-[#2563EB]/15 to-transparent dark:from-[#2563EB]/25 ring-2 ring-[#2563EB]/40 shadow-xl shadow-[#2563EB]/20 dark:shadow-[#2563EB]/20 sm:-translate-y-2 z-20"
                   : "border-[#D1D5DB] dark:border-white/7 bg-white dark:bg-[#1A2033]/50 sm:mt-2"
               }`}
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-0 right-0 flex justify-center">
-                  <span className="rounded-full bg-[#F59E0B] px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-[#111827] shadow-lg shadow-[#F59E0B]/40 whitespace-nowrap flex items-center gap-1.5">
+                  <span className="rounded-full bg-gradient-to-r from-[#2563EB] to-[#1d4ed8] px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-white shadow-lg shadow-[#2563EB]/30 whitespace-nowrap flex items-center gap-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
                       <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clipRule="evenodd" />
                     </svg>
@@ -183,7 +186,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
                 </div>
               )}
 
-              <h3 className={`text-lg font-semibold ${plan.popular ? "text-[#F59E0B]" : "text-[#111827] dark:text-[#E8ECF4]"}`}>
+              <h3 className={`text-lg font-semibold ${plan.popular ? "text-[#2563EB] dark:text-[#4F8EF7]" : "text-[#111827] dark:text-[#E8ECF4]"}`}>
                 {plan.name}
               </h3>
 
@@ -204,7 +207,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
                   >
                     <svg
                       className={`mt-0.5 h-4 w-4 shrink-0 ${
-                        plan.popular ? "text-[#F59E0B]" : "text-[#2563EB] dark:text-[#4F8EF7]"
+                        plan.popular ? "text-[#2563EB] dark:text-[#4F8EF7]" : "text-[#2563EB] dark:text-[#4F8EF7]"
                       }`}
                       fill="currentColor"
                       viewBox="0 0 20 20"
@@ -226,40 +229,52 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
                   onClick={onClose}
                   className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all bg-transparent text-[#6B7280] dark:text-[#8B95A8] border border-[#D1D5DB] dark:border-white/10 hover:bg-[#F1F5F9] dark:hover:bg-[#1A2033]"
                 >
-                  Sākt bezmaksas
+                  Sākt bez maksas
                 </button>
               )}
               {plan.id === "pro" && (
-                <button
-                  onClick={() => handleCheckout("pro")}
-                  disabled={loading !== null}
-                  className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-[#2563EB] text-white hover:bg-blue-700 shadow-md hover:shadow-xl hover:-translate-y-0.5"
-                >
-                  {loading === "pro" ? (
-                    <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Notiek pāradresēšana...
-                    </>
-                  ) : (
-                    "Izvēlēties Pro — €5.99/mēn."
-                  )}
-                </button>
+                <>
+                  <button
+                    onClick={() => handleCheckout("pro")}
+                    disabled={loading !== null}
+                    className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-[#2563EB] text-white hover:bg-blue-700 shadow-lg shadow-[#2563EB]/30 hover:shadow-xl hover:-translate-y-0.5"
+                  >
+                    {loading === "pro" ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        Notiek pāradresēšana...
+                      </>
+                    ) : (
+                      "Sākt Pro — €5.99/mēn."
+                    )}
+                  </button>
+                  <p className="mt-2 text-center text-xs text-[#6B7280] dark:text-[#8B95A8]">
+                    Atcelšana jebkurā brīdī.
+                  </p>
+                </>
               )}
               {plan.id === "premium" && (
-                <button
-                  onClick={() => handleCheckout("premium")}
-                  disabled={loading !== null}
-                  className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-[#F59E0B] text-[#111827] hover:bg-[#F59E0B]/90 shadow-lg shadow-[#F59E0B]/40 hover:shadow-xl hover:-translate-y-0.5"
-                >
-                  {loading === "premium" ? (
-                    <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Notiek pāradresēšana...
-                    </>
-                  ) : (
-                    "★ Sākt Premium — €14.99/mēn."
+                <>
+                  <button
+                    onClick={() => handleCheckout("premium")}
+                    disabled={loading !== null}
+                    className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-[#F59E0B] text-[#111827] hover:bg-[#F59E0B]/90 shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                  >
+                    {loading === "premium" ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#111827]/30 border-t-[#111827]" />
+                        Notiek pāradresēšana...
+                      </>
+                    ) : (
+                      "Sākt Eksāmenu Plānu — €14.99/mēn."
+                    )}
+                  </button>
+                  {examCountdown !== null && (
+                    <p className="mt-2 text-center text-xs text-[#6B7280] dark:text-[#8B95A8]">
+                      Līdz eksāmenam: {examCountdown.daysRemaining} dienas
+                    </p>
                   )}
-                </button>
+                </>
               )}
             </div>
           ))}
