@@ -114,10 +114,10 @@ function PlanCard({
 
   return (
     <div
-      className={`relative flex flex-col rounded-2xl border p-6 lg:p-8 transition-all duration-300 ${
+      className={`relative flex flex-col rounded-2xl p-6 lg:p-8 transition-all duration-300 ${
         plan.popular
-          ? "border-transparent bg-gradient-to-b from-[#2563EB]/15 to-transparent dark:from-[#2563EB]/25 ring-2 ring-[#2563EB]/40 shadow-xl shadow-[#2563EB]/20 dark:shadow-[#2563EB]/20"
-          : "border-[#D1D5DB] dark:border-white/7 bg-white dark:bg-[#1A2033]/50"
+          ? "border-2 border-[#2563EB] bg-[#EFF6FF] shadow-xl shadow-[#2563EB]/20 dark:border-transparent dark:bg-gradient-to-b dark:from-[#2563EB]/25 dark:to-transparent dark:ring-2 dark:ring-[#2563EB]/40 dark:shadow-[#2563EB]/20"
+          : "border border-[#E5E7EB] shadow-md bg-white dark:border-white/7 dark:bg-[#1A2033]/50"
       }`}
     >
       {plan.popular && (
@@ -254,10 +254,10 @@ function PlanCard({
                     ? onConsentPro(e.target.checked)
                     : onConsentPremium(e.target.checked)
                 }
-                className={`peer appearance-none h-4 w-4 rounded border-2 cursor-pointer transition-colors duration-150 checked:bg-[#2563EB] checked:border-[#2563EB] ${
+                className={`peer appearance-none h-4 w-4 rounded border-2 cursor-pointer transition-colors duration-150 checked:bg-[#2563EB] checked:border-[#2563EB] bg-white ${
                   showWarning && !consent
                     ? "border-[#F59E0B]"
-                    : "border-[#6B7280]"
+                    : "border-[#9CA3AF]"
                 }`}
               />
               <svg

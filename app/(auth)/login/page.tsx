@@ -55,10 +55,7 @@ export default function LoginPage() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-          <span className="text-[#F9FAFB] font-bold text-xl leading-none select-none" style={{ fontFamily: "var(--font-sora), 'Sora', sans-serif" }}>S</span>
-        </div>
-        <h1 className="flex justify-center">
+        <h1 className="flex justify-center mb-1">
           <LogoWordmark size="lg" />
         </h1>
         <p className="mt-1 text-sm text-text-secondary">Ienāc savā kontā</p>
