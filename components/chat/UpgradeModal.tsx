@@ -103,6 +103,15 @@ function PlanCard({
   onClose,
   examCountdown,
 }: PlanCardProps) {
+  const [showWarning, setShowWarning] = useState(false);
+
+  function triggerWarning() {
+    setShowWarning(true);
+    setTimeout(() => setShowWarning(false), 600);
+  }
+
+  const consent = plan.id === "pro" ? consentPro : consentPremium;
+
   return (
     <div
       className={`relative flex flex-col rounded-2xl border p-6 lg:p-8 transition-all duration-300 ${
@@ -155,36 +164,54 @@ function PlanCard({
         </button>
       )}
       {plan.id === "pro" && (
-        <button
-          onClick={() => onCheckout("pro")}
-          disabled={loading !== null || !consentPro}
-          className="mt-4 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#2563EB] text-white hover:bg-blue-700 shadow-lg shadow-[#2563EB]/30 hover:shadow-xl hover:-translate-y-0.5"
-        >
-          {loading === "pro" ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              Notiek pāradresēšana...
-            </>
-          ) : (
-            "Sākt Pro — €5.99/mēn."
+        <div className="relative mt-4">
+          {showWarning && (
+            <div className="absolute -top-8 left-0 right-0 flex justify-center pointer-events-none z-10">
+              <span className="rounded-md bg-[#1A2033] border border-[#374151] px-2.5 py-1 text-[11px] font-medium text-[#F59E0B] whitespace-nowrap shadow-lg">
+                Vispirms apstipriniet zemāk
+              </span>
+            </div>
           )}
-        </button>
+          <button
+            onClick={() => { if (!consentPro) { triggerWarning(); return; } onCheckout("pro"); }}
+            disabled={loading !== null}
+            className={`w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#2563EB] text-white hover:bg-blue-700 shadow-lg shadow-[#2563EB]/30 hover:shadow-xl hover:-translate-y-0.5 ${!consentPro ? "opacity-50" : ""}`}
+          >
+            {loading === "pro" ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                Notiek pāradresēšana...
+              </>
+            ) : (
+              "Sākt Pro — €5.99/mēn."
+            )}
+          </button>
+        </div>
       )}
       {plan.id === "premium" && (
-        <button
-          onClick={() => onCheckout("premium")}
-          disabled={loading !== null || !consentPremium}
-          className="mt-4 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#F59E0B] text-[#111827] hover:bg-[#F59E0B]/90 shadow-md hover:shadow-lg hover:-translate-y-0.5"
-        >
-          {loading === "premium" ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#111827]/30 border-t-[#111827]" />
-              Notiek pāradresēšana...
-            </>
-          ) : (
-            "Sākt Eksāmenu Plānu — €14.99/mēn."
+        <div className="relative mt-4">
+          {showWarning && (
+            <div className="absolute -top-8 left-0 right-0 flex justify-center pointer-events-none z-10">
+              <span className="rounded-md bg-[#1A2033] border border-[#374151] px-2.5 py-1 text-[11px] font-medium text-[#F59E0B] whitespace-nowrap shadow-lg">
+                Vispirms apstipriniet zemāk
+              </span>
+            </div>
           )}
-        </button>
+          <button
+            onClick={() => { if (!consentPremium) { triggerWarning(); return; } onCheckout("premium"); }}
+            disabled={loading !== null}
+            className={`w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#F59E0B] text-[#111827] hover:bg-[#F59E0B]/90 shadow-md hover:shadow-lg hover:-translate-y-0.5 ${!consentPremium ? "opacity-50" : ""}`}
+          >
+            {loading === "premium" ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#111827]/30 border-t-[#111827]" />
+                Notiek pāradresēšana...
+              </>
+            ) : (
+              "Sākt Eksāmenu Plānu — €14.99/mēn."
+            )}
+          </button>
+        </div>
       )}
 
       {/* Feature list — below CTA */}
@@ -210,16 +237,28 @@ function PlanCard({
         ))}
       </ul>
 
-      {/* Consent + secondary CTA — pinned to bottom for paid plans */}
-      {plan.id === "pro" && (
+      {/* Consent — pinned to bottom for paid plans */}
+      {(plan.id === "pro" || plan.id === "premium") && (
         <div className="mt-auto pt-5">
-          <label className="flex items-start gap-2.5 cursor-pointer">
-            <div className={`relative mt-0.5 shrink-0 ${!consentPro ? "animate-checkbox-nudge" : ""}`}>
+          <label
+            className={`flex items-start gap-2.5 cursor-pointer transition-all duration-150 ${
+              showWarning ? "translate-x-1" : "translate-x-0"
+            }`}
+          >
+            <div className="relative mt-0.5 shrink-0">
               <input
                 type="checkbox"
-                checked={consentPro}
-                onChange={(e) => onConsentPro(e.target.checked)}
-                className="peer appearance-none h-4 w-4 rounded border-2 border-[#374151] checked:bg-[#2563EB] checked:border-[#2563EB] cursor-pointer transition-colors"
+                checked={consent}
+                onChange={(e) =>
+                  plan.id === "pro"
+                    ? onConsentPro(e.target.checked)
+                    : onConsentPremium(e.target.checked)
+                }
+                className={`peer appearance-none h-4 w-4 rounded border-2 cursor-pointer transition-colors duration-150 checked:bg-[#2563EB] checked:border-[#2563EB] ${
+                  showWarning && !consent
+                    ? "border-[#F59E0B]"
+                    : "border-[#6B7280]"
+                }`}
               />
               <svg
                 className="pointer-events-none absolute inset-0 h-4 w-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity"
@@ -229,35 +268,14 @@ function PlanCard({
                 <path d="M3 8.5l2.5 2.5 5.5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <span className="text-[11px] text-[#6B7280] dark:text-[#8B95A8] leading-relaxed">
+            <span className="text-[11px] text-[#9CA3AF] leading-relaxed">
+              {!consent && (
+                <span className="mr-1 text-[#F59E0B]">•</span>
+              )}
               Piekrītu tūlītējai piekļuvei un saprotu, ka zaudēju 14 dienu atteikuma tiesības.
             </span>
           </label>
-        </div>
-      )}
-      {plan.id === "premium" && (
-        <div className="mt-auto pt-5">
-          <label className="flex items-start gap-2.5 cursor-pointer">
-            <div className={`relative mt-0.5 shrink-0 ${!consentPremium ? "animate-checkbox-nudge" : ""}`}>
-              <input
-                type="checkbox"
-                checked={consentPremium}
-                onChange={(e) => onConsentPremium(e.target.checked)}
-                className="peer appearance-none h-4 w-4 rounded border-2 border-[#374151] checked:bg-[#2563EB] checked:border-[#2563EB] cursor-pointer transition-colors"
-              />
-              <svg
-                className="pointer-events-none absolute inset-0 h-4 w-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity"
-                viewBox="0 0 16 16"
-                fill="none"
-              >
-                <path d="M3 8.5l2.5 2.5 5.5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <span className="text-[11px] text-[#6B7280] dark:text-[#8B95A8] leading-relaxed">
-              Piekrītu tūlītējai piekļuvei un saprotu, ka zaudēju 14 dienu atteikuma tiesības.
-            </span>
-          </label>
-          {examCountdown !== null && (
+          {plan.id === "premium" && examCountdown !== null && (
             <p className="mt-2 text-center text-xs text-[#6B7280] dark:text-[#8B95A8]">
               Līdz eksāmenam: {examCountdown.daysRemaining} dienas
             </p>
@@ -360,9 +378,6 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
           <h1 className="text-3xl font-bold text-[#111827] dark:text-[#E8ECF4] sm:text-4xl">
             Izvēlies savu plānu
           </h1>
-          <p className="mt-2 text-sm text-[#6B7280] dark:text-[#8B95A8]">
-            Atcelšana jebkurā laikā.
-          </p>
         </div>
 
         {/* Cards — single column on mobile, 3 columns on md+ */}
@@ -381,11 +396,10 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
 
         {/* Footer */}
         <p className="mt-10 pb-8 text-center text-xs text-[#6B7280] dark:text-[#8B95A8] leading-relaxed">
-          Droši maksājumi ar Stripe. Atcelšana jebkurā laikā.{" "}
-          <Link href="/terms" className="underline hover:text-[#374151] dark:hover:text-[#8B95A8] ml-1">
+          Droši maksājumi ar Stripe. ·{" "}
+          <Link href="/terms" className="underline hover:text-[#374151] dark:hover:text-[#8B95A8]">
             Lietošanas noteikumi
           </Link>
-          .
         </p>
       </div>
     </div>
