@@ -12,7 +12,7 @@
 // Note: this page is intentionally placed outside the (auth) route group to avoid
 // the auth layout redirecting parents who happen to have a SkolnieksAI account.
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { loadStripe, type Stripe, type StripeCardElement } from "@stripe/stripe-js";
 import Link from "next/link";
@@ -20,6 +20,14 @@ import Link from "next/link";
 type Step = "loading" | "ready" | "paying" | "success" | "error";
 
 export default function ParentalVerifyPage() {
+  return (
+    <Suspense fallback={<PageShell><div className="text-center text-sm text-text-muted">Ielādē...</div></PageShell>}>
+      <ParentalVerifyContent />
+    </Suspense>
+  );
+}
+
+function ParentalVerifyContent() {
   const searchParams = useSearchParams();
   const consentId = searchParams.get("token");
 

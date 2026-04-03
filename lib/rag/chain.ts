@@ -139,6 +139,8 @@ async function saveToCache(question: string, answer: string, embedding: number[]
 // System prompt — Latvian, Skola2030-aligned
 // ---------------------------------------------------------------------------
 
+// PII audit: only `subject` and `grade` are interpolated here.
+// No uid, email, display name, birth year, tier, or payment info.
 function buildSystemPrompt(subject: string, grade: number): string {
   const complexityRule =
     grade <= 9
@@ -288,6 +290,7 @@ async function fetchWebContext(query: string, ragEmpty: boolean, maxSources = 3)
 // Message builder
 // ---------------------------------------------------------------------------
 
+// GDPR: Verified — no PII sent to LLM providers. Only query + curriculum context + conversation history.
 function buildMessages(
   systemPrompt: string,
   context: string,

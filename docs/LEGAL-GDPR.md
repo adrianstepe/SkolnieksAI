@@ -98,7 +98,7 @@ Smart-ID Enterprise). A `// TODO` comment is left in the verify route for this.
 ### User Rights (GDPR Articles 15–22)
 Must implement:
 - [ ] Right to access: User can download their data
-- [ ] Right to deletion: User can delete account + all data
+- [x] Right to deletion: User can delete account + all data
 - [ ] Right to rectification: User can edit profile
 - [ ] Right to data portability: Export conversations as JSON
 - [ ] Right to withdraw consent: Delete account button

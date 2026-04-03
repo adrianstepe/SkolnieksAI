@@ -9,8 +9,9 @@ import {
 } from "@/lib/context/settings-context";
 import { SUBJECTS, GRADES } from "@/components/chat/SubjectGradeSelector";
 import { useAuth } from "@/lib/context/auth-context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { UpgradeModal } from "@/components/chat/UpgradeModal";
+import { useRouter } from "next/navigation";
 
 interface SettingsPanelProps {
   onClose: () => void;
@@ -473,6 +474,161 @@ function SubscriptionSection() {
 }
 
 // ---------------------------------------------------------------------------
+// Delete account
+// ---------------------------------------------------------------------------
+
+const CONFIRM_WORD = "DZĒST";
+
+function DeleteAccountSection() {
+  const { getIdToken, signOut } = useAuth();
+  const router = useRouter();
+  const [showModal, setShowModal] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the input when modal opens
+  useEffect(() => {
+    if (showModal) {
+      setConfirmText("");
+      setError(null);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [showModal]);
+
+  const handleDelete = async () => {
+    if (confirmText !== CONFIRM_WORD) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      const token = await getIdToken();
+      if (!token) throw new Error("Nav autentifikācijas tokena");
+
+      const res = await fetch("/api/auth/account", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        throw new Error(data.error ?? "Nezināma kļūda");
+      }
+
+      // Firebase Auth user is deleted server-side — sign out client session
+      await signOut();
+      router.replace("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kļūda. Lūdzu mēģiniet vēlreiz.");
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <section>
+      <SectionTitle>Konts</SectionTitle>
+      <button
+        onClick={() => setShowModal(true)}
+        className="w-full rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 transition-colors hover:bg-red-100 dark:hover:bg-red-950/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+      >
+        Dzēst kontu
+      </button>
+
+      {showModal && (
+        <>
+          {/* Backdrop — z-60 to sit above the settings drawer (z-50) */}
+          <div
+            className="fixed inset-0 z-60 bg-black/60 backdrop-blur-sm"
+            onClick={() => !deleting && setShowModal(false)}
+            aria-hidden="true"
+          />
+
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-modal-title"
+            className="fixed left-1/2 top-1/2 z-60 w-[min(420px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-white dark:bg-[#151926] p-7 shadow-2xl"
+          >
+            {/* Warning icon */}
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-6 w-6 text-red-600 dark:text-red-400"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+
+            <h2
+              id="delete-modal-title"
+              className="text-center text-lg font-bold text-[#111827] dark:text-[#E8ECF4]"
+            >
+              Dzēst kontu
+            </h2>
+
+            <p className="mt-3 text-center text-sm leading-relaxed text-[#374151] dark:text-[#8B95A8]">
+              Vai tiešām vēlies dzēst savu kontu? Visi dati tiks neatgriezeniski izdzēsti.
+            </p>
+
+            <p className="mt-5 text-sm font-medium text-[#374151] dark:text-[#8B95A8]">
+              Lai apstiprinātu, ieraksti{" "}
+              <span className="font-bold text-red-600 dark:text-red-400">
+                {CONFIRM_WORD}
+              </span>
+            </p>
+            <input
+              ref={inputRef}
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
+              placeholder={CONFIRM_WORD}
+              disabled={deleting}
+              className="mt-2 w-full rounded-xl border border-[#D1D5DB] dark:border-white/7 bg-white dark:bg-[#0D1117] px-4 py-2.5 text-sm font-mono font-semibold tracking-widest text-[#111827] dark:text-[#E8ECF4] placeholder:text-[#9CA3AF] dark:placeholder:text-[#4B5563] focus-visible:border-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/30 disabled:opacity-50"
+            />
+
+            {error && (
+              <p className="mt-3 rounded-lg bg-red-50 dark:bg-red-900/20 px-4 py-2.5 text-sm text-red-600 dark:text-red-400">
+                {error}
+              </p>
+            )}
+
+            <button
+              onClick={handleDelete}
+              disabled={confirmText !== CONFIRM_WORD || deleting}
+              className="mt-5 w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 flex items-center justify-center gap-2"
+            >
+              {deleting ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Notiek dzēšana...
+                </>
+              ) : (
+                "Neatgriezeniski dzēst kontu"
+              )}
+            </button>
+
+            <button
+              onClick={() => setShowModal(false)}
+              disabled={deleting}
+              className="mt-3 w-full text-center text-sm text-[#6B7280] dark:text-[#8B95A8] hover:text-[#374151] dark:hover:text-[#E8ECF4] transition-colors disabled:opacity-40"
+            >
+              Atcelt
+            </button>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Panel
 // ---------------------------------------------------------------------------
 
@@ -522,6 +678,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
           <DefaultsSection />
           <PreferencesSection />
           <SubscriptionSection />
+          <DeleteAccountSection />
         </div>
 
         {/* Footer */}

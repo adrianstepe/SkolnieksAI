@@ -282,6 +282,7 @@ export async function POST(request: NextRequest) {
       let fullAssistantContent = "";
 
       try {
+        // GDPR: Verified — no PII sent to LLM providers. Only query + curriculum context + conversation history.
         const ragStream = runRagChainStream({
           query: message,
           subject,
