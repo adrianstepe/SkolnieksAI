@@ -474,7 +474,7 @@ export function ChatContainer() {
         userGrade={profile?.grade ?? grade}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
-        onSettingsOpen={() => setShowSettings(true)}
+        onSettingsOpen={() => { setSidebarOpen(false); setShowSettings(true); }}
         onUpgradeOpen={() => setShowUpgrade(true)}
         onSignOut={signOut}
         isPremium={isPremium}
@@ -847,9 +847,9 @@ function WelcomeScreen({
   const reshuffle = () => setDisplayed((prev) => pickPrompts(currentGrade, prev));
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 min-h-full animate-fade-in">
+    <div className="flex-1 flex flex-col items-center justify-center px-4 py-4 md:py-10 min-h-full animate-fade-in">
       {/* Greeting */}
-      <div className="text-center space-y-3 mb-8 w-full mt-[-8vh]">
+      <div className="text-center space-y-2 md:space-y-3 mb-4 md:mb-8 w-full md:mt-[-8vh]">
         <div className="mb-4 w-fit mx-auto block">
           <LogoWordmark size="lg" />
         </div>
@@ -861,13 +861,14 @@ function WelcomeScreen({
         </p>
       </div>
 
-      {/* 4 starter prompt cards — 2×2 on mobile, 1×4 on md+ */}
-      <div className="w-full max-w-2xl grid grid-cols-2 md:grid-cols-4 gap-3 animate-slide-up">
+      {/* 4 starter prompt cards — horizontal scroll on mobile (2 visible), 1×4 grid on md+ */}
+      <div className="w-full max-w-2xl animate-slide-up">
+        <div className="flex md:grid md:grid-cols-4 gap-3 overflow-x-auto snap-x snap-mandatory pb-2 md:pb-0 md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0 scrollbar-none">
         {displayed.map((prompt, i) => (
           <button
             key={i}
             onClick={() => onPopulateInput(prompt.text)}
-            className="group flex flex-col gap-2 rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-white dark:bg-[#151926] p-4 text-left transition-all min-h-[88px] hover:border-[#2563EB] dark:hover:border-[#4F8EF7] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] dark:focus-visible:ring-[#4F8EF7]"
+            className="group flex flex-col gap-2 rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-white dark:bg-[#151926] p-4 text-left transition-all min-h-[88px] shrink-0 w-[calc(50%-6px)] md:w-auto snap-start hover:border-[#2563EB] dark:hover:border-[#4F8EF7] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] dark:focus-visible:ring-[#4F8EF7]"
             aria-label={prompt.text}
           >
             <div className="flex items-center gap-1.5">
@@ -883,6 +884,7 @@ function WelcomeScreen({
             </p>
           </button>
         ))}
+        </div>
       </div>
 
       {/* Reshuffle */}
@@ -894,7 +896,7 @@ function WelcomeScreen({
       </button>
 
       {/* Trust badges */}
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-[11px] font-semibold text-[#6B7280] dark:text-[#8B95A8]">
+      <div className="mt-4 md:mt-8 flex flex-wrap items-center justify-center gap-4 text-[11px] font-semibold text-[#6B7280] dark:text-[#8B95A8]">
         <span className="inline-flex items-center gap-1">📚 Balstīts uz OpenStax</span>
         <span className="inline-flex items-center gap-1">🔒 Privāts un drošs</span>
         <span className="inline-flex items-center gap-1">🇱🇻 Latviski</span>
