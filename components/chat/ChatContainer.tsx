@@ -483,7 +483,7 @@ export function ChatContainer() {
       {/* Main area */}
       <div className={`${sidebarWidth} flex flex-1 flex-col min-w-0 transition-all duration-300`}>
         {/* Header — h-14 with backdrop blur */}
-        <header className="h-14 flex items-center justify-between px-4 lg:px-6 border-b border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB]/50 dark:bg-[#0F1117]/50 backdrop-blur-sm shrink-0">
+        <header className="h-14 flex items-center justify-between px-4 lg:px-6 border-b border-[#E5E7EB] dark:border-white/7 bg-white/80 dark:bg-[#0F1117]/50 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-3">
             {/* Hamburger — mobile only */}
             <button

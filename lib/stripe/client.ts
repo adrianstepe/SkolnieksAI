@@ -14,9 +14,16 @@ export const stripe: Stripe = new Proxy({} as Stripe, {
   get: (_, prop) => Reflect.get(getStripe(), prop as string),
 });
 
+export function getPriceId(plan: "pro" | "premium"): string {
+  const key = plan === "pro" ? "STRIPE_PRICE_PRO" : "STRIPE_PRICE_PREMIUM";
+  const id = process.env[key] ?? "";
+  return id;
+}
+
+// Kept for backward-compatibility with any callers that import PRICE_IDS.
 export const PRICE_IDS = {
-  pro: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO ?? "",
-  premium: process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM ?? "",
+  get pro() { return getPriceId("pro"); },
+  get premium() { return getPriceId("premium"); },
 } as const;
 
 export type PlanId = keyof typeof PRICE_IDS;

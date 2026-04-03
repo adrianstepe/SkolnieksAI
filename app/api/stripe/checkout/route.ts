@@ -35,6 +35,10 @@ export async function POST(request: NextRequest) {
   const priceId = PRICE_IDS[plan];
 
   if (!priceId) {
+    console.error(
+      `[stripe/checkout] Price ID not configured for plan "${plan}". ` +
+        `Set STRIPE_PRICE_PRO / STRIPE_PRICE_PREMIUM in Vercel environment variables.`,
+    );
     return NextResponse.json(
       { error: "price_not_configured" },
       { status: 500 },
@@ -58,23 +62,31 @@ export async function POST(request: NextRequest) {
     checkboxes: ["immediate_delivery", "withdrawal_waiver"],
   };
 
-  await userRef.set(
-    { digitalContentConsent: consentRecord },
-    { merge: true },
-  );
+  try {
+    await userRef.set(
+      { digitalContentConsent: consentRecord },
+      { merge: true },
+    );
 
-  // Also write to a dedicated sub-collection so the record is immutable even
-  // if the user profile is later updated or deleted.
-  await adminDb
-    .collection("withdrawalConsents")
-    .doc(`${decoded.uid}_${plan}_${Date.now()}`)
-    .set({
-      uid: decoded.uid,
-      email: decoded.email ?? null,
-      plan,
-      ...consentRecord,
-      createdAt: FieldValue.serverTimestamp(),
-    });
+    // Also write to a dedicated sub-collection so the record is immutable even
+    // if the user profile is later updated or deleted.
+    await adminDb
+      .collection("withdrawalConsents")
+      .doc(`${decoded.uid}_${plan}_${Date.now()}`)
+      .set({
+        uid: decoded.uid,
+        email: decoded.email ?? null,
+        plan,
+        ...consentRecord,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+  } catch (err) {
+    console.error("[stripe/checkout] Firestore consent write failed:", err);
+    return NextResponse.json(
+      { error: "consent_write_failed", detail: String(err) },
+      { status: 500 },
+    );
+  }
 
   // Check if user already has a Stripe customer ID
   const userDoc = await userRef.get();

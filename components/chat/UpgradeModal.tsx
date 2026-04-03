@@ -116,7 +116,7 @@ function PlanCard({
     <div
       className={`relative flex flex-col rounded-2xl p-6 lg:p-8 transition-all duration-300 ${
         plan.popular
-          ? "border-2 border-[#2563EB] bg-[#EFF6FF] shadow-xl shadow-[#2563EB]/20 dark:border-transparent dark:bg-gradient-to-b dark:from-[#2563EB]/25 dark:to-transparent dark:ring-2 dark:ring-[#2563EB]/40 dark:shadow-[#2563EB]/20"
+          ? "border-2 border-[#2563EB] bg-[#EFF6FF] shadow-xl shadow-[#2563EB]/20 dark:border-[#2563EB] dark:bg-[#1e3a5f] dark:ring-2 dark:ring-[#2563EB]/60 dark:shadow-[#2563EB]/20"
           : "border border-[#E5E7EB] shadow-md bg-white dark:border-white/7 dark:bg-[#1A2033]/50"
       }`}
     >
@@ -141,7 +141,7 @@ function PlanCard({
 
       {/* Price */}
       <div className="mt-3 flex items-baseline gap-1">
-        <span className="text-3xl font-extrabold tracking-tight text-[#111827] dark:text-[#E8ECF4]">
+        <span className={`text-3xl font-extrabold tracking-tight text-[#111827] ${plan.popular ? "dark:text-white" : "dark:text-[#E8ECF4]"}`}>
           {plan.price}
         </span>
         <span className="text-sm font-medium text-[#6B7280] dark:text-[#8B95A8]">

@@ -114,7 +114,7 @@ export function Sidebar({
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#F9FAFB] dark:bg-[#0D1117] border-r border-gray-200 dark:border-none shadow-2xl lg:shadow-none transition-[transform,width] duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-[#0D1117] border-r border-gray-200 dark:border-none shadow-2xl lg:shadow-none transition-[transform,width] duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"
           } ${mobileOpen ? "translate-x-0" : "-translate-x-full"
           } lg:translate-x-0 lg:z-30`}
       >
