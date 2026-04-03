@@ -28,7 +28,16 @@ export async function GET(request: NextRequest) {
   }
 
   const userRef = adminDb.collection("users").doc(decoded.uid);
-  const userDoc = await userRef.get();
+
+  // Get current month usage
+  const now = new Date();
+  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  // Fetch both documents concurrently to save time
+  const [userDoc, usageDoc] = await Promise.all([
+    userRef.get(),
+    userRef.collection("usage").doc(yearMonth).get(),
+  ]);
 
   if (!userDoc.exists) {
     return NextResponse.json({ error: "user_not_found" }, { status: 404 });
@@ -45,11 +54,6 @@ export async function GET(request: NextRequest) {
     lastActiveDate: (userData.lastActiveDate as string) ?? null,
     streakFreeze: (userData.streakFreeze as boolean) ?? false,
   };
-
-  // Get current month usage
-  const now = new Date();
-  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const usageDoc = await userRef.collection("usage").doc(yearMonth).get();
 
   const usageData = usageDoc.exists
     ? (usageDoc.data() as Record<string, number>)
