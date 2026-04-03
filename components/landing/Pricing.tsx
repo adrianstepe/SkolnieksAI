@@ -9,7 +9,7 @@ const PLANS = [
     price: "€0",
     features: [
       "Visi priekšmeti no 6.–12. klasei",
-      "~2 jautājumi dienā (60 mēnesī)",
+      "~3 jautājumi dienā (100 mēnesī)",
       "Atbildes pielāgotas Latvijas mācību programmai",
     ],
     cta: "Sākt bez maksas",
@@ -22,7 +22,7 @@ const PLANS = [
     name: "Pro",
     price: "€5.99",
     features: [
-      "25 jautājumi dienā — pietiek jebkuram mājasdarbam",
+      "20 jautājumi dienā (800 mēnesī)",
       "Pilns skaidrojums ar risinājuma soļiem",
       "Ātrākas atbildes, bez gaidīšanas",
       "Pilns izglītības saturs visos priekšmetos",
@@ -37,11 +37,10 @@ const PLANS = [
     name: "Eksāmenu Plāns",
     price: "€14.99",
     features: [
-      "Viss, kas Pro plānā, plus:",
       "Visprecīzākais AI modelis (augstākā atbilžu kvalitāte)",
       "Eksāmenu līmeņa uzdevumu ģenerēšana",
       "Detalizēta soļu-pa-soļim analīze",
-      "60 jautājumi dienā — neierobežota sagatavošanās",
+      "50 jautājumi dienā — maksimāla sagatavošanās",
     ],
     cta: "Sākt Eksāmenu Plānu — €14.99/mēn.",
     ctaStyle: "accent",

@@ -7,10 +7,10 @@ import { adminDb } from "@/lib/firebase/admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { evaluateAndUpdateStreak } from "@/lib/firebase/streak";
 
-/** Free tier: ~150,000 tokens/month ≈ 60 questions */
-const FREE_TOKEN_BUDGET = 150_000;
-const PRO_TOKEN_BUDGET = 1_500_000;
-const PREMIUM_TOKEN_BUDGET = 3_000_000;
+/** Free tier: ~250,000 tokens/month ≈ 100 questions */
+const FREE_TOKEN_BUDGET = 250_000;
+const PRO_TOKEN_BUDGET = 2_000_000;
+const PREMIUM_TOKEN_BUDGET = 4_000_000;
 
 /** Daily hard limits (queries per calendar day UTC) */
 const FREE_DAILY_LIMIT = 15;

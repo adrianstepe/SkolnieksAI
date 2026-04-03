@@ -120,8 +120,10 @@ Target launch: Late April / Early May 2026
 | Vercel              | €0            | Free tier (hobby)              |
 | ChromaDB VPS        | ~€5           | Hetzner CX11                   |
 | Firebase            | €0            | Spark plan initially           |
-| DeepSeek API        | ~€15–35       | 10k free users at €0.035/user  |
+| DeepSeek API (1k)   | ~€50          | 1k users at ~100 q/user        |
+| DeepSeek API (10k)  | ~€500         | 10k users at ~100 q/user       |
 | Claude API (paid)   | ~€10–50       | Only for paying subscribers     |
 | Domain              | ~€10/yr       | skolnieks.ai or similar        |
-| **Total MVP**       | **€35–145/mo**|                                |
+| **Total (1k users)**| **~€70/mo**   |                                |
+| **Total (10k user)**| **~€520/mo**  |                                |
 | Break-even          | 10–25 paid subscribers                          |

@@ -19,7 +19,7 @@ const PLANS = [
     period: "/mēn.",
     features: [
       "Visi priekšmeti no 6.–12. klasei",
-      "~2 jautājumi dienā (60 mēnesī)",
+      "~3 jautājumi dienā (100 mēnesī)",
       "Atbildes pielāgotas Latvijas mācību programmai",
     ],
     accent: "muted",
@@ -31,7 +31,7 @@ const PLANS = [
     price: "€5.99",
     period: "/mēn.",
     features: [
-      "25 jautājumi dienā — pietiek jebkuram mājasdarbam",
+      "20 jautājumi dienā (800 mēnesī)",
       "Pilns skaidrojums ar risinājuma soļiem",
       "Ātrākas atbildes, bez gaidīšanas",
       "Pilns izglītības saturs visos priekšmetos",
@@ -49,7 +49,7 @@ const PLANS = [
       "Visprecīzākais AI modelis (augstākā atbilžu kvalitāte)",
       "Eksāmenu līmeņa uzdevumu ģenerēšana",
       "Detalizēta soļu-pa-soļim analīze",
-      "60 jautājumi dienā — neierobežota sagatavošanās",
+      "50 jautājumi dienā — maksimāla sagatavošanās",
     ],
     accent: "accent",
     popular: false,
@@ -79,16 +79,16 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
   // EU distance selling — Consumer Rights Directive Art. 16(m).
-  // Both must be checked before checkout can proceed.
-  const [consentImmediate, setConsentImmediate] = useState(false);
-  const [consentWithdrawal, setConsentWithdrawal] = useState(false);
-  const consentComplete = consentImmediate && consentWithdrawal;
+  // Per-plan consent: checked before checkout can proceed.
+  const [consentPro, setConsentPro] = useState(false);
+  const [consentPremium, setConsentPremium] = useState(false);
 
   const examCountdown = grade != null ? getExamCountdown(grade) : null;
   const isExamGrade = examCountdown !== null;
 
   const handleCheckout = async (plan: "pro" | "premium") => {
-    if (!consentComplete) return; // guard — buttons are also disabled
+    const consent = plan === "pro" ? consentPro : consentPremium;
+    if (!consent) return; // guard — buttons are also disabled
     setLoading(plan);
     try {
       const token = await getIdToken();
@@ -128,7 +128,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative mx-4 w-full max-w-3xl animate-fade-up rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB] dark:bg-[#0F1117] p-6 sm:p-8 max-h-[90vh] overflow-y-auto hide-scrollbar">
+      <div className="relative mx-4 w-full max-w-3xl animate-fade-up rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB] dark:bg-[#0F1117] p-6 sm:p-8">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -243,10 +243,22 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
               )}
               {plan.id === "pro" && (
                 <>
+                  {/* EU Consumer Rights Directive Art. 16(m) inline consent */}
+                  <label className="mt-5 flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentPro}
+                      onChange={(e) => setConsentPro(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#D1D5DB] dark:border-white/20 accent-[#2563EB]"
+                    />
+                    <span className="text-[11px] text-[#6B7280] dark:text-[#8B95A8] leading-relaxed">
+                      Piekrītu tūlītējai piekļuvei un saprotu, ka zaudēju 14 dienu atteikuma tiesības.
+                    </span>
+                  </label>
                   <button
                     onClick={() => handleCheckout("pro")}
-                    disabled={loading !== null || !consentComplete}
-                    className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-[#2563EB] text-white hover:bg-blue-700 shadow-lg shadow-[#2563EB]/30 hover:shadow-xl hover:-translate-y-0.5"
+                    disabled={loading !== null || !consentPro}
+                    className="mt-3 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#2563EB] text-white hover:bg-blue-700 shadow-lg shadow-[#2563EB]/30 hover:shadow-xl hover:-translate-y-0.5"
                   >
                     {loading === "pro" ? (
                       <>
@@ -257,17 +269,26 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
                       "Sākt Pro — €5.99/mēn."
                     )}
                   </button>
-                  <p className="mt-2 text-center text-xs text-[#6B7280] dark:text-[#8B95A8]">
-                    Atcelšana jebkurā brīdī.
-                  </p>
                 </>
               )}
               {plan.id === "premium" && (
                 <>
+                  {/* EU Consumer Rights Directive Art. 16(m) inline consent */}
+                  <label className="mt-5 flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentPremium}
+                      onChange={(e) => setConsentPremium(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#D1D5DB] dark:border-white/20 accent-[#2563EB]"
+                    />
+                    <span className="text-[11px] text-[#6B7280] dark:text-[#8B95A8] leading-relaxed">
+                      Piekrītu tūlītējai piekļuvei un saprotu, ka zaudēju 14 dienu atteikuma tiesības.
+                    </span>
+                  </label>
                   <button
                     onClick={() => handleCheckout("premium")}
-                    disabled={loading !== null || !consentComplete}
-                    className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-[#F59E0B] text-[#111827] hover:bg-[#F59E0B]/90 shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                    disabled={loading !== null || !consentPremium}
+                    className="mt-3 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#F59E0B] text-[#111827] hover:bg-[#F59E0B]/90 shadow-md hover:shadow-lg hover:-translate-y-0.5"
                   >
                     {loading === "premium" ? (
                       <>
@@ -287,48 +308,6 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
               )}
             </div>
           ))}
-        </div>
-
-        {/* EU withdrawal-right consent — required before paid plan checkout.
-            Consumer Rights Directive Art. 16(m): digital content delivered immediately
-            is exempt from the 14-day withdrawal right ONLY if the consumer explicitly
-            consents and acknowledges the waiver. PTAC requires this as audit evidence. */}
-        <div className="mt-6 rounded-xl border border-[#D1D5DB] dark:border-white/10 bg-[#F9FAFB] dark:bg-[#1A2033]/60 px-5 py-4 space-y-3">
-          <p className="text-xs font-semibold text-[#374151] dark:text-[#CBD5E1] uppercase tracking-wide">
-            Pirms abonēšanas — obligāts apstiprinājums
-          </p>
-
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={consentImmediate}
-              onChange={(e) => setConsentImmediate(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#D1D5DB] dark:border-white/20 accent-[#2563EB]"
-            />
-            <span className="text-xs text-[#374151] dark:text-[#94A3B8] leading-relaxed">
-              Es piekrītu, ka pakalpojuma sniegšana sākas nekavējoties pēc maksājuma
-              apstiprināšanas.
-            </span>
-          </label>
-
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={consentWithdrawal}
-              onChange={(e) => setConsentWithdrawal(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#D1D5DB] dark:border-white/20 accent-[#2563EB]"
-            />
-            <span className="text-xs text-[#374151] dark:text-[#94A3B8] leading-relaxed">
-              Es saprotu, ka, piekrītot tūlītējai piekļuvei, es zaudēju 14 dienu
-              atteikuma tiesības saskaņā ar Patērētāju tiesību direktīvu.
-            </span>
-          </label>
-
-          {!consentComplete && (
-            <p className="text-[11px] text-[#9CA3AF] dark:text-[#64748B]">
-              Lūdzu, apstipriniet abus punktus, lai turpinātu.
-            </p>
-          )}
         </div>
 
         {/* Footer */}

@@ -42,10 +42,10 @@ With optimization (high cache hit rates): ~$0.0005 per query.
 
 ### Scenario: 10,000 Free Users
 
-- Avg queries/user/month: 15 (most won't hit 60 cap)
-- Total queries: 150,000
+- Avg queries/user/month: 25 (most won't hit 100 cap)
+- Total queries: 250,000
 - Cost per query: $0.001
-- **Monthly DeepSeek cost: ~$150 (€140)**
+- **Monthly DeepSeek cost: ~$250 (€230)**
 
 ### Scenario: Adding 100 Paid Users
 
@@ -75,8 +75,8 @@ Break-even at €350/month (10k free users) = ~60 Premium subscribers.
 
 ### Free Tier Budget
 
-Monthly token cap: 150,000 tokens (input + output combined)
-- Conservative estimate: ~60 questions/month
+Monthly token cap: 250,000 tokens (input + output combined)
+- Conservative estimate: ~100 questions/month
 - We track actual tokens, not query count — fairer and harder to game
 - Budget visible to us in Firestore, NOT shown as counter to user
 
@@ -91,12 +91,12 @@ Instead: let them use naturally until budget runs out, then show:
 
 | Tier       | Price      | LLM           | Token Budget     |
 |------------|------------|---------------|------------------|
-| Free       | €0         | DeepSeek V3.2 | 150K tokens/mo   |
-| Premium    | €5.99/mo   | Claude Sonnet | Unlimited*       |
-| Exam Prep  | €14.99/mo  | Claude Sonnet | Unlimited*       |
-| School Pro | €20/student/yr or €1,000/mo | Claude Sonnet | Unlimited* |
+| Free       | €0         | DeepSeek V3.2 | 250K tokens/mo   |
+| Premium    | €5.99/mo   | Claude Sonnet | 1.5M tokens/mo   |
+| Exam Prep  | €14.99/mo  | Claude Sonnet | 3M tokens/mo     |
+| School Pro | €20/student/yr or €1,000/mo | Claude Sonnet | 3M tokens/mo |
 
-*"Unlimited" = soft cap at 1M tokens/month. Extremely generous — no normal student hits this.
+*"Unlimited" = soft cap at 1.5M/3M tokens/month. Extremely generous — no normal student hits this.
 
 ## Cost Optimization Strategies
 
