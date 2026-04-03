@@ -101,9 +101,7 @@ export function ChatInput({
           {/* Camera button with coach mark */}
           <button
             disabled
-            className={`p-1.5 text-[#6B7280] dark:text-[#8B95A8] shrink-0 opacity-60 cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-opacity ${
-              showCameraHint ? "animate-camera-coach" : ""
-            }`}
+            className="p-1.5 text-[#6B7280] dark:text-[#8B95A8] shrink-0 opacity-60 cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-opacity animate-camera-coach"
             aria-label="Pievienot attēlu"
             title="Uzņem fotoattēlu vai augšupielādē uzdevumu"
           >

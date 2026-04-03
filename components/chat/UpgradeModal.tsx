@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/context/auth-context";
 import { getExamCountdown } from "@/lib/exams/latvianExams";
 
 interface UpgradeModalProps {
   onClose: () => void;
-  /** Optional grade — when 9 or 12, shows exam-specific copy instead of the generic header */
+  /** Optional grade — when 9 or 12, shows exam countdown badge */
   grade?: number | null;
 }
 
@@ -75,11 +75,12 @@ function FeatureText({ text }: { text: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Shared plan card — used in both mobile carousel and desktop grid
+// Plan card
 // ---------------------------------------------------------------------------
 
 interface PlanCardProps {
   plan: (typeof PLANS)[number];
+  isCurrentPlan: boolean;
   consentPro: boolean;
   onConsentPro: (v: boolean) => void;
   consentPremium: boolean;
@@ -88,14 +89,11 @@ interface PlanCardProps {
   onCheckout: (plan: "pro" | "premium") => void;
   onClose: () => void;
   examCountdown: ReturnType<typeof getExamCountdown>;
-  /** Ref callback — used by the carousel for scrollIntoView / IntersectionObserver */
-  cardRef?: (el: HTMLDivElement | null) => void;
-  /** Extra Tailwind classes applied to the outer card wrapper */
-  wrapperClass?: string;
 }
 
 function PlanCard({
   plan,
+  isCurrentPlan,
   consentPro,
   onConsentPro,
   consentPremium,
@@ -104,17 +102,14 @@ function PlanCard({
   onCheckout,
   onClose,
   examCountdown,
-  cardRef,
-  wrapperClass = "",
 }: PlanCardProps) {
   return (
     <div
-      ref={cardRef}
-      className={`relative flex flex-col rounded-2xl border p-6 transition-all duration-300 ${
+      className={`relative flex flex-col rounded-2xl border p-6 lg:p-8 transition-all duration-300 ${
         plan.popular
           ? "border-transparent bg-gradient-to-b from-[#2563EB]/15 to-transparent dark:from-[#2563EB]/25 ring-2 ring-[#2563EB]/40 shadow-xl shadow-[#2563EB]/20 dark:shadow-[#2563EB]/20"
           : "border-[#D1D5DB] dark:border-white/7 bg-white dark:bg-[#1A2033]/50"
-      } ${wrapperClass}`}
+      }`}
     >
       {plan.popular && (
         <div className="absolute -top-3 left-0 right-0 flex justify-center">
@@ -127,10 +122,15 @@ function PlanCard({
         </div>
       )}
 
+      {/* Plan name */}
       <h3 className={`text-lg font-semibold ${plan.popular ? "text-[#2563EB] dark:text-[#4F8EF7]" : "text-[#111827] dark:text-[#E8ECF4]"}`}>
         {plan.name}
       </h3>
+      {plan.id === "free" && isCurrentPlan && (
+        <p className="mt-0.5 text-xs text-[#6B7280] dark:text-[#8B95A8]">Tavs pašreizējais plāns</p>
+      )}
 
+      {/* Price */}
       <div className="mt-3 flex items-baseline gap-1">
         <span className="text-3xl font-extrabold tracking-tight text-[#111827] dark:text-[#E8ECF4]">
           {plan.price}
@@ -140,7 +140,55 @@ function PlanCard({
         </span>
       </div>
 
-      <ul className="mt-5 flex-1 space-y-3">
+      {/* CTA — directly below price */}
+      {plan.id === "free" && (
+        <button
+          onClick={isCurrentPlan ? undefined : onClose}
+          disabled={isCurrentPlan}
+          className={`mt-4 w-full rounded-xl py-3 text-sm font-bold transition-all ${
+            isCurrentPlan
+              ? "bg-transparent border border-[#374151] text-[#6B7280] cursor-not-allowed opacity-60"
+              : "bg-transparent border border-[#374151] text-[#6B7280] hover:border-[#6B7280] hover:bg-[#F1F5F9] dark:hover:bg-[#1A2033]"
+          }`}
+        >
+          {isCurrentPlan ? "Tavs pašreizējais plāns" : "Sākt bez maksas"}
+        </button>
+      )}
+      {plan.id === "pro" && (
+        <button
+          onClick={() => onCheckout("pro")}
+          disabled={loading !== null || !consentPro}
+          className="mt-4 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#2563EB] text-white hover:bg-blue-700 shadow-lg shadow-[#2563EB]/30 hover:shadow-xl hover:-translate-y-0.5"
+        >
+          {loading === "pro" ? (
+            <>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              Notiek pāradresēšana...
+            </>
+          ) : (
+            "Sākt Pro — €5.99/mēn."
+          )}
+        </button>
+      )}
+      {plan.id === "premium" && (
+        <button
+          onClick={() => onCheckout("premium")}
+          disabled={loading !== null || !consentPremium}
+          className="mt-4 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#F59E0B] text-[#111827] hover:bg-[#F59E0B]/90 shadow-md hover:shadow-lg hover:-translate-y-0.5"
+        >
+          {loading === "premium" ? (
+            <>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#111827]/30 border-t-[#111827]" />
+              Notiek pāradresēšana...
+            </>
+          ) : (
+            "Sākt Eksāmenu Plānu — €14.99/mēn."
+          )}
+        </button>
+      )}
+
+      {/* Feature list — below CTA */}
+      <ul className="mt-4 space-y-3">
         {plan.features.map((feature) => (
           <li
             key={feature}
@@ -162,22 +210,11 @@ function PlanCard({
         ))}
       </ul>
 
-      {/* Per-card CTA — mt-auto pins this block to the bottom of the flex column */}
-      {plan.id === "free" && (
-        <div className="mt-auto">
-          <button
-            onClick={onClose}
-            className="mt-7 w-full rounded-xl py-3 text-sm font-bold transition-all bg-transparent text-[#6B7280] dark:text-[#8B95A8] border border-[#374151] hover:border-[#6B7280] hover:bg-[#F1F5F9] dark:hover:bg-[#1A2033]"
-          >
-            Sākt bez maksas
-          </button>
-        </div>
-      )}
+      {/* Consent + secondary CTA — pinned to bottom for paid plans */}
       {plan.id === "pro" && (
-        <div className="mt-auto">
-          {/* EU Consumer Rights Directive Art. 16(m) inline consent */}
-          <label className="mt-5 flex items-start gap-2.5 cursor-pointer">
-            <div className="relative mt-0.5 shrink-0">
+        <div className="mt-auto pt-5">
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <div className={`relative mt-0.5 shrink-0 ${!consentPro ? "animate-checkbox-nudge" : ""}`}>
               <input
                 type="checkbox"
                 checked={consentPro}
@@ -196,27 +233,12 @@ function PlanCard({
               Piekrītu tūlītējai piekļuvei un saprotu, ka zaudēju 14 dienu atteikuma tiesības.
             </span>
           </label>
-          <button
-            onClick={() => onCheckout("pro")}
-            disabled={loading !== null || !consentPro}
-            className="mt-3 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#2563EB] text-white hover:bg-blue-700 shadow-lg shadow-[#2563EB]/30 hover:shadow-xl hover:-translate-y-0.5"
-          >
-            {loading === "pro" ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                Notiek pāradresēšana...
-              </>
-            ) : (
-              "Sākt Pro — €5.99/mēn."
-            )}
-          </button>
         </div>
       )}
       {plan.id === "premium" && (
-        <div className="mt-auto">
-          {/* EU Consumer Rights Directive Art. 16(m) inline consent */}
-          <label className="mt-5 flex items-start gap-2.5 cursor-pointer">
-            <div className="relative mt-0.5 shrink-0">
+        <div className="mt-auto pt-5">
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <div className={`relative mt-0.5 shrink-0 ${!consentPremium ? "animate-checkbox-nudge" : ""}`}>
               <input
                 type="checkbox"
                 checked={consentPremium}
@@ -235,20 +257,6 @@ function PlanCard({
               Piekrītu tūlītējai piekļuvei un saprotu, ka zaudēju 14 dienu atteikuma tiesības.
             </span>
           </label>
-          <button
-            onClick={() => onCheckout("premium")}
-            disabled={loading !== null || !consentPremium}
-            className="mt-3 w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#F59E0B] text-[#111827] hover:bg-[#F59E0B]/90 shadow-md hover:shadow-lg hover:-translate-y-0.5"
-          >
-            {loading === "premium" ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#111827]/30 border-t-[#111827]" />
-                Notiek pāradresēšana...
-              </>
-            ) : (
-              "Sākt Eksāmenu Plānu — €14.99/mēn."
-            )}
-          </button>
           {examCountdown !== null && (
             <p className="mt-2 text-center text-xs text-[#6B7280] dark:text-[#8B95A8]">
               Līdz eksāmenam: {examCountdown.daysRemaining} dienas
@@ -261,53 +269,22 @@ function PlanCard({
 }
 
 // ---------------------------------------------------------------------------
-// Modal
+// Full-screen pricing page
 // ---------------------------------------------------------------------------
 
 export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
-  const { getIdToken } = useAuth();
+  const { getIdToken, profile } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
 
   // EU distance selling — Consumer Rights Directive Art. 16(m).
   const [consentPro, setConsentPro] = useState(false);
   const [consentPremium, setConsentPremium] = useState(false);
 
-  // Mobile carousel state
-  const [activeCard, setActiveCard] = useState(1); // default: Pro (index 1)
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-
   const examCountdown = grade != null ? getExamCountdown(grade) : null;
   const isExamGrade = examCountdown !== null;
 
-  // Scroll Pro card into view immediately on mount (no animation flash)
-  useEffect(() => {
-    const proCard = cardRefs.current[1];
-    if (proCard) {
-      proCard.scrollIntoView({ behavior: "instant", block: "nearest", inline: "center" });
-    }
-  }, []);
-
-  // Update active dot via IntersectionObserver watching cards against the carousel viewport
-  useEffect(() => {
-    const carousel = carouselRef.current;
-    if (!carousel) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const index = cardRefs.current.findIndex((r) => r === entry.target);
-            if (index !== -1) setActiveCard(index);
-          }
-        }
-      },
-      { threshold: 0.6, root: carousel },
-    );
-    cardRefs.current.forEach((ref) => {
-      if (ref) observer.observe(ref);
-    });
-    return () => observer.disconnect();
-  }, []);
+  // Detect free tier: no active paid subscription
+  const isFreeTier = !profile?.tier || profile.tier === "free";
 
   const handleCheckout = async (plan: "pro" | "premium") => {
     const consent = plan === "pro" ? consentPro : consentPremium;
@@ -342,7 +319,6 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
     }
   };
 
-  // Shared props passed to every PlanCard instance
   const sharedCardProps = {
     consentPro,
     onConsentPro: setConsentPro,
@@ -355,113 +331,61 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 md:flex md:items-center md:justify-center">
-      {/* Backdrop — desktop only; on mobile the modal covers the full screen */}
-      <div
-        className="absolute inset-0 hidden md:block bg-black/60 backdrop-blur-sm"
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#F9FAFB] dark:bg-[#0F1117]">
+      {/* Close button */}
+      <button
         onClick={onClose}
-      />
-
-      {/* Modal — full-screen on mobile, centred card on md+ */}
-      <div className="relative w-full h-full overflow-y-auto md:h-auto md:max-w-3xl md:mx-4 animate-fade-up rounded-none md:rounded-2xl border-0 md:border border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB] dark:bg-[#0F1117] pt-6 pb-24 md:p-8">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1.5 text-[#6B7280] dark:text-[#8B95A8] transition-colors hover:bg-[#F1F5F9] dark:hover:bg-[#1A2033] hover:text-[#111827] dark:hover:text-[#E8ECF4]"
-          aria-label="Aizvērt"
+        className="fixed right-4 top-4 z-10 rounded-lg p-1.5 text-[#6B7280] dark:text-[#8B95A8] transition-colors hover:bg-[#F1F5F9] dark:hover:bg-[#1A2033] hover:text-[#111827] dark:hover:text-[#E8ECF4]"
+        aria-label="Aizvērt"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          className="h-5 w-5"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="h-5 w-5"
-          >
-            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-          </svg>
-        </button>
+          <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+        </svg>
+      </button>
 
+      {/* Centred content column */}
+      <div className="flex min-h-full flex-col items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-6 px-6 text-center md:px-0">
-          {isExamGrade ? (
-            <>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-[#F59E0B] to-[#d97706] bg-clip-text text-transparent sm:text-3xl">
-                Sagatavojies eksāmenam bez stresa
-              </h2>
-              <p className="mt-2 text-base text-[#6B7280] dark:text-[#8B95A8]">
-                Tev ir{" "}
-                <span className="font-semibold text-[#111827] dark:text-[#E8ECF4]">
-                  {examCountdown.daysRemaining}
-                </span>{" "}
-                dienas līdz centralizētajiem eksāmeniem. Eksāmenu Plāns ietver
-                eksāmenu simulācijas, soli pa solim risinājumus un neierobežotas sarunas.
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2563EB] to-[#10B981] bg-clip-text text-transparent sm:text-3xl">
-                Uzlabo savu plānu
-              </h2>
-              <p className="mt-2 text-base text-[#6B7280] dark:text-[#8B95A8]">
-                Izvēlies sev piemērotāko SkolnieksAI plānu
-              </p>
-            </>
+        <div className="mb-10 text-center">
+          {isExamGrade && (
+            <span className="mb-4 inline-block rounded-full bg-[#F59E0B]/15 px-3 py-1 text-xs font-semibold text-[#F59E0B]">
+              Eksāmeni pēc {examCountdown.daysRemaining} dienām
+            </span>
           )}
+          <h1 className="text-3xl font-bold text-[#111827] dark:text-[#E8ECF4] sm:text-4xl">
+            Izvēlies savu plānu
+          </h1>
+          <p className="mt-2 text-sm text-[#6B7280] dark:text-[#8B95A8]">
+            Atcelšana jebkurā laikā.
+          </p>
         </div>
 
-        {/* ── MOBILE: snap carousel ── */}
-        <div
-          ref={carouselRef}
-          className="md:hidden flex overflow-x-auto snap-x snap-mandatory gap-4 px-4 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {PLANS.map((plan, i) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              {...sharedCardProps}
-              cardRef={(el) => { cardRefs.current[i] = el; }}
-              wrapperClass="snap-center shrink-0 w-[85vw]"
-            />
-          ))}
-        </div>
-
-        {/* Dot indicators (mobile only) */}
-        <div className="md:hidden flex justify-center gap-2 mt-3">
-          {PLANS.map((_, i) => (
-            <button
-              key={i}
-              onClick={() =>
-                cardRefs.current[i]?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "nearest",
-                  inline: "center",
-                })
-              }
-              aria-label={`Plāns ${i + 1}`}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                activeCard === i
-                  ? "w-5 bg-[#2563EB]"
-                  : "w-2 bg-[#D1D5DB] dark:bg-[#374151]"
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* ── DESKTOP: 3-column grid ── */}
-        <div className="hidden md:grid gap-4 grid-cols-3 items-start relative z-10 pt-3">
-          {PLANS.map((plan) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              {...sharedCardProps}
-              wrapperClass={plan.popular ? "z-20" : ""}
-            />
-          ))}
+        {/* Cards — single column on mobile, 3 columns on md+ */}
+        <div className="w-full max-w-5xl">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {PLANS.map((plan) => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                isCurrentPlan={plan.id === "free" && isFreeTier}
+                {...sharedCardProps}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Footer */}
-        <p className="mt-5 px-6 text-center text-xs text-[#6B7280] dark:text-[#8B95A8] leading-relaxed md:px-0">
+        <p className="mt-10 pb-8 text-center text-xs text-[#6B7280] dark:text-[#8B95A8] leading-relaxed">
           Droši maksājumi ar Stripe. Atcelšana jebkurā laikā.{" "}
-          <Link href="/terms" className="underline hover:text-text-secondary ml-1">Lietošanas noteikumi</Link>.
+          <Link href="/terms" className="underline hover:text-[#374151] dark:hover:text-[#8B95A8] ml-1">
+            Lietošanas noteikumi
+          </Link>
+          .
         </p>
       </div>
     </div>
