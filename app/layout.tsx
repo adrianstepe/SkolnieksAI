@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, JetBrains_Mono, Sora } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import { SettingsProvider } from "@/lib/context/settings-context";
@@ -44,11 +45,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Reading the nonce here opts the page into dynamic rendering and signals
+  // Next.js to apply this nonce to all inline <script> tags it generates
+  // (hydration, RSC payload, etc.), satisfying the CSP set in middleware.ts.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="lv"
