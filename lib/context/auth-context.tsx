@@ -81,10 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        await fetchProfile(firebaseUser);
+        // Fetch profile asynchronously without blocking the initial render
+        fetchProfile(firebaseUser).catch(console.error);
       } else {
         setProfile(null);
         setUsage(null);
