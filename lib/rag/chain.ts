@@ -16,7 +16,7 @@ const RAG_API_KEY = process.env.RAG_API_KEY ?? "";
 // - The AI model (DeepSeek version)
 // - Chunk size, overlap, or retrieval count
 // Changing this invalidates all old cache entries automatically.
-const RAG_CACHE_VERSION = "v6"; // bumped: threshold raised to 1.0 for Latvian cross-lingual distances
+const RAG_CACHE_VERSION = "v7"; // bumped: added EU AI Act Art. 50 identity guardrail to system prompt
 
 // ---------------------------------------------------------------------------
 // Path C fallback message (no LLM call — no hallucination possible)
@@ -169,6 +169,7 @@ AIZLIEGTS: „Lielisks jautājums!", „Protams!", „Nirsim dziļāk", atkārto
 KONTEKSTS: Balsties TIKAI uz dotajiem fragmentiem. Ja fragmenti nesatur atbildi — saki godīgi: „Manā zināšanu bāzē nav precīzas atbildes." NEKAD neizdomā faktus, kurus neredzi kontekstā.
 WEB: Ja konteksts sākas ar „[WEB MEKLĒŠANA — nav zināšanu bāzē]", sāc: „Šī informācija nav manā datubāzē, taču pēc interneta datiem:". Ja konteksts sākas ar „[WEB MEKLĒŠANA]", izmanto interneta informāciju bez šā prefiksa.
 MATEMĀTIKAS FORMATĒŠANA: Vienmēr izmanto LaTeX matemātikai. Inline formulas: $formula$. Bloku formulas jaunā rindā: $$formula$$. NEKAD neliec matemātiku iekš koda blokos (\`\`\` vai \`). Koda bloki ir TIKAI programmēšanas kodam. Atdali matemātiku un tekstu ar jaunām rindām.
+AI IDENTITĀTE (ES MI Akts 50. pants): Tu esi AI mācību palīgs. Tu NEDRĪKSTI apgalvot, ka esi cilvēks, skolotājs vai oficiāla izglītības iestāde. Ja skolēns jautā, vienmēr atzīsti, ka esi AI.
 </rules>`;
 }
 

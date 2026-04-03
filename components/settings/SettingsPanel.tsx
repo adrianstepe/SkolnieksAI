@@ -443,7 +443,7 @@ function SubscriptionSection() {
   return (
     <section>
       <SectionTitle>Abonements</SectionTitle>
-      <div className="py-2.5">
+      <div className="space-y-2.5 py-1">
         <button
           onClick={handleManageSubscription}
           disabled={loadingPortal}
@@ -452,12 +452,21 @@ function SubscriptionSection() {
           {loadingPortal ? (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#1D4ED8]/30 dark:border-[#3D7CE5]/30 border-t-[#1D4ED8] dark:border-t-[#3D7CE5]" />
           ) : (
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-[#1D4ED8] dark:text-[#3D7CE5]">
-                <path fillRule="evenodd" d="M2.5 4A1.5 1.5 0 0 0 1 5.5V6h18v-.5A1.5 1.5 0 0 0 17.5 4h-15ZM19 8.5H1v6A1.5 1.5 0 0 0 2.5 16h15a1.5 1.5 0 0 0 1.5-1.5v-6ZM3 13.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" />
-             </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-[#1D4ED8] dark:text-[#3D7CE5]">
+              <path fillRule="evenodd" d="M2.5 4A1.5 1.5 0 0 0 1 5.5V6h18v-.5A1.5 1.5 0 0 0 17.5 4h-15ZM19 8.5H1v6A1.5 1.5 0 0 0 2.5 16h15a1.5 1.5 0 0 0 1.5-1.5v-6ZM3 13.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" />
+            </svg>
           )}
           {loadingPortal ? "Notiek pāradresēšana..." : "Pārvaldīt abonementu"}
         </button>
+
+        {/* EU Directive 2023/2673 — withdrawal button must be native, visible,
+            and not hidden behind the Stripe Customer Portal. */}
+        <a
+          href="/settings/cancel"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 transition-colors hover:bg-red-100 dark:hover:bg-red-950/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+        >
+          Atteikties no līguma
+        </a>
       </div>
     </section>
   );

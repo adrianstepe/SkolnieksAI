@@ -93,6 +93,48 @@ Operating as a sole trader / individual. Before first B2B (School Pro) deal:
 - Latvian consumer protection: 14-day cooling-off period for online purchases.
 - Store Stripe customer ID and subscription ID for audit trail.
 
+## EU Directive 2023/2673 — Standardised Cancellation Flow
+
+Implemented as required. The flow is:
+
+1. A clearly visible **"Atteikties no līguma"** (Withdraw from contract) button is present in Settings → Abonements for all paid-tier users.
+2. Route: `/settings/cancel` — accessible without re-authentication for logged-in users.
+3. **Step 1**: Contract summary (plan name, price, user email) + "Atteikties no līguma" button.
+4. **Step 2**: Confirmation showing user email + "Apstiprināt atteikumu" button.
+5. On confirm: subscription cancelled immediately via Stripe (`subscriptions.cancel`), user downgraded to `free` in Firestore, confirmation email sent via Resend with cancellation timestamp.
+
+No retention prompts, discount offers, or chatbot flows are present. The button is native in the app UI — not hidden behind the Stripe Customer Portal.
+
+Implementation files:
+- `app/(dashboard)/settings/cancel/page.tsx` — 2-step cancellation UI
+- `app/api/stripe/cancel/route.ts` — cancellation API endpoint
+- `lib/email/resend.ts` — `sendCancellationConfirmationEmail`
+
+## Latvian Tax & Corporate Compliance (2026)
+
+### SIA Registration
+- SIA Stepe Digital — micro-capital SIA (€1–€2,799 share capital)
+- Micro-capital constraints: max 5 natural person founders, board = shareholders only, no external directors
+- Register before first B2B contract or live Stripe payments (~€280)
+
+### Corporate Income Tax (2026 Reforms)
+- Standard regime: 0% on retained earnings, 20% CIT on distributed dividends
+- Alternative regime (new 2026): 15% CIT on distributed profits + 6% PIT withheld from shareholders. Advantageous for foreign investors (6% PIT usable as international tax credit). Only available for SIAs wholly owned by natural persons.
+- Micro-Enterprise Tax (MUN): No longer available to SIAs as of 2026. Reserved for sole traders only.
+- Recommendation for Stepe Digital: Use the standard 20% regime initially. Reinvest all earnings. Switch to 15%+6% alternative only if taking on foreign investors.
+
+### VAT
+- Domestic VAT registration mandatory when turnover exceeds €50,000/year
+- EU cross-border digital services (OSS): If total B2C revenue from other EU states < €10,000/year → apply Latvian VAT rate. Above €10,000 → apply consumer's country VAT rate, declare via OSS portal on vid.gov.lv.
+- Action: Register for OSS with VID before Baltic expansion.
+
+### Immediate Actions
+1. Register SIA before payments go live
+2. Open business bank account
+3. Register with VID (State Revenue Service)
+4. VAT registration not needed until €50k turnover
+5. Keep all dividend distributions at €0 initially (0% tax on retained earnings)
+
 ## Checklist Before Launch
 
 - [ ] Privacy policy page (Latvian + English)

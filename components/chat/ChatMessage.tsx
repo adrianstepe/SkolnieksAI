@@ -243,6 +243,17 @@ export function ChatMessage({ message }: { message: Message }) {
           )}
         </div>
 
+        {/* EU AI Act — Limited Risk transparency obligation.
+            Every AI-generated response must be labelled as such. */}
+        {!isUser && (
+          <p
+            className="px-1 text-[10px] text-[#9CA3AF] dark:text-[#4B5563]"
+            title="Šī atbilde ir ģenerēta ar mākslīgo intelektu"
+          >
+            AI ģenerēta atbilde
+          </p>
+        )}
+
         {/* Source citation — design studio style */}
         {!isUser && message.sources && message.sources.length > 0 && (
           <div className="flex flex-wrap gap-1.5">

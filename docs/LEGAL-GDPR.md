@@ -13,12 +13,64 @@
 - Users aged 13–17: can consent themselves
 - Users under 13: **parental consent required** — must implement consent flow
 
-### Under-13 Consent Flow
-1. During signup, ask date of birth
-2. If under 13: block account creation, show message:
-   "Lai izmantotu SkolnieksAI, tev ir nepieciešama vecāku atļauja. Lūdzu, palūdz vecākiem reģistrēties tavā vārdā."
-3. Parent creates account, links child profile
-4. Store `parentConsent: true` + parent email in Firestore
+### Under-13 Consent Flow — VPC (Verifiable Parental Consent)
+
+Self-declaration (checkbox or parent-email-only) does not meet the GDPR "verifiable" standard
+under DVI enforcement guidance. SkolnieksAI implements micro-payment verification:
+
+#### Implementation
+
+1. **Child signup** (`app/(auth)/signup/page.tsx`)
+   - Birth year collected first. If `age < 13`, the account creation form is replaced by
+     the parental consent form.
+   - Child provides their name, email, and parent email. Password will be set later.
+   - `POST /api/auth/parental-consent` stores a **pending** consent record in Firestore
+     (`parentalConsents/{consentId}`) and emails the parent.
+
+2. **Firestore schema** — `parentalConsents/{consentId}`
+   ```
+   childName:             string
+   childEmail:            string
+   parentEmail:           string
+   birthYear:             number
+   inviteCode?:           string
+   status:                "pending" | "verified"
+   createdAt:             Timestamp
+   verifiedAt?:           Timestamp          (set on success)
+   firebaseUid?:          string             (set on success)
+   stripePaymentIntentId?: string            (set on success, audit trail)
+   ```
+
+3. **Parent verification page** (`app/parental-verify?token={consentId}`)
+   - Explains the €0.01 verification to the parent.
+   - Calls `POST /api/auth/parental-consent/create-intent` → Stripe PaymentIntent for €0.01.
+   - Stripe Elements card form confirms the payment (handles SCA/3DS).
+   - On success calls `POST /api/auth/parental-consent/verify`.
+
+4. **Verify endpoint** (`app/api/auth/parental-consent/verify/route.ts`)
+   - Retrieves the Stripe PaymentIntent and asserts `status === "succeeded"`.
+   - Cross-checks `pi.metadata.consentId` to prevent replay attacks.
+   - Creates Firebase Auth user (no password — account is passwordless until child sets one).
+   - Creates Firestore `users/{uid}` with `parentConsent: true`, `parentEmail`, `stripePaymentIntentId`.
+   - Marks `parentalConsents/{consentId}` as `verified`.
+   - **Immediately refunds** the €0.01 via `stripe.refunds.create`.
+   - Sends password-setup email to child via `adminAuth.generatePasswordResetLink` + Resend.
+
+#### Why €0.01 micro-payment satisfies "verifiable"
+- Requires a valid payment card in the parent's name — the same standard banks apply.
+- Cards are age-gated (you cannot legally hold a debit/credit card under ~16 in Latvia).
+- The charge + immediate refund creates an auditable record without ongoing cost.
+- This approach is used by several EU ed-tech platforms pending eID mandate enforcement.
+
+#### Alternative path — eParaksts / Smart-ID (post-launch TODO)
+Latvia's national eID systems (eParaksts Mobile, Smart-ID) would provide stronger identity
+assurance. Integration requires registration with a trust service provider (e.g. Dokobit,
+Smart-ID Enterprise). A `// TODO` comment is left in the verify route for this.
+
+#### Audit trail
+- `stripePaymentIntentId` stored in both `users/{uid}` and `parentalConsents/{consentId}`
+- Refund record visible in Stripe Dashboard
+- `verifiedAt` timestamp for compliance reporting
 
 ### Data We Collect
 | Data               | Purpose                    | Legal Basis     |

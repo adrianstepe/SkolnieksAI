@@ -178,8 +178,10 @@ export default function SignupPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           childName,
+          childEmail: email,
           parentEmail,
           birthYear: birthYear as number,
+          ...(inviteCode ? { inviteCode } : {}),
         }),
       });
 
@@ -215,7 +217,7 @@ export default function SignupPage() {
           </div>
           <h1 className="text-lg font-semibold text-text-primary">E-pasts nosūtīts!</h1>
           <p className="text-sm text-text-secondary">
-            Lūdzu, lūdz vecākus apstiprināt reģistrāciju. Kad vecāks apstiprinās, varēsi pieteikties.
+            Lūdzu, lūdz vecākus atvērt e-pastu un apstiprināt reģistrāciju. Kad vecāks apstiprinās, tu saņemsi e-pastu ar paroles iestatīšanas saiti un varēsi pieteikties.
           </p>
           <Link
             href="/login"

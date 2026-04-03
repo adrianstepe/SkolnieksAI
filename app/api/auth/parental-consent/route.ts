@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
+import { adminDb } from "@/lib/firebase/admin";
+import { FieldValue } from "firebase-admin/firestore";
 
 const ParentalConsentSchema = z.object({
   childName: z.string().min(1).max(100),
+  childEmail: z.string().email(),
   parentEmail: z.string().email(),
   birthYear: z.number().int().min(2006).max(2026),
+  inviteCode: z.string().max(20).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -24,11 +28,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { childName, parentEmail, birthYear } = parsed.data;
+  const { childName, childEmail, parentEmail, birthYear, inviteCode } = parsed.data;
 
-  // Stub confirmation URL — replace PLACEHOLDER with a signed token when the
-  // full parental-consent confirmation flow is implemented.
-  const confirmUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://skolnieks.ai"}/api/auth/parental-consent/confirm?token=PLACEHOLDER`;
+  // Create a pending consent record in Firestore. The consentId is used as a
+  // token in the parent verification link — no separate signed token needed.
+  const consentRef = adminDb.collection("parentalConsents").doc();
+  const consentId = consentRef.id;
+
+  await consentRef.set({
+    childName,
+    childEmail,
+    parentEmail,
+    birthYear,
+    ...(inviteCode ? { inviteCode } : {}),
+    status: "pending",
+    createdAt: FieldValue.serverTimestamp(),
+  });
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://skolnieks.ai";
+  const verifyUrl = `${baseUrl}/parental-verify?token=${consentId}`;
 
   const emailSubject = "Vecāku atļauja — SkolnieksAI reģistrācija";
 
@@ -47,7 +65,9 @@ Datu aizsardzība:
 • Atbilstoši Latvijas PDPL un ES GDPR prasībām
 
 Lai apstiprinātu jūsu bērna reģistrāciju, noklikšķiniet uz šīs saites:
-${confirmUrl}
+${verifyUrl}
+
+Verifikācijai tiek izmantots €0.01 maksājums, kas tiek nekavējoties atmaksāts. Tas ļauj mums pārbaudīt, ka piekrišanu sniedz īsts pieaugušais (GDPR 8. panta prasība).
 
 Ja neesat pieprasījuši šo reģistrāciju, vienkārši ignorējiet šo e-pastu.
 
@@ -72,6 +92,8 @@ https://skolnieks.ai
 
   if (error) {
     console.error("[parental-consent] Failed to send email to", parentEmail, error);
+    // Clean up the orphaned consent record
+    await consentRef.delete();
     return NextResponse.json({ error: "email_failed" }, { status: 502 });
   }
 

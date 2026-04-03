@@ -37,6 +37,11 @@ export const metadata: Metadata = {
   icons: {
     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111827'/><text y='72' x='50' text-anchor='middle' font-size='65' font-family='sans-serif' fill='white' font-weight='700'>S</text><circle cx='68' cy='32' r='10' fill='%232563EB'/></svg>",
   },
+  // EU AI Act Art. 50 — machine-readable disclosure of AI-generated content
+  other: {
+    "ai-generated-content":
+      "This platform uses AI to generate educational responses. AI model providers: DeepSeek, Anthropic Claude.",
+  },
 };
 
 export default function RootLayout({

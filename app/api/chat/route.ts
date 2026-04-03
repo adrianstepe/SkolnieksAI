@@ -319,6 +319,9 @@ export async function POST(request: NextRequest) {
             const doneData = JSON.stringify({
               type: "done",
               tokensUsed: event.usage.total_tokens,
+              // EU AI Act Art. 50 — machine-readable transparency field
+              ai_generated: true,
+              ai_model: effectiveModel === "claude" ? "claude-sonnet-4.6" : "deepseek-v3",
             });
             controller.enqueue(
               encoder.encode(`data: ${doneData}\n\n`),
