@@ -83,7 +83,7 @@ function buildCspHeader(nonce: string): string {
       "https://*.skolnieksai.lv",
       "https://skolnieksai.firebaseapp.com",
     ].join(" "),
-    "frame-src https://js.stripe.com https://skolnieksai.firebaseapp.com",
+    "frame-src 'self' https://js.stripe.com https://skolnieksai.firebaseapp.com",
     "object-src 'none'",
     "base-uri 'self'",
   ].join("; ");
@@ -93,7 +93,7 @@ function buildCspHeader(nonce: string): string {
 function applySecurityHeaders(response: NextResponse, nonce: string): void {
   response.headers.set("Content-Security-Policy", buildCspHeader(nonce));
   response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Frame-Options", "SAMEORIGIN");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set(
     "Permissions-Policy",
