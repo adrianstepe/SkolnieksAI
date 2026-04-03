@@ -116,7 +116,7 @@ function PlanCard({
     <div
       className={`relative flex flex-col rounded-2xl p-6 lg:p-8 transition-all duration-300 ${
         plan.popular
-          ? "border-2 border-[#2563EB] bg-[#EFF6FF] shadow-xl shadow-[#2563EB]/20 dark:border-[#2563EB] dark:bg-[#1e3a5f] dark:ring-2 dark:ring-[#2563EB]/60 dark:shadow-[#2563EB]/20"
+          ? "border-2 border-[#2563EB] bg-[#EFF6FF] shadow-xl shadow-[#2563EB]/20 dark:border-[#2563EB] dark:bg-[#162454] dark:ring-2 dark:ring-[#2563EB]/60 dark:shadow-[#2563EB]/20"
           : "border border-[#E5E7EB] shadow-md bg-white dark:border-white/7 dark:bg-[#1A2033]/50"
       }`}
     >
@@ -219,7 +219,7 @@ function PlanCard({
         {plan.features.map((feature) => (
           <li
             key={feature}
-            className="flex items-start gap-2.5 text-sm text-[#6B7280] dark:text-[#8B95A8] font-medium"
+            className={`flex items-start gap-2.5 text-sm font-medium text-[#6B7280] ${plan.popular ? "dark:text-[#E8ECF4]" : "dark:text-[#8B95A8]"}`}
           >
             <svg
               className="mt-0.5 h-4 w-4 shrink-0 text-[#2563EB] dark:text-[#4F8EF7]"
