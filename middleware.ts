@@ -68,7 +68,7 @@ function extractUidFromAuthHeader(request: NextRequest): string | null {
 function buildCspHeader(nonce: string): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' https://js.stripe.com`,
+    `script-src 'self' 'nonce-${nonce}' https://js.stripe.com https://apis.google.com https://www.gstatic.com`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https://*.googleapis.com",
     "font-src 'self'",
@@ -81,8 +81,9 @@ function buildCspHeader(nonce: string): string {
       "https://firestore.googleapis.com",
       "https://js.stripe.com",
       "https://*.skolnieksai.lv",
+      "https://skolnieksai.firebaseapp.com",
     ].join(" "),
-    "frame-src https://js.stripe.com",
+    "frame-src https://js.stripe.com https://skolnieksai.firebaseapp.com",
     "object-src 'none'",
     "base-uri 'self'",
   ].join("; ");
