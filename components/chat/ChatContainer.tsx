@@ -62,6 +62,13 @@ export function ChatContainer() {
   const [systemError, setSystemError] = useState<SystemError>(null);
   const [detectedSubjectLabel, setDetectedSubjectLabel] = useState<string | null>(null);
   const [pendingPrompt, setPendingPrompt] = useState<string>("");
+  const [displayedPrompts, setDisplayedPrompts] = useState<StarterPrompt[]>(() =>
+    pickPrompts(settings.defaultGrade)
+  );
+  const reshufflePrompts = useCallback(
+    () => setDisplayedPrompts((prev) => pickPrompts(grade, prev)),
+    [grade],
+  );
 
   // Streak-broken modal: show once per session when a notable streak resets to 1
   const [showStreakBroken, setShowStreakBroken] = useState(false);
@@ -620,16 +627,26 @@ export function ChatContainer() {
         {activeTab === "learn" ? (
           <>
             {!hasMessages && !loadingChat ? (
-              /* Empty state: WelcomeScreen + ChatInput centered in the flex-1 area */
-              <div className="flex-1 flex flex-col items-center justify-center bg-[#F9FAFB] dark:bg-[#0B0E14] px-3 sm:px-6">
-                <div className="w-full max-w-xl mx-auto flex flex-col gap-4">
-                  <WelcomeScreen
-                    onPopulateInput={setPendingPrompt}
-                    currentGrade={grade}
-                  />
+              /* Empty state: centered greeting + floating input + chips */
+              <div className="flex-1 flex flex-col items-center justify-center bg-[#F9FAFB] dark:bg-[#0B0E14] px-4">
+                {/* Greeting */}
+                <div className="text-center space-y-2 mb-6 w-full max-w-2xl animate-fade-in">
+                  <div className="mb-4 w-fit mx-auto">
+                    <LogoWordmark size="lg" />
+                  </div>
+                  <h1 className="text-2xl font-semibold text-[#111827] dark:text-[#E8ECF4] tracking-tight">
+                    Sveiki! Ko šodien mācāmies?
+                  </h1>
+                  <p className="text-sm text-[#6B7280] dark:text-[#8B95A8] max-w-sm mx-auto">
+                    Izvēlies tēmu vai ieraksti savu jautājumu zemāk
+                  </p>
+                </div>
+
+                {/* Floating input */}
+                <div className="w-full max-w-2xl animate-slide-up">
                   {systemError && (
                     <div
-                      className={`px-4 py-3 rounded-xl border shrink-0 ${
+                      className={`mb-3 px-4 py-3 rounded-xl border shrink-0 ${
                         systemError.type === "general"
                           ? "bg-red-500/10 border-red-500/20"
                           : "bg-warning/10 border-warning/20"
@@ -685,7 +702,38 @@ export function ChatContainer() {
                     onStop={handleStop}
                     pendingPrompt={pendingPrompt}
                     onPromptConsumed={() => setPendingPrompt("")}
+                    floating
                   />
+                </div>
+
+                {/* Starter prompt chips */}
+                <div className="flex flex-row gap-2 flex-wrap justify-center mt-3 w-full max-w-2xl">
+                  {displayedPrompts.map((prompt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPendingPrompt(prompt.text)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#151926] text-sm text-[#374151] dark:text-[#C9D1E0] hover:border-[#2563EB] dark:hover:border-[#4F8EF7] hover:text-[#2563EB] dark:hover:text-[#4F8EF7] transition-all cursor-pointer whitespace-nowrap overflow-hidden max-w-[200px]"
+                      aria-label={prompt.text}
+                    >
+                      <span aria-hidden="true">{prompt.subjectEmoji}</span>
+                      <span className="truncate">{prompt.text}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Reshuffle */}
+                <button
+                  onClick={reshufflePrompts}
+                  className="mt-3 text-xs text-[#6B7280] dark:text-[#8B95A8] hover:text-[#2563EB] dark:hover:text-[#4F8EF7] transition-colors underline underline-offset-2"
+                >
+                  Rādīt citus jautājumus
+                </button>
+
+                {/* Trust badges */}
+                <div className="mt-4 md:mt-6 flex flex-wrap items-center justify-center gap-4 text-[11px] font-semibold text-[#6B7280] dark:text-[#8B95A8]">
+                  <span className="inline-flex items-center gap-1">📚 Balstīts uz OpenStax</span>
+                  <span className="inline-flex items-center gap-1">🔒 Privāts un drošs</span>
+                  <span className="inline-flex items-center gap-1">🇱🇻 Latviski</span>
                 </div>
               </div>
             ) : (
@@ -895,77 +943,6 @@ function pickPrompts(grade: number, exclude?: StarterPrompt[]): StarterPrompt[] 
   return [...source].sort(() => Math.random() - 0.5).slice(0, 4);
 }
 
-function WelcomeScreen({
-  onPopulateInput,
-  currentGrade,
-}: {
-  onPopulateInput: (text: string) => void;
-  currentGrade: number;
-}) {
-  const [displayed, setDisplayed] = useState<StarterPrompt[]>(() =>
-    pickPrompts(currentGrade)
-  );
-
-  const reshuffle = () => setDisplayed((prev) => pickPrompts(currentGrade, prev));
-
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-4 md:py-10 min-h-full animate-fade-in">
-      {/* Greeting */}
-      <div className="text-center space-y-2 md:space-y-3 mb-4 md:mb-8 w-full md:mt-[-8vh]">
-        <div className="mb-4 w-fit mx-auto block">
-          <LogoWordmark size="lg" />
-        </div>
-        <h1 className="text-2xl font-semibold text-[#111827] dark:text-[#E8ECF4] tracking-tight">
-          Sveiki! Ko šodien mācāmies?
-        </h1>
-        <p className="text-sm text-[#6B7280] dark:text-[#8B95A8] max-w-sm mx-auto">
-          Izvēlies tēmu vai ieraksti savu jautājumu zemāk
-        </p>
-      </div>
-
-      {/* 4 starter prompt cards — horizontal scroll on mobile (2 visible), 1×4 grid on md+ */}
-      <div className="w-full max-w-2xl animate-slide-up">
-        <div className="flex md:grid md:grid-cols-4 gap-3 overflow-x-auto snap-x snap-mandatory pb-2 md:pb-0 md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0 scrollbar-none">
-        {displayed.map((prompt, i) => (
-          <button
-            key={i}
-            onClick={() => onPopulateInput(prompt.text)}
-            className="group flex flex-col gap-2 rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-white dark:bg-[#151926] p-4 text-left transition-all min-h-[88px] shrink-0 w-[calc(50%-6px)] md:w-auto snap-start hover:border-[#2563EB] dark:hover:border-[#4F8EF7] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] dark:focus-visible:ring-[#4F8EF7]"
-            aria-label={prompt.text}
-          >
-            <div className="flex items-center gap-1.5">
-              <span className="text-base leading-none" aria-hidden="true">
-                {prompt.subjectEmoji}
-              </span>
-              <span className="text-[10px] font-semibold text-[#6B7280] dark:text-[#8B95A8] uppercase tracking-wider truncate">
-                {prompt.subject}
-              </span>
-            </div>
-            <p className="text-sm font-medium text-[#111827] dark:text-[#E8ECF4] leading-snug line-clamp-3">
-              {prompt.text}
-            </p>
-          </button>
-        ))}
-        </div>
-      </div>
-
-      {/* Reshuffle */}
-      <button
-        onClick={reshuffle}
-        className="mt-4 text-xs text-[#6B7280] dark:text-[#8B95A8] hover:text-[#2563EB] dark:hover:text-[#4F8EF7] transition-colors underline underline-offset-2"
-      >
-        Rādīt citus jautājumus
-      </button>
-
-      {/* Trust badges */}
-      <div className="mt-4 md:mt-8 flex flex-wrap items-center justify-center gap-4 text-[11px] font-semibold text-[#6B7280] dark:text-[#8B95A8]">
-        <span className="inline-flex items-center gap-1">📚 Balstīts uz OpenStax</span>
-        <span className="inline-flex items-center gap-1">🔒 Privāts un drošs</span>
-        <span className="inline-flex items-center gap-1">🇱🇻 Latviski</span>
-      </div>
-    </div>
-  );
-}
 
 function OnboardingModal({
   currentGrade,

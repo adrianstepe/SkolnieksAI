@@ -18,6 +18,7 @@ interface ChatInputProps {
   onStop?: () => void;
   pendingPrompt?: string;
   onPromptConsumed?: () => void;
+  floating?: boolean;
 }
 
 export function ChatInput({
@@ -27,6 +28,7 @@ export function ChatInput({
   onStop,
   pendingPrompt,
   onPromptConsumed,
+  floating = false,
 }: ChatInputProps) {
   const { settings } = useSettings();
   const { profile } = useAuth();
@@ -93,11 +95,8 @@ export function ChatInput({
   const isOverLimit = trimmedLength > charLimit;
   const showCounter = charCount > charLimit * 0.75;
 
-  return (
-    <div className="border-t border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB]/80 dark:bg-[#0B0E14]/80 backdrop-blur-sm px-6 py-3">
-      <div className="max-w-3xl mx-auto">
-        {/* Card-style input container */}
-        <div className="flex flex-col bg-white dark:bg-[#151926] rounded-2xl border border-[#E5E7EB] dark:border-white/7 shadow-sm dark:shadow-none px-4 py-3.5 transition-all duration-150 focus-within:border-[#2563EB]/50 dark:focus-within:border-[#4F8EF7]/50 focus-within:ring-2 focus-within:ring-[#2563EB]/15 dark:focus-within:ring-[#4F8EF7]/15 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.08)] dark:focus-within:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]">
+  const card = (
+    <div className={`flex flex-col bg-white dark:bg-[#151926] rounded-2xl border border-[#E5E7EB] dark:border-white/7 px-4 pt-3 pb-2 transition-all duration-150 focus-within:border-[#2563EB]/50 dark:focus-within:border-[#4F8EF7]/50 focus-within:ring-2 focus-within:ring-[#2563EB]/15 dark:focus-within:ring-[#4F8EF7]/15 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.08)] dark:focus-within:shadow-[0_0_0_3px_rgba(79,142,247,0.08)] ${floating ? "shadow-lg shadow-black/10 dark:shadow-black/30" : "shadow-sm dark:shadow-none"}`}>
           {/* Textarea — full width, expands from 1 row up to 200px */}
           <textarea
             ref={textareaRef}
@@ -112,7 +111,7 @@ export function ChatInput({
           />
 
           {/* Bottom toolbar */}
-          <div className="flex items-center mt-2">
+          <div className="flex items-center justify-between mt-2">
             {/* Left: camera + book */}
             <div className="flex items-center gap-1">
               <button
@@ -148,16 +147,13 @@ export function ChatInput({
               </button>
             </div>
 
-            {/* Center: char counter — only when near limit */}
-            <div className="flex-1 flex justify-center">
+            {/* Right: char counter + stop / send */}
+            <div className="flex items-center gap-2">
               {showCounter && (
                 <span className={`text-[11px] tabular-nums ${isOverLimit ? "text-red-400" : "text-[#F59E0B]"}`}>
                   {charCount} / {charLimit.toLocaleString()}
                 </span>
               )}
-            </div>
-
-            {/* Right: stop / send */}
             {isGenerating ? (
               <button
                 onClick={onStop}
@@ -185,18 +181,36 @@ export function ChatInput({
                 </svg>
               </button>
             )}
+            </div>
           </div>
         </div>
+  );
 
-        {/* Disclaimer text below input */}
-        <p className="text-[11px] text-[#6B7280] dark:text-[#8B95A8] text-center mt-2 flex items-center justify-center gap-1.5">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-3.5 w-3.5 shrink-0 rounded-[3px]">
-            <rect width="100" height="100" rx="20" fill="#111827"/>
-            <text y="72" x="50" textAnchor="middle" fontSize="65" fontFamily="sans-serif" fill="white" fontWeight="700">S</text>
-            <circle cx="68" cy="32" r="10" fill="#2563EB"/>
-          </svg>
-          Tavs AI mācību palīgs.
-        </p>
+  const disclaimer = (
+    <p className="text-[11px] text-[#6B7280] dark:text-[#8B95A8] text-center mt-2 flex items-center justify-center gap-1.5">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-3.5 w-3.5 shrink-0 rounded-[3px]">
+        <rect width="100" height="100" rx="20" fill="#111827"/>
+        <text y="72" x="50" textAnchor="middle" fontSize="65" fontFamily="sans-serif" fill="white" fontWeight="700">S</text>
+        <circle cx="68" cy="32" r="10" fill="#2563EB"/>
+      </svg>
+      Tavs AI mācību palīgs.
+    </p>
+  );
+
+  if (floating) {
+    return (
+      <div className="w-full">
+        {card}
+        {disclaimer}
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB]/80 dark:bg-[#0B0E14]/80 backdrop-blur-sm px-6 py-3">
+      <div className="max-w-3xl mx-auto">
+        {card}
+        {disclaimer}
       </div>
     </div>
   );
