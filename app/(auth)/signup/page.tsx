@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { sendEmailVerification } from "firebase/auth";
 import { useAuth } from "@/lib/context/auth-context";
 import { LogoWordmark } from "@/components/LogoWordmark";
 
@@ -118,7 +119,8 @@ export default function SignupPage() {
       const user = await signUpWithEmail(email, password);
       const token = await user.getIdToken();
       await registerInFirestore(token);
-      router.replace("/");
+      await sendEmailVerification(user);
+      router.replace("/verify-email");
     } catch (err) {
       setError(mapFirebaseError(err));
     } finally {

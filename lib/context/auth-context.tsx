@@ -14,6 +14,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
+  sendEmailVerification,
   type User,
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase/client";
@@ -51,6 +52,8 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   getIdToken: () => Promise<string | null>;
   refreshProfile: () => Promise<void>;
+  reloadUser: () => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -135,6 +138,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const reloadUser = async () => {
+    const current = auth.currentUser;
+    if (!current) return;
+    await current.reload();
+    // Force React to re-render with the updated user object (emailVerified etc.)
+    setUser({ ...current } as User);
+  };
+
+  const sendVerificationEmail = async () => {
+    const current = auth.currentUser;
+    if (!current) return;
+    await sendEmailVerification(current);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -148,6 +165,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         getIdToken,
         refreshProfile,
+        reloadUser,
+        sendVerificationEmail,
       }}
     >
       {children}

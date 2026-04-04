@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       const resetLink = await adminAuth.generatePasswordResetLink(consent.childEmail);
       const resend = new Resend(resendKey);
       await resend.emails.send({
-        from: "SkolnieksAI <noreply@send.skolnieksai.lv>",
+        from: "SkolnieksAI <noreply@skolnieksai.lv>",
         to: consent.childEmail,
         subject: "SkolnieksAI — iestati savu paroli un sāc mācīties!",
         text: `Sveiki, ${consent.childName}!

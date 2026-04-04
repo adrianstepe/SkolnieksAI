@@ -84,7 +84,7 @@ https://skolnieks.ai
 
   const resend = new Resend(key);
   const { error } = await resend.emails.send({
-    from: "SkolnieksAI <noreply@send.skolnieksai.lv>",
+    from: "SkolnieksAI <noreply@skolnieksai.lv>",
     to: parentEmail,
     subject: emailSubject,
     text: emailBody,

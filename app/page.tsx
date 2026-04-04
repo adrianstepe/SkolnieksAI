@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ChatContainer } from "@/components/chat/ChatContainer";
 import { Navbar } from "@/components/landing/Navbar";
 import { Hero } from "@/components/landing/Hero";
@@ -68,9 +70,19 @@ function LandingPage() {
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user && !user.emailVerified) {
+      router.replace("/verify-email");
+    }
+  }, [user, loading, router]);
 
   if (loading) return <LoadingSkeleton />;
+
   if (user) {
+    // Still redirecting unverified users — show skeleton briefly
+    if (!user.emailVerified) return <LoadingSkeleton />;
     return (
       <main className="h-full">
         <ChatContainer />

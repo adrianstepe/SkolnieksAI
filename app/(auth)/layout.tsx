@@ -14,7 +14,8 @@ export default function AuthLayout({
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace("/");
+      // Google users always have emailVerified=true; email users need to verify first
+      router.replace(user.emailVerified ? "/" : "/verify-email");
     }
   }, [user, loading, router]);
 

@@ -136,6 +136,20 @@ Auth pages live under `app/(auth)/` and share a centered card layout via `app/(a
 | Sign up                     | `app/(auth)/signup/page.tsx`            |
 | Forgot password             | `app/(auth)/forgot-password/page.tsx`   |
 | Reset password              | `app/(auth)/reset-password/page.tsx`    |
+| Email verification          | `app/verify-email/page.tsx`             |
+
+### Email Verification Flow
+
+Email/password signups require address verification before accessing the app. Google sign-ins are exempt (Google already verifies the address).
+
+1. After `createUserWithEmailAndPassword` succeeds, `sendEmailVerification(user)` is called and the user is redirected to `/verify-email`.
+2. `/verify-email` shows "Pārbaudiet savu e-pastu..." with two actions:
+   - **Esmu apstiprinājis** — calls `user.reload()` via `reloadUser()` in `AuthContext`; if `emailVerified` is now true, redirects to `/`.
+   - **Nosūtīt vēlreiz** — calls `sendEmailVerification(user)` again (60-second cooldown).
+3. `app/(auth)/layout.tsx` redirects authenticated users: verified → `/`, unverified → `/verify-email`.
+4. `app/page.tsx` guards the dashboard: if `user.emailVerified === false`, redirects to `/verify-email` before rendering `ChatContainer`.
+
+`AuthContext` exposes `reloadUser()` and `sendVerificationEmail()` to avoid direct Firebase imports in page components.
 
 Each auth page header displays the **"S" monogram** — a bold off-white (`#F9FAFB`) "S" character centered inside a Royal Blue (`#2563EB`) 48×48 px rounded square — instead of a generic icon. The monogram uses the Sora font to match the `LogoWordmark` component.
 
