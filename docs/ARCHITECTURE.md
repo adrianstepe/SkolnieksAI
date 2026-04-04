@@ -1,5 +1,7 @@
 # Architecture — SkolnieksAI
 
+> **UI:** April 2026 — simplified chat chrome: personalised empty-state greeting (Sora, first name), 2×2 chip grid, muted sidebar labels, no topbar progress bar or exam countdown.
+
 ## System Overview
 
 ```

@@ -34,7 +34,7 @@ const PLANS = [
   },
   {
     id: "exam",
-    name: "Eksāmenu Plāns",
+    name: "Premium",
     price: "€14.99",
     features: [
       "Visprecīzākais AI modelis (augstākā atbilžu kvalitāte)",
@@ -42,7 +42,7 @@ const PLANS = [
       "Detalizēta soļu-pa-soļim analīze",
       "50 jautājumi dienā — maksimāla sagatavošanās",
     ],
-    cta: "Sākt Eksāmenu Plānu — €14.99/mēn.",
+    cta: "Sākt Premium — €14.99/mēn.",
     ctaStyle: "accent",
     badge: "exam",
     ctaSub: "countdown" as const,
@@ -92,11 +92,19 @@ export function Pricing() {
           return (
             <div
               key={plan.id}
+              style={
+                isPopular
+                  ? {
+                      background:
+                        "linear-gradient(to bottom, rgba(79,142,247,0.18) 0%, rgba(79,142,247,0.10) 35%, rgba(15,20,40,0.95) 100%)",
+                    }
+                  : undefined
+              }
               className={[
                 "relative flex flex-col rounded-3xl border transition-all duration-300",
                 isPopular
                   ? [
-                      "bg-primary/10 border-primary/60 ring-2 ring-primary shadow-2xl shadow-primary/20",
+                      "border-primary/60 ring-2 ring-primary shadow-2xl shadow-primary/20",
                       "scale-105 z-10 py-10 px-8",
                       "hover:-translate-y-2",
                     ].join(" ")

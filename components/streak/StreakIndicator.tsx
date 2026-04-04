@@ -60,14 +60,14 @@ export function StreakIndicator() {
         aria-expanded={open}
         aria-label={streakLabel}
         title={streakLabel}
-        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 bg-[#F59E0B]/10 dark:bg-[#F59E0B]/15 border border-[#F59E0B]/25 dark:border-[#F59E0B]/30 transition-colors hover:bg-[#F59E0B]/20 dark:hover:bg-[#F59E0B]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B]/50"
+        className="flex items-center gap-1 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B]/50"
       >
         {/* Flame icon */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
           fill="currentColor"
-          className="h-4 w-4 text-[#F59E0B] shrink-0"
+          className="h-4 w-4 text-[#9CA3AF] dark:text-[#5A6478] shrink-0"
           aria-hidden="true"
         >
           <path
@@ -78,7 +78,7 @@ export function StreakIndicator() {
         </svg>
 
         {/* Count */}
-        <span className="text-sm font-bold text-[#F59E0B] tabular-nums leading-none">
+        <span className="text-sm text-[#9CA3AF] dark:text-[#5A6478] tabular-nums leading-none">
           {currentStreak}
         </span>
 

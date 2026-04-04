@@ -170,7 +170,7 @@ export function Sidebar({
         {/* Subjects */}
         <div className="flex-1 overflow-y-auto mt-3 px-3 thin-scrollbar">
           {!collapsed && (
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#111827] dark:text-[#E8ECF4] mb-2 px-1">
+            <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF] dark:text-[#5A6478] mb-2 px-1">
               Priekšmeti
             </p>
           )}
@@ -225,7 +225,7 @@ export function Sidebar({
           {/* Recent chats */}
           {!collapsed && (
             <>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#111827] dark:text-[#E8ECF4] mb-2 px-1 mt-75">
+              <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF] dark:text-[#5A6478] mb-2 px-1 mt-4">
                 Pēdējās sarunas
               </p>
               <div className="space-y-0.5">
@@ -243,12 +243,9 @@ export function Sidebar({
                           onChatSelect?.(chat.id);
                           onMobileClose?.();
                         }}
-                        className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
+                        className="flex items-center flex-1 min-w-0 text-left"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`h-3.5 w-3.5 shrink-0 ${activeChatId === chat.id ? "text-white/80" : "text-[#6B7280] dark:text-[#8B95A8]"}`}>
-                          <path fillRule="evenodd" d="M10 2c-2.236 0-4.43.18-6.57.524C1.993 2.755 1 3.997 1 5.402v5.196c0 1.405.993 2.647 2.43 2.878a49.143 49.143 0 0 0 3.57.42V17.5a.75.75 0 0 0 1.234.577l3.733-3.154a49.38 49.38 0 0 0 2.603-.27c1.437-.23 2.43-1.472 2.43-2.878V5.402c0-1.405-.993-2.647-2.43-2.878A49.024 49.024 0 0 0 10 2Z" clipRule="evenodd" />
-                        </svg>
-                        <span className="truncate">{chat.title}</span>
+                        <span className="truncate text-sm text-[#6B7280] dark:text-[#8B95A8]">{chat.title}</span>
                       </button>
                       <button
                         onClick={(e) => {

@@ -104,7 +104,7 @@ export function ChatInput({
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
             onInput={handleInput}
-            placeholder="Uzdod jautājumu par mācību vielu..."
+            placeholder="Jautā par jebkuru mācību tēmu..."
             disabled={disabled}
             rows={1}
             className="w-full bg-transparent text-sm text-[#111827] dark:text-[#E8ECF4] placeholder:text-[#6B7280] dark:placeholder:text-gray-400 resize-none outline-none max-h-[200px] disabled:opacity-50 overflow-y-auto thin-scrollbar"
@@ -116,9 +116,9 @@ export function ChatInput({
             <div className="flex items-center gap-1">
               <button
                 disabled
-                className="p-1.5 text-[#6B7280] dark:text-[#8B95A8] opacity-60 cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-opacity animate-camera-coach"
+                className="p-1.5 text-[#6B7280] dark:text-[#8B95A8] opacity-40 cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-opacity"
                 aria-label="Pievienot attēlu"
-                title="Uzņem fotoattēlu vai augšupielādē uzdevumu"
+                title="Drīzumā"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -186,22 +186,10 @@ export function ChatInput({
         </div>
   );
 
-  const disclaimer = (
-    <p className="text-[11px] text-[#6B7280] dark:text-[#8B95A8] text-center mt-2 flex items-center justify-center gap-1.5">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-3.5 w-3.5 shrink-0 rounded-[3px]">
-        <rect width="100" height="100" rx="20" fill="#111827"/>
-        <text y="72" x="50" textAnchor="middle" fontSize="65" fontFamily="sans-serif" fill="white" fontWeight="700">S</text>
-        <circle cx="68" cy="32" r="10" fill="#2563EB"/>
-      </svg>
-      Tavs AI mācību palīgs.
-    </p>
-  );
-
   if (floating) {
     return (
       <div className="w-full">
         {card}
-        {disclaimer}
       </div>
     );
   }
@@ -210,7 +198,6 @@ export function ChatInput({
     <div className="border-t border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB]/80 dark:bg-[#0B0E14]/80 backdrop-blur-sm px-6 py-3">
       <div className="max-w-3xl mx-auto">
         {card}
-        {disclaimer}
       </div>
     </div>
   );

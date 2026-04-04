@@ -13,8 +13,7 @@ import { useSettings } from "@/lib/context/settings-context";
 import { useAuth } from "@/lib/context/auth-context";
 import { detectSubject } from "@/lib/utils/detect-subject";
 import { starterPrompts, type StarterPrompt } from "@/lib/chat/starterPrompts";
-import { LogoWordmark } from "@/components/LogoWordmark";
-import { getExamCountdown, EXAM_UPGRADE_KEYWORDS, normalizeLv } from "@/lib/exams/latvianExams";
+import { EXAM_UPGRADE_KEYWORDS, normalizeLv } from "@/lib/exams/latvianExams";
 
 const SUBJECT_LABELS: Record<string, string> = {
   general: "Vispārīgi",
@@ -460,6 +459,9 @@ export function ChatContainer() {
     profile?.tier === "premium" ||
     profile?.tier === "school_pro";
 
+  const displayName = profile?.displayName ?? user?.displayName ?? user?.email?.split("@")[0];
+  const firstName = displayName?.split(" ")[0] ?? "Skolnieks";
+
   const hasMessages = messages.length > 0;
   const sidebarWidth = sidebarCollapsed ? "lg:ml-16" : "lg:ml-64";
 
@@ -562,47 +564,15 @@ export function ChatContainer() {
             {/* Streak indicator */}
             <StreakIndicator />
 
-            {/* Exam countdown badge — grades 9 and 12 only, within 90 days */}
-            {(() => {
-              const userGrade = profile?.grade ?? grade;
-              const countdown = getExamCountdown(userGrade);
-              if (!countdown || countdown.daysRemaining > 90) return null;
-              const { daysRemaining } = countdown;
-              const colorClass =
-                daysRemaining < 30
-                  ? "bg-red-500/15 border-red-500/25 text-red-600 dark:text-red-400"
-                  : daysRemaining <= 60
-                  ? "bg-amber-500/15 border-amber-500/25 text-amber-600 dark:text-amber-400"
-                  : "bg-emerald-500/15 border-emerald-500/25 text-emerald-600 dark:text-emerald-400";
-              const examTooltip = "Palicis laiks līdz eksāmenu sesijas sākumam";
-              return (
-                <div className="relative hidden sm:block">
-                  <ExamCountdownBadge
-                    daysRemaining={daysRemaining}
-                    colorClass={colorClass}
-                    label={countdown.label}
-                    tooltip={examTooltip}
-                  />
-                </div>
-              );
-            })()}
-
-            {/* Usage meter */}
-            {usage && <UsageMeter percent={usage.budgetPercentUsed} queriesCount={usage.queriesCount} />}
-
-            {/* Upgrade / Premium button (always visible next to progress bar) */}
+            {/* Upgrade text link */}
             {!isPremium && (
               <button
                 onClick={() => setShowUpgrade(true)}
-                className="flex items-center gap-1 border border-[#2563EB] dark:border-[#4F8EF7] rounded-lg px-3 py-1 text-[#2563EB] dark:text-[#4F8EF7] text-sm font-medium hover:bg-[#2563EB]/10 transition-colors"
+                className="text-sm text-[#2563EB] dark:text-[#4F8EF7] hover:opacity-70 transition-opacity"
               >
                 Uzlabot plānu
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                  <path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" />
-                </svg>
               </button>
             )}
-
           </div>
         </header>
 
@@ -630,15 +600,12 @@ export function ChatContainer() {
               /* Empty state: centered greeting + floating input + chips */
               <div className="flex-1 flex flex-col items-center justify-center bg-[#F9FAFB] dark:bg-[#0B0E14] px-4">
                 {/* Greeting */}
-                <div className="text-center space-y-2 mb-6 w-full max-w-2xl animate-fade-in">
-                  <div className="mb-4 w-fit mx-auto">
-                    <LogoWordmark size="lg" />
-                  </div>
-                  <h1 className="text-2xl font-semibold text-[#111827] dark:text-[#E8ECF4] tracking-tight">
-                    Sveiki! Ko šodien mācāmies?
+                <div className="text-center mb-5 w-full max-w-2xl animate-fade-in">
+                  <h1 className="font-[family-name:var(--font-sora)] text-[28px] font-semibold text-[#111827] dark:text-[#E8ECF4] tracking-tight">
+                    Sveiki, {firstName}
                   </h1>
-                  <p className="text-sm text-[#6B7280] dark:text-[#8B95A8] max-w-sm mx-auto">
-                    Izvēlies tēmu vai ieraksti savu jautājumu zemāk
+                  <p className="text-sm text-[#6B7280] dark:text-[#8B95A8] mt-2">
+                    Ko šodien gribam saprast?
                   </p>
                 </div>
 
@@ -706,34 +673,18 @@ export function ChatContainer() {
                   />
                 </div>
 
-                {/* Starter prompt chips */}
-                <div className="flex flex-row gap-2 flex-wrap justify-center mt-3 w-full max-w-2xl">
-                  {displayedPrompts.map((prompt, i) => (
+                {/* Starter prompt chips — 2×2 grid, no emoji */}
+                <div className="grid grid-cols-2 gap-2 mt-4 w-full max-w-2xl">
+                  {displayedPrompts.slice(0, 4).map((prompt, i) => (
                     <button
                       key={i}
                       onClick={() => setPendingPrompt(prompt.text)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#151926] text-sm text-[#374151] dark:text-[#C9D1E0] hover:border-[#2563EB] dark:hover:border-[#4F8EF7] hover:text-[#2563EB] dark:hover:text-[#4F8EF7] transition-all cursor-pointer whitespace-nowrap overflow-hidden max-w-[200px]"
+                      className="px-4 py-2.5 rounded-full border border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#151926] text-sm text-[#374151] dark:text-[#C9D1E0] hover:border-[#2563EB] dark:hover:border-[#4F8EF7] hover:text-[#2563EB] dark:hover:text-[#4F8EF7] transition-all text-left truncate"
                       aria-label={prompt.text}
                     >
-                      <span aria-hidden="true">{prompt.subjectEmoji}</span>
-                      <span className="truncate">{prompt.text}</span>
+                      {prompt.text}
                     </button>
                   ))}
-                </div>
-
-                {/* Reshuffle */}
-                <button
-                  onClick={reshufflePrompts}
-                  className="mt-3 text-xs text-[#6B7280] dark:text-[#8B95A8] hover:text-[#2563EB] dark:hover:text-[#4F8EF7] transition-colors underline underline-offset-2"
-                >
-                  Rādīt citus jautājumus
-                </button>
-
-                {/* Trust badges */}
-                <div className="mt-4 md:mt-6 flex flex-wrap items-center justify-center gap-4 text-[11px] font-semibold text-[#6B7280] dark:text-[#8B95A8]">
-                  <span className="inline-flex items-center gap-1">📚 Balstīts uz OpenStax</span>
-                  <span className="inline-flex items-center gap-1">🔒 Privāts un drošs</span>
-                  <span className="inline-flex items-center gap-1">🇱🇻 Latviski</span>
                 </div>
               </div>
             ) : (
@@ -1061,63 +1012,3 @@ function ChatSkeleton() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Exam countdown badge
-// ---------------------------------------------------------------------------
-
-function ExamCountdownBadge({
-  daysRemaining,
-  colorClass,
-  label,
-  tooltip,
-}: {
-  daysRemaining: number;
-  colorClass: string;
-  label: string;
-  tooltip: string;
-}) {
-  return (
-    <div
-      title={tooltip}
-      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold cursor-default select-none ${colorClass}`}
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0">
-        <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clipRule="evenodd" />
-      </svg>
-      <span>{label}: {daysRemaining}d</span>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Usage meter
-// ---------------------------------------------------------------------------
-
-function UsageMeter({ percent, queriesCount }: { percent: number; queriesCount?: number }) {
-  const color =
-    percent >= 90
-      ? "bg-subj-chemistry"
-      : percent >= 70
-        ? "bg-warning"
-        : "bg-primary";
-
-  // Free tier is ~60 questions/month (per CLAUDE.md)
-  const FREE_MONTHLY_BUDGET = 60;
-  const used = queriesCount ?? Math.round(percent * FREE_MONTHLY_BUDGET / 100);
-  const tooltipText = `${used} no ${FREE_MONTHLY_BUDGET} jautājumiem šomēnes`;
-
-  return (
-    <div
-      className="hidden items-center gap-2 sm:flex cursor-default"
-      title={tooltipText}
-    >
-      <div className="h-1.5 w-14 overflow-hidden rounded-full bg-[#E5E7EB] dark:bg-[#1A2033]">
-        <div
-          className={`h-full rounded-full transition-all ${color}`}
-          style={{ width: `${Math.min(100, percent)}%` }}
-        />
-      </div>
-      <span className="text-[11px] font-bold text-[#111827] dark:text-[#E8ECF4]">{percent}%</span>
-    </div>
-  );
-}
