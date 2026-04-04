@@ -7,7 +7,7 @@ function getResendClient(): Resend {
 }
 
 function buildResetEmailHtml(resetUrl: string): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://skolnieks.ai";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://skolnieksai.lv";
 
   return `<!DOCTYPE html>
 <html lang="lv">
