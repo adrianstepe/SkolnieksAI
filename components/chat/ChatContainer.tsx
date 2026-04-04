@@ -686,6 +686,9 @@ export function ChatContainer() {
                     </button>
                   ))}
                 </div>
+                <p className="text-xs text-[#9CA3AF] dark:text-[#6B7280] text-center mt-3">
+                  SkolnieksAI var kļūdīties. Pārbaudi svarīgas atbildes.
+                </p>
               </div>
             ) : (
               /* Messages exist: scroll area + pinned input at bottom */

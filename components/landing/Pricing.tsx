@@ -96,7 +96,7 @@ export function Pricing() {
                 isPopular
                   ? {
                       background:
-                        "linear-gradient(to bottom, rgba(79,142,247,0.18) 0%, rgba(79,142,247,0.10) 35%, rgba(15,20,40,0.95) 100%)",
+                        "linear-gradient(to bottom, rgba(79,142,247,0.12) 0%, rgba(26,32,51,0.97) 45%, #1A2033 100%)",
                     }
                   : undefined
               }
