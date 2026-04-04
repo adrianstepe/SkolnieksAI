@@ -45,7 +45,9 @@ export async function logAuthAnalyticsEvent(
   const supported = await isSupported().catch(() => false);
   if (!supported) return;
   try {
-    logEvent(getAnalytics(app), eventName, { method });
+    const analytics = getAnalytics(app);
+    // logEvent overloads key off literal event names; a string union resolves to `never` without widening.
+    logEvent(analytics, eventName as string, { method });
   } catch {
     // Missing measurement ID or other init failure — do not break auth flow
   }

@@ -34,7 +34,12 @@ const csp = [
   [
     "connect-src",
     "'self'",
+    "https://firebase.googleapis.com",
+    "https://firebaseinstallations.googleapis.com",
     "https://*.googleapis.com",
+    "https://www.google-analytics.com",
+    "https://region1.google-analytics.com",
+    "https://region2.google-analytics.com",
     "https://*.firebaseio.com",
     "wss://*.firebaseio.com",
     "https://identitytoolkit.googleapis.com",

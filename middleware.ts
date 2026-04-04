@@ -76,9 +76,14 @@ function buildCspHeader(nonce: string): string {
       "connect-src 'self'",
       "https://api.deepseek.com",
       "https://api.anthropic.com",
-      "https://identitytoolkit.googleapis.com",
-      "https://securetoken.googleapis.com",
-      "https://firestore.googleapis.com",
+      // Firebase Analytics / Installations (explicit + wildcard googleapis)
+      "https://firebase.googleapis.com",
+      "https://firebaseinstallations.googleapis.com",
+      "https://*.googleapis.com",
+      // Google Analytics (measurement / regional collectors)
+      "https://www.google-analytics.com",
+      "https://region1.google-analytics.com",
+      "https://region2.google-analytics.com",
       "https://js.stripe.com",
       "https://*.skolnieksai.lv",
       "https://skolnieksai.firebaseapp.com",
