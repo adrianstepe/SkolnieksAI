@@ -44,9 +44,9 @@ function buildStreakReminderHtml(
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tava sērija ir apdraudēta</title>
   <style>
-    body { margin: 0; padding: 0; background: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { margin: 0; padding: 0; background: #f9fafb; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     .wrapper { max-width: 480px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-    .header { background: #1d1d1f; padding: 28px 32px; }
+    .header { background: #2563EB; padding: 28px 32px; }
     .header h1 { margin: 0; color: #ffffff; font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
     .body { padding: 32px; }
     .streak-badge { display: inline-block; background: #fff3cd; color: #92400e; font-size: 28px; font-weight: 700; padding: 12px 20px; border-radius: 8px; margin-bottom: 24px; }
