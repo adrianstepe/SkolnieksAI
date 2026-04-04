@@ -619,136 +619,198 @@ export function ChatContainer() {
         {/* Content area */}
         {activeTab === "learn" ? (
           <>
-            {/* Chat messages area */}
-            <div
-              ref={scrollRef}
-              className="flex-1 overflow-y-auto bg-[#F9FAFB] dark:bg-[#0B0E14] px-3 py-4 sm:px-6 sm:py-6 thin-scrollbar"
-            >
-              {!hasMessages && !loadingChat ? (
-                <WelcomeScreen
-                  onPopulateInput={setPendingPrompt}
-                  currentGrade={grade}
-                />
-              ) : (
-                <div className="mx-auto max-w-3xl space-y-4 sm:space-y-6">
-                  {loadingChat ? (
-                    <ChatSkeleton />
-                  ) : (
-                    <>
-                      {messages.map((msg) => {
-                        // Suppress the empty assistant placeholder while loading — TypingIndicator renders instead
-                        if (
-                          isLoading &&
-                          msg.role === "assistant" &&
-                          msg.content === "" &&
-                          msg.id === messages[messages.length - 1]?.id
-                        ) {
-                          return null;
-                        }
-                        return <ChatMessage key={msg.id} message={msg} subject={subject} conversationId={conversationId} userId={user?.uid ?? null} />;
-                      })}
-
-                      {isLoading && (() => {
-                        const last = messages[messages.length - 1];
-                        return last?.role === "user" || (last?.role === "assistant" && last.content === "");
-                      })() && <TypingIndicator subject={subject} />}
-
-                      {/* Inline exam upgrade banner — shown once per session after a relevant free-tier response */}
-                      {showExamBanner && !isLoading && (
-                        <div className="animate-fade-up flex items-center justify-between gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm">
-                          <span className="text-emerald-700 dark:text-emerald-300 font-medium">
-                            Gatavojies eksāmenam ar AI simulācijām →{" "}
+            {!hasMessages && !loadingChat ? (
+              /* Empty state: WelcomeScreen + ChatInput centered in the flex-1 area */
+              <div className="flex-1 flex flex-col items-center justify-center bg-[#F9FAFB] dark:bg-[#0B0E14] px-3 sm:px-6">
+                <div className="w-full max-w-xl mx-auto flex flex-col gap-4">
+                  <WelcomeScreen
+                    onPopulateInput={setPendingPrompt}
+                    currentGrade={grade}
+                  />
+                  {systemError && (
+                    <div
+                      className={`px-4 py-3 rounded-xl border shrink-0 ${
+                        systemError.type === "general"
+                          ? "bg-red-500/10 border-red-500/20"
+                          : "bg-warning/10 border-warning/20"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`shrink-0 mt-0.5 ${
+                            systemError.type === "general" ? "text-red-400" : "text-warning"
+                          }`}
+                        >
+                          {systemError.type === "rate_limit" ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clipRule="evenodd" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                              <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <p
+                          className={`flex-1 text-sm ${
+                            systemError.type === "general" ? "text-red-300" : "text-warning"
+                          }`}
+                        >
+                          {systemError.message}
+                          {systemError.type === "billing" && (
                             <button
                               onClick={() => setShowUpgrade(true)}
-                              className="underline underline-offset-2 hover:opacity-80 transition-opacity font-semibold"
+                              className="ml-2 underline underline-offset-2 hover:opacity-80 transition-opacity"
                             >
-                              Izmēģini Premium
+                              Uzzināt vairāk
                             </button>
-                          </span>
-                          <button
-                            onClick={() => setShowExamBanner(false)}
-                            className="shrink-0 text-emerald-600/60 dark:text-emerald-400/60 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
-                            aria-label="Aizvērt"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                            </svg>
-                          </button>
-                        </div>
-                      )}
-                    </>
+                          )}
+                        </p>
+                        <button
+                          onClick={() => setSystemError(null)}
+                          className="shrink-0 text-[#6B7280] dark:text-[#8B95A8] hover:text-[#111827] dark:hover:text-[#E8ECF4] transition-colors"
+                          aria-label="Aizvērt"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </div>
-              )}
-            </div>
-
-            {/* System error banner */}
-            {systemError && (
-              <div
-                className={`px-4 py-3 border-t shrink-0 ${
-                  systemError.type === "general"
-                    ? "bg-red-500/10 border-red-500/20"
-                    : "bg-warning/10 border-warning/20"
-                }`}
-              >
-                <div className="max-w-3xl mx-auto flex items-start gap-3">
-                  {/* Icon */}
-                  <div
-                    className={`shrink-0 mt-0.5 ${
-                      systemError.type === "general" ? "text-red-400" : "text-warning"
-                    }`}
-                  >
-                    {systemError.type === "rate_limit" ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clipRule="evenodd" />
-                      </svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-
-                  {/* Message */}
-                  <p
-                    className={`flex-1 text-sm ${
-                      systemError.type === "general" ? "text-red-300" : "text-warning"
-                    }`}
-                  >
-                    {systemError.message}
-                    {systemError.type === "billing" && (
-                      <button
-                        onClick={() => setShowUpgrade(true)}
-                        className="ml-2 underline underline-offset-2 hover:opacity-80 transition-opacity"
-                      >
-                        Uzzināt vairāk
-                      </button>
-                    )}
-                  </p>
-
-                  {/* Dismiss */}
-                  <button
-                    onClick={() => setSystemError(null)}
-                    className="shrink-0 text-[#6B7280] dark:text-[#8B95A8] hover:text-[#111827] dark:hover:text-[#E8ECF4] transition-colors"
-                    aria-label="Aizvērt"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                      <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                    </svg>
-                  </button>
+                  <ChatInput
+                    onSend={handleSend}
+                    disabled={isLoading || loadingChat}
+                    isGenerating={isLoading}
+                    onStop={handleStop}
+                    pendingPrompt={pendingPrompt}
+                    onPromptConsumed={() => setPendingPrompt("")}
+                  />
                 </div>
               </div>
-            )}
+            ) : (
+              /* Messages exist: scroll area + pinned input at bottom */
+              <>
+                {/* Chat messages area */}
+                <div
+                  ref={scrollRef}
+                  className="flex-1 overflow-y-auto bg-[#F9FAFB] dark:bg-[#0B0E14] px-3 py-4 sm:px-6 sm:py-6 thin-scrollbar"
+                >
+                  <div className="mx-auto max-w-3xl space-y-4 sm:space-y-6">
+                    {loadingChat ? (
+                      <ChatSkeleton />
+                    ) : (
+                      <>
+                        {messages.map((msg) => {
+                          // Suppress the empty assistant placeholder while loading — TypingIndicator renders instead
+                          if (
+                            isLoading &&
+                            msg.role === "assistant" &&
+                            msg.content === "" &&
+                            msg.id === messages[messages.length - 1]?.id
+                          ) {
+                            return null;
+                          }
+                          return <ChatMessage key={msg.id} message={msg} subject={subject} conversationId={conversationId} userId={user?.uid ?? null} />;
+                        })}
 
-            {/* Input */}
-            <ChatInput
-              onSend={handleSend}
-              disabled={isLoading || loadingChat}
-              isGenerating={isLoading}
-              onStop={handleStop}
-              pendingPrompt={pendingPrompt}
-              onPromptConsumed={() => setPendingPrompt("")}
-            />
+                        {isLoading && (() => {
+                          const last = messages[messages.length - 1];
+                          return last?.role === "user" || (last?.role === "assistant" && last.content === "");
+                        })() && <TypingIndicator subject={subject} />}
+
+                        {/* Inline exam upgrade banner — shown once per session after a relevant free-tier response */}
+                        {showExamBanner && !isLoading && (
+                          <div className="animate-fade-up flex items-center justify-between gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm">
+                            <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                              Gatavojies eksāmenam ar AI simulācijām →{" "}
+                              <button
+                                onClick={() => setShowUpgrade(true)}
+                                className="underline underline-offset-2 hover:opacity-80 transition-opacity font-semibold"
+                              >
+                                Izmēģini Premium
+                              </button>
+                            </span>
+                            <button
+                              onClick={() => setShowExamBanner(false)}
+                              className="shrink-0 text-emerald-600/60 dark:text-emerald-400/60 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+                              aria-label="Aizvērt"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* System error banner */}
+                {systemError && (
+                  <div
+                    className={`px-4 py-3 border-t shrink-0 ${
+                      systemError.type === "general"
+                        ? "bg-red-500/10 border-red-500/20"
+                        : "bg-warning/10 border-warning/20"
+                    }`}
+                  >
+                    <div className="max-w-3xl mx-auto flex items-start gap-3">
+                      <div
+                        className={`shrink-0 mt-0.5 ${
+                          systemError.type === "general" ? "text-red-400" : "text-warning"
+                        }`}
+                      >
+                        {systemError.type === "rate_limit" ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clipRule="evenodd" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <p
+                        className={`flex-1 text-sm ${
+                          systemError.type === "general" ? "text-red-300" : "text-warning"
+                        }`}
+                      >
+                        {systemError.message}
+                        {systemError.type === "billing" && (
+                          <button
+                            onClick={() => setShowUpgrade(true)}
+                            className="ml-2 underline underline-offset-2 hover:opacity-80 transition-opacity"
+                          >
+                            Uzzināt vairāk
+                          </button>
+                        )}
+                      </p>
+                      <button
+                        onClick={() => setSystemError(null)}
+                        className="shrink-0 text-[#6B7280] dark:text-[#8B95A8] hover:text-[#111827] dark:hover:text-[#E8ECF4] transition-colors"
+                        aria-label="Aizvērt"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                          <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Input */}
+                <ChatInput
+                  onSend={handleSend}
+                  disabled={isLoading || loadingChat}
+                  isGenerating={isLoading}
+                  onStop={handleStop}
+                  pendingPrompt={pendingPrompt}
+                  onPromptConsumed={() => setPendingPrompt("")}
+                />
+              </>
+            )}
           </>
         ) : (
           /* Drīzumā placeholder for Uzdevumi & Progress */
