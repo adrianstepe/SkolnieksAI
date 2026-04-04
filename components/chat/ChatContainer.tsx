@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
+import { usePathname } from "next/navigation";
+import { getAnalytics, isSupported, logEvent } from "firebase/analytics";
+import { app } from "@/lib/firebase/client";
 import { ChatMessage, TypingIndicator, type Message } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 import { Sidebar, type RecentChat } from "./Sidebar";
@@ -32,10 +35,26 @@ const SUBJECT_LABELS: Record<string, string> = {
 type NavTab = "learn" | "tasks" | "progress";
 type SystemError = { message: string; type: "billing" | "rate_limit" | "general" } | null;
 
+/** URL query for shareable/bookmarkable upgrade modal state (synced via History API, not Next router — avoids RSC refetch). */
+const UPGRADE_QUERY_KEY = "upgrade";
+const UPGRADE_QUERY_VALUE = "1";
+
+function readUpgradeOpenFromLocation(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    new URLSearchParams(window.location.search).get(UPGRADE_QUERY_KEY) ===
+    UPGRADE_QUERY_VALUE
+  );
+}
+
 export function ChatContainer() {
   const { settings } = useSettings();
   const { user, usage, profile, signOut, getIdToken, refreshProfile } =
     useAuth();
+  const pathname = usePathname() ?? "/";
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  /** True when this session opened the modal via `pushState` (so Back / close can `history.back()`). */
+  const upgradePushedRef = useRef(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [subject, setSubject] = useState(settings.defaultSubject);
@@ -48,7 +67,6 @@ export function ChatContainer() {
   const [showSettings, setShowSettings] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [showUpgrade, setShowUpgrade] = useState(false);
   const [activeTab, setActiveTab] = useState<NavTab>("learn");
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -76,6 +94,17 @@ export function ChatContainer() {
 
   // Inline exam upgrade banner — shown once per session after a relevant response
   const [showExamBanner, setShowExamBanner] = useState(false);
+
+  useLayoutEffect(() => {
+    setShowUpgrade(readUpgradeOpenFromLocation());
+    const onPopState = () => {
+      const open = readUpgradeOpenFromLocation();
+      setShowUpgrade(open);
+      if (!open) upgradePushedRef.current = false;
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   useEffect(() => {
     // Fire only once, on the first profile load after login
@@ -221,6 +250,51 @@ export function ChatContainer() {
   const handleStop = useCallback(() => {
     abortControllerRef.current?.abort();
   }, []);
+
+  const openUpgrade = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get(UPGRADE_QUERY_KEY) === UPGRADE_QUERY_VALUE) {
+      setShowUpgrade(true);
+      return;
+    }
+    params.set(UPGRADE_QUERY_KEY, UPGRADE_QUERY_VALUE);
+    const q = params.toString();
+    window.history.pushState(null, "", q ? `${pathname}?${q}` : pathname);
+    upgradePushedRef.current = true;
+    setShowUpgrade(true);
+  }, [pathname]);
+
+  const closeUpgrade = useCallback(() => {
+    if (upgradePushedRef.current) {
+      upgradePushedRef.current = false;
+      window.history.back();
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    params.delete(UPGRADE_QUERY_KEY);
+    const q = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      q ? `${pathname}?${q}` : pathname,
+    );
+    setShowUpgrade(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!showUpgrade) return;
+    let cancelled = false;
+    void (async () => {
+      const ok = await isSupported().catch(() => false);
+      if (!ok || cancelled) return;
+      logEvent(getAnalytics(app), "upgrade_modal_opened", {
+        method: "history_api",
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [showUpgrade]);
 
   const handleSend = useCallback(
     async (text: string) => {
@@ -398,7 +472,7 @@ export function ChatContainer() {
         const isRateLimited = msg.startsWith("RATE_LIMITED:");
 
         if (isBudgetExceeded || isDailyLimitExceeded) {
-          setShowUpgrade(true);
+          openUpgrade();
         }
 
         if (isBudgetExceeded) {
@@ -433,7 +507,18 @@ export function ChatContainer() {
         setIsLoading(false);
       }
     },
-    [messages, subject, grade, settings.aiModel, conversationId, getIdToken, refreshProfile, fetchRecentChats, profile],
+    [
+      messages,
+      subject,
+      grade,
+      settings.aiModel,
+      conversationId,
+      getIdToken,
+      refreshProfile,
+      fetchRecentChats,
+      profile,
+      openUpgrade,
+    ],
   );
 
   const handleOnboardingComplete = async () => {
@@ -484,7 +569,7 @@ export function ChatContainer() {
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
         onSettingsOpen={() => { setSidebarOpen(false); setShowSettings(true); }}
-        onUpgradeOpen={() => setShowUpgrade(true)}
+        onUpgradeOpen={openUpgrade}
         onSignOut={signOut}
         isPremium={isPremium}
       />
@@ -564,7 +649,7 @@ export function ChatContainer() {
             {/* Upgrade text link */}
             {!isPremium && (
               <button
-                onClick={() => setShowUpgrade(true)}
+                onClick={openUpgrade}
                 className="rounded-full border border-[#2563EB]/20 bg-[#2563EB]/10 px-4 py-1.5 text-sm font-semibold text-[#2563EB] transition-all hover:bg-[#2563EB]/20 dark:border-[#4F8EF7]/30 dark:bg-[#4F8EF7]/10 dark:text-[#4F8EF7] dark:hover:bg-[#4F8EF7]/20"
               >
                 Uzlabot plānu
@@ -641,7 +726,7 @@ export function ChatContainer() {
                           {systemError.message}
                           {systemError.type === "billing" && (
                             <button
-                              onClick={() => setShowUpgrade(true)}
+                              onClick={openUpgrade}
                               className="ml-2 underline underline-offset-2 hover:opacity-80 transition-opacity"
                             >
                               Uzzināt vairāk
@@ -725,7 +810,7 @@ export function ChatContainer() {
                             <span className="text-emerald-700 dark:text-emerald-300 font-medium">
                               Gatavojies eksāmenam ar AI simulācijām →{" "}
                               <button
-                                onClick={() => setShowUpgrade(true)}
+                                onClick={openUpgrade}
                                 className="underline underline-offset-2 hover:opacity-80 transition-opacity font-semibold"
                               >
                                 Izmēģini Premium
@@ -777,7 +862,7 @@ export function ChatContainer() {
                         {systemError.message}
                         {systemError.type === "billing" && (
                           <button
-                            onClick={() => setShowUpgrade(true)}
+                            onClick={openUpgrade}
                             className="ml-2 underline underline-offset-2 hover:opacity-80 transition-opacity"
                           >
                             Uzzināt vairāk
@@ -849,7 +934,7 @@ export function ChatContainer() {
 
       {/* Upgrade modal */}
       {showUpgrade && (
-        <UpgradeModal onClose={() => setShowUpgrade(false)} grade={profile?.grade ?? grade} />
+        <UpgradeModal onClose={closeUpgrade} grade={profile?.grade ?? grade} />
       )}
 
       {/* Streak broken modal */}

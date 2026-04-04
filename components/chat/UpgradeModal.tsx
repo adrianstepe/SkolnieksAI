@@ -41,7 +41,7 @@ const PLANS = [
   },
   {
     id: "premium" as const,
-    name: "Eksāmenu Plāns",
+    name: "Premium",
     price: "€14.99",
     period: "/mēn.",
     features: [
@@ -116,10 +116,9 @@ function PlanCard({
     <div
       className={`relative flex flex-col rounded-2xl p-6 lg:p-8 transition-all duration-300 ${
         plan.popular
-          ? "border-2 border-[#2563EB] shadow-xl shadow-[#2563EB]/20 dark:border-[#2563EB] dark:shadow-[#2563EB]/20"
+          ? "border-2 border-[#2563EB] bg-gradient-to-b from-[#EFF6FF] to-white shadow-xl shadow-[#2563EB]/20 dark:from-[#1E2A45] dark:to-[#141C33] dark:shadow-[#2563EB]/20"
           : "border border-[#E5E7EB] shadow-md bg-white dark:border-white/7 dark:bg-[#1A2033]/50"
       }`}
-      style={plan.popular ? { background: 'linear-gradient(to bottom, #162454, #0d1535)' } : undefined}
     >
       {plan.popular && (
         <div className="absolute -top-3 left-0 right-0 flex justify-center">
@@ -133,7 +132,11 @@ function PlanCard({
       )}
 
       {/* Plan name */}
-      <h3 className={`text-lg font-semibold ${plan.popular ? "text-[#2563EB] dark:text-[#4F8EF7]" : "text-[#111827] dark:text-[#E8ECF4]"}`}>
+      <h3
+        className={`text-lg font-semibold ${
+          plan.popular ? "text-[#1D4ED8] dark:text-[#93C5FD]" : "text-[#111827] dark:text-[#E8ECF4]"
+        }`}
+      >
         {plan.name}
       </h3>
       {plan.id === "free" && isCurrentPlan && (
@@ -142,10 +145,18 @@ function PlanCard({
 
       {/* Price */}
       <div className="mt-3 flex items-baseline gap-1">
-        <span className={`text-3xl font-extrabold tracking-tight text-[#111827] ${plan.popular ? "dark:text-white" : "dark:text-[#E8ECF4]"}`}>
+        <span
+          className={`text-3xl font-extrabold tracking-tight ${
+            plan.popular ? "text-[#111827] dark:text-white" : "text-[#111827] dark:text-[#E8ECF4]"
+          }`}
+        >
           {plan.price}
         </span>
-        <span className="text-sm font-medium text-[#6B7280] dark:text-[#8B95A8]">
+        <span
+          className={`text-sm font-medium ${
+            plan.popular ? "text-[#4B5563] dark:text-[#9CA3AF]" : "text-[#6B7280] dark:text-[#8B95A8]"
+          }`}
+        >
           {plan.period}
         </span>
       </div>
@@ -209,7 +220,7 @@ function PlanCard({
                 Notiek pāradresēšana...
               </>
             ) : (
-              "Sākt Eksāmenu Plānu — €14.99/mēn."
+              "Sākt Premium — €14.99/mēn."
             )}
           </button>
         </div>
@@ -220,7 +231,9 @@ function PlanCard({
         {plan.features.map((feature) => (
           <li
             key={feature}
-            className={`flex items-start gap-2.5 text-sm font-medium text-[#6B7280] ${plan.popular ? "dark:text-[#E8ECF4]" : "dark:text-[#8B95A8]"}`}
+            className={`flex items-start gap-2.5 text-sm font-medium ${
+              plan.popular ? "text-[#374151] dark:text-[#E5E7EB]" : "text-[#6B7280] dark:text-[#8B95A8]"
+            }`}
           >
             <svg
               className="mt-0.5 h-4 w-4 shrink-0 text-[#2563EB] dark:text-[#4F8EF7]"
@@ -269,7 +282,11 @@ function PlanCard({
                 <path d="M3 8.5l2.5 2.5 5.5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <span className="text-[11px] text-[#9CA3AF] leading-relaxed">
+            <span
+              className={`text-[11px] leading-relaxed ${
+                plan.popular ? "text-[#6B7280] dark:text-[#9CA3AF]" : "text-[#9CA3AF]"
+              }`}
+            >
               {!consent && (
                 <span className="mr-1 text-[#F59E0B]">•</span>
               )}

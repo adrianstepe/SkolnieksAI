@@ -12,7 +12,7 @@ import { useAuth } from "@/lib/context/auth-context";
 
 const TIER_INFO: Record<string, { name: string; price: string }> = {
   pro: { name: "Pro", price: "€5,99/mēn." },
-  premium: { name: "Eksāmenu Plāns", price: "€14,99/mēn." },
+  premium: { name: "Premium", price: "€14,99/mēn." },
   school_pro: { name: "School Pro", price: "" },
 };
 
