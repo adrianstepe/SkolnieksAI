@@ -43,38 +43,26 @@ function buildStreakReminderHtml(
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tava sērija ir apdraudēta</title>
-  <style>
-    body { margin: 0; padding: 0; background: #f9fafb; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    .wrapper { max-width: 480px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-    .header { background: #2563EB; padding: 28px 32px; }
-    .header h1 { margin: 0; color: #ffffff; font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
-    .body { padding: 32px; }
-    .streak-badge { display: inline-block; background: #fff3cd; color: #92400e; font-size: 28px; font-weight: 700; padding: 12px 20px; border-radius: 8px; margin-bottom: 24px; }
-    .body p { margin: 0 0 16px; color: #374151; font-size: 15px; line-height: 1.6; }
-    .cta { display: inline-block; margin-top: 8px; padding: 13px 28px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 8px; font-size: 15px; font-weight: 600; }
-    .footer { padding: 20px 32px; border-top: 1px solid #f3f4f6; }
-    .footer p { margin: 0; color: #9ca3af; font-size: 12px; line-height: 1.5; }
-  </style>
 </head>
-<body>
-  <div class="wrapper">
-    <div class="header">
-      <h1>SkolnieksAI</h1>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:480px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);">
+    <div style="background:#2563EB;padding:28px 32px;">
+      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:600;letter-spacing:-0.3px;">SkolnieksAI</h1>
     </div>
-    <div class="body">
-      <div class="streak-badge">${currentStreak} dienu sērija</div>
-      <p>Sveiks, ${name}!</p>
-      <p>
+    <div style="padding:32px;">
+      <div style="display:inline-block;background:#fff3cd;color:#92400e;font-size:28px;font-weight:700;padding:12px 20px;border-radius:8px;margin-bottom:24px;">${currentStreak} dienu sērija</div>
+      <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">Sveiks, ${name}!</p>
+      <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">
         Tava <strong>${currentStreak} dienu mācību sērija</strong> beigsies pēc pusnakts,
         ja šodien vēl neesi pieteicies.
       </p>
-      <p>
+      <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">
         Viens īss jautājums ir pietiekami — piesakies un turpini no tur, kur apstājies.
       </p>
-      <a href="${appUrl}" class="cta">Turpināt mācīties</a>
+      <a href="${appUrl}" style="display:inline-block;padding:13px 28px;background-color:#2563EB;color:#ffffff !important;text-decoration:none;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:0.2px;mso-padding-alt:0;-webkit-text-fill-color:#ffffff;">Turpināt mācīties</a>
     </div>
-    <div class="footer">
-      <p>
+    <div style="padding:20px 32px;border-top:1px solid #f3f4f6;">
+      <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.5;">
         Tu saņem šo e-pastu, jo tev ir aktīva mācību sērija SkolnieksAI.<br />
         Ja nevēlies saņemt atgādinājumus, vari tos izslēgt iestatījumos.
       </p>
@@ -105,31 +93,20 @@ function buildCancellationConfirmationHtml(
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Abonements atcelts</title>
-  <style>
-    body { margin: 0; padding: 0; background: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    .wrapper { max-width: 480px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-    .header { background: #1d1d1f; padding: 28px 32px; }
-    .header h1 { margin: 0; color: #ffffff; font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
-    .body { padding: 32px; }
-    .body p { margin: 0 0 16px; color: #374151; font-size: 15px; line-height: 1.6; }
-    .timestamp { background: #f3f4f6; border-radius: 8px; padding: 12px 16px; font-size: 14px; color: #374151; margin-bottom: 16px; }
-    .footer { padding: 20px 32px; border-top: 1px solid #f3f4f6; }
-    .footer p { margin: 0; color: #9ca3af; font-size: 12px; line-height: 1.5; }
-  </style>
 </head>
-<body>
-  <div class="wrapper">
-    <div class="header">
-      <h1>SkolnieksAI</h1>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:480px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);">
+    <div style="background:#1d1d1f;padding:28px 32px;">
+      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:600;letter-spacing:-0.3px;">SkolnieksAI</h1>
     </div>
-    <div class="body">
-      <p>Sveiks, ${name}!</p>
-      <p>Jūsu abonements ir veiksmīgi atcelts.</p>
-      <div class="timestamp">Atcelšanas datums un laiks: <strong>${date}</strong></div>
-      <p>Jūs varat turpināt izmantot SkolnieksAI bezmaksas plānu. Ja jums ir kādi jautājumi, sazinieties ar mums.</p>
+    <div style="padding:32px;">
+      <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">Sveiks, ${name}!</p>
+      <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">Jūsu abonements ir veiksmīgi atcelts.</p>
+      <div style="background:#f3f4f6;border-radius:8px;padding:12px 16px;font-size:14px;color:#374151;margin-bottom:16px;">Atcelšanas datums un laiks: <strong>${date}</strong></div>
+      <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">Jūs varat turpināt izmantot SkolnieksAI bezmaksas plānu. Ja jums ir kādi jautājumi, sazinieties ar mums.</p>
     </div>
-    <div class="footer">
-      <p>
+    <div style="padding:20px 32px;border-top:1px solid #f3f4f6;">
+      <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.5;">
         Šis e-pasts ir automatizēts apstiprinājums par Jūsu abonementa atcelšanu saskaņā ar ES Direktīvu 2023/2673.<br />
         Stepe Digital · Gulbene, Latvija
       </p>

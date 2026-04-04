@@ -622,7 +622,7 @@ export function ChatContainer() {
             {/* Chat messages area */}
             <div
               ref={scrollRef}
-              className="flex-1 overflow-y-auto bg-[#F9FAFB] dark:bg-[#0B0E14] px-6 py-6 thin-scrollbar"
+              className="flex-1 overflow-y-auto bg-[#F9FAFB] dark:bg-[#0B0E14] px-3 py-4 sm:px-6 sm:py-6 thin-scrollbar"
             >
               {!hasMessages && !loadingChat ? (
                 <WelcomeScreen
@@ -630,7 +630,7 @@ export function ChatContainer() {
                   currentGrade={grade}
                 />
               ) : (
-                <div className="mx-auto max-w-3xl space-y-6">
+                <div className="mx-auto max-w-3xl space-y-4 sm:space-y-6">
                   {loadingChat ? (
                     <ChatSkeleton />
                   ) : (
@@ -645,13 +645,13 @@ export function ChatContainer() {
                         ) {
                           return null;
                         }
-                        return <ChatMessage key={msg.id} message={msg} />;
+                        return <ChatMessage key={msg.id} message={msg} subject={subject} conversationId={conversationId} userId={user?.uid ?? null} />;
                       })}
 
                       {isLoading && (() => {
                         const last = messages[messages.length - 1];
                         return last?.role === "user" || (last?.role === "assistant" && last.content === "");
-                      })() && <TypingIndicator />}
+                      })() && <TypingIndicator subject={subject} />}
 
                       {/* Inline exam upgrade banner — shown once per session after a relevant free-tier response */}
                       {showExamBanner && !isLoading && (

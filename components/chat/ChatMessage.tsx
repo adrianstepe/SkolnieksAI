@@ -7,6 +7,8 @@ import rehypeKatex from "rehype-katex";
 import { SourcesBubble } from "@/components/SourcesBubble";
 import { useStreamingMarkdown } from "@/hooks/useStreamingMarkdown";
 import { MathErrorBoundary } from "@/components/chat/MathErrorBoundary";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
 
 // ---------------------------------------------------------------------------
 // Thinking block parser
@@ -186,18 +188,125 @@ export interface Message {
   usedWebSearch?: boolean;
 }
 
-export function ChatMessage({ message }: { message: Message }) {
+// ---------------------------------------------------------------------------
+// Subject → CSS variable color mapping
+// ---------------------------------------------------------------------------
+
+const SUBJECT_COLOR_MAP: Record<string, string> = {
+  math: "var(--color-subj-math)",
+  chemistry: "var(--color-subj-chemistry)",
+  latvian: "var(--color-subj-latvian)",
+  history: "var(--color-subj-history)",
+  physics: "var(--color-subj-physics)",
+  english: "var(--color-subj-english)",
+  science: "var(--color-subj-science)",
+  social: "var(--color-subj-social)",
+  biology: "var(--color-subj-biology)",
+  informatics: "var(--color-subj-informatics)",
+  geography: "var(--color-subj-geography)",
+  art: "var(--color-subj-art)",
+};
+
+function getSubjectColor(subject?: string): string {
+  if (!subject) return "var(--color-primary)";
+  return SUBJECT_COLOR_MAP[subject] ?? "var(--color-primary)";
+}
+
+// ---------------------------------------------------------------------------
+// Thumbs up/down feedback
+// ---------------------------------------------------------------------------
+
+function MessageFeedback({
+  messageId,
+  conversationId,
+  userId,
+}: {
+  messageId: string;
+  conversationId: string | null;
+  userId: string | null;
+}) {
+  const [rating, setRating] = useState<1 | -1 | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function handleRate(value: 1 | -1) {
+    if (saving || rating === value) return;
+    setSaving(true);
+    try {
+      await addDoc(collection(db, "message_feedback"), {
+        messageId,
+        conversationId: conversationId ?? null,
+        userId: userId ?? null,
+        rating: value,
+        timestamp: serverTimestamp(),
+      });
+      setRating(value);
+    } catch {
+      // silent — feedback is non-critical
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-1 px-1">
+      <button
+        onClick={() => handleRate(1)}
+        disabled={saving}
+        aria-label="Novērtēt pozitīvi"
+        className={`p-1 rounded-md transition-colors ${
+          rating === 1
+            ? "text-[#22C55E]"
+            : "text-[#9CA3AF] dark:text-[#4B5563] hover:text-[#22C55E]"
+        }`}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+          <path d="M1 8.25a1.25 1.25 0 1 1 2.5 0v7.5a1.25 1.25 0 1 1-2.5 0v-7.5ZM5.5 6.802v7.948a2.56 2.56 0 0 0 1.169 2.15 1.35 1.35 0 0 0 1.598-.099l.78-.624a4.25 4.25 0 0 1 2.655-.933h1.548a2.58 2.58 0 0 0 2.45-1.75l1.2-3.59a1.75 1.75 0 0 0-1.66-2.304H12.5V4.25A2.25 2.25 0 0 0 10.25 2c-.39 0-.75.25-.88.63L7.08 8.998A2.573 2.573 0 0 1 5.5 6.802Z" />
+        </svg>
+      </button>
+      <button
+        onClick={() => handleRate(-1)}
+        disabled={saving}
+        aria-label="Novērtēt negatīvi"
+        className={`p-1 rounded-md transition-colors ${
+          rating === -1
+            ? "text-[#EF4444]"
+            : "text-[#9CA3AF] dark:text-[#4B5563] hover:text-[#EF4444]"
+        }`}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+          <path d="M19 11.75a1.25 1.25 0 1 1-2.5 0v-7.5a1.25 1.25 0 1 1 2.5 0v7.5ZM14.5 13.198V5.25a2.56 2.56 0 0 0-1.169-2.15 1.35 1.35 0 0 0-1.598.099l-.78.624a4.25 4.25 0 0 1-2.655.933H6.75a2.58 2.58 0 0 0-2.45 1.75l-1.2 3.59a1.75 1.75 0 0 0 1.66 2.304H7.5v3.45A2.25 2.25 0 0 0 9.75 18c.39 0 .75-.25.88-.63l2.29-6.368a2.573 2.573 0 0 1 1.58 2.196Z" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+export function ChatMessage({
+  message,
+  subject,
+  conversationId,
+  userId,
+}: {
+  message: Message;
+  subject?: string;
+  conversationId?: string | null;
+  userId?: string | null;
+}) {
   const isUser = message.role === "user";
   const parsed = isUser ? null : parseThinking(message.content);
+  const accentColor = getSubjectColor(subject);
 
   return (
     <div
-      className={`flex gap-3 ${isUser ? "justify-end animate-slide-in-right" : "justify-start animate-slide-in-left"}`}
+      className={`flex gap-2.5 sm:gap-3 ${isUser ? "justify-end animate-slide-in-right" : "justify-start animate-slide-in-left"}`}
     >
-      {/* AI avatar — gradient sparkle */}
+      {/* AI avatar — subject-tinted */}
       {!isUser && (
-        <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shrink-0 mt-1">
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+        <div
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+          style={{ backgroundColor: accentColor }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 sm:h-4 sm:w-4">
             <path
               d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
               fill="white"
@@ -206,13 +315,18 @@ export function ChatMessage({ message }: { message: Message }) {
         </div>
       )}
 
-      <div className={`max-w-[75%] space-y-2 ${isUser ? "order-first" : ""}`}>
+      <div
+        className={`max-w-[80%] sm:max-w-[75%] space-y-1.5 sm:space-y-2 ${isUser ? "order-first" : ""}`}
+      >
         <div
-          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+          className={`rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-sm leading-relaxed ${
             isUser
-              ? "bg-[#2563EB] dark:bg-[#4F8EF7] text-white rounded-br-md"
-              : "bg-[#F1F5F9] dark:bg-[#1A2033] text-[#111827] dark:text-[#E8ECF4] rounded-bl-md"
+              ? "bg-[#2563EB] dark:bg-[#4F8EF7] text-white rounded-br-sm shadow-sm"
+              : "bg-[#F1F5F9] dark:bg-[#1A2033] text-[#111827] dark:text-[#E8ECF4] rounded-bl-sm border-l-2"
           }`}
+          style={
+            !isUser ? { borderLeftColor: accentColor } : undefined
+          }
         >
           {isUser ? (
             <p className="whitespace-pre-wrap break-words">
@@ -243,15 +357,21 @@ export function ChatMessage({ message }: { message: Message }) {
           )}
         </div>
 
-        {/* EU AI Act — Limited Risk transparency obligation.
-            Every AI-generated response must be labelled as such. */}
+        {/* EU AI Act label + feedback row */}
         {!isUser && (
-          <p
-            className="px-1 text-[10px] text-[#9CA3AF] dark:text-[#4B5563]"
-            title="Šī atbilde ir ģenerēta ar mākslīgo intelektu"
-          >
-            AI ģenerēta atbilde
-          </p>
+          <div className="flex items-center gap-2 px-1">
+            <p
+              className="text-[10px] text-[#9CA3AF] dark:text-[#4B5563]"
+              title="Šī atbilde ir ģenerēta ar mākslīgo intelektu"
+            >
+              AI ģenerēta atbilde
+            </p>
+            <MessageFeedback
+              messageId={message.id}
+              conversationId={conversationId ?? null}
+              userId={userId ?? null}
+            />
+          </div>
         )}
 
         {/* Source citation — design studio style */}
@@ -260,13 +380,22 @@ export function ChatMessage({ message }: { message: Message }) {
             {message.sources.map((source, i) => (
               <div
                 key={`${source.id}-${i}`}
-                className="flex items-start gap-2 px-3 py-2 rounded-lg bg-[#F1F5F9] dark:bg-[#1A2033]/30 border border-[#E5E7EB] dark:border-white/7"
+                className="flex items-start gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-[#F1F5F9] dark:bg-[#1A2033]/30 border border-[#E5E7EB] dark:border-white/7"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-[#2563EB] dark:text-[#4F8EF7] mt-0.5 shrink-0">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-3.5 h-3.5 mt-0.5 shrink-0"
+                  style={{ color: accentColor }}
+                >
                   <path d="M10.75 16.82A7.462 7.462 0 0 1 15 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0 0 18 15.06V3.44a.75.75 0 0 0-.525-.72A8.963 8.963 0 0 0 15 2.25a8.963 8.963 0 0 0-4.25 1.063v13.507ZM9.25 4.313A8.963 8.963 0 0 0 5 2.25c-.862 0-1.7.121-2.475.345a.75.75 0 0 0-.525.72v11.62a.75.75 0 0 0 .954.721A7.506 7.506 0 0 1 5 15.5c1.579 0 3.042.487 4.25 1.32V4.313Z" />
                 </svg>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium text-[#2563EB] dark:text-[#4F8EF7]">
+                  <p
+                    className="text-[11px] font-medium"
+                    style={{ color: accentColor }}
+                  >
                     {source.subject}
                     {source.sourceTitle ? ` — ${source.sourceTitle}` : source.section ? ` — ${source.section}` : ""}
                   </p>
@@ -286,24 +415,36 @@ export function ChatMessage({ message }: { message: Message }) {
   );
 }
 
-export function TypingIndicator() {
+export function TypingIndicator({ subject }: { subject?: string }) {
+  const accentColor = getSubjectColor(subject);
+
   return (
-    <div className="flex gap-3 animate-slide-in-left">
+    <div className="flex gap-2.5 sm:gap-3 animate-slide-in-left">
       {/* AI avatar */}
-      <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shrink-0">
-        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+      <div
+        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0"
+        style={{ backgroundColor: accentColor }}
+      >
+        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 sm:h-4 sm:w-4">
           <path
             d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
             fill="white"
           />
         </svg>
       </div>
-      <div className="bg-[#F1F5F9] dark:bg-[#1A2033] rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5">
+      <div
+        className="bg-[#F1F5F9] dark:bg-[#1A2033] rounded-2xl rounded-bl-sm px-3.5 py-2.5 sm:px-4 sm:py-3 flex items-center gap-1.5 border-l-2"
+        style={{ borderLeftColor: accentColor }}
+      >
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="w-2 h-2 rounded-full bg-[#2563EB]/60 dark:bg-[#4F8EF7]/60 animate-typing-dot"
-            style={{ animationDelay: `${i * 0.2}s` }}
+            className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full animate-typing-dot"
+            style={{
+              backgroundColor: accentColor,
+              opacity: 0.6,
+              animationDelay: `${i * 0.2}s`,
+            }}
           />
         ))}
       </div>
