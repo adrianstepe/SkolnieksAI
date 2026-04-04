@@ -116,9 +116,10 @@ function PlanCard({
     <div
       className={`relative flex flex-col rounded-2xl p-6 lg:p-8 transition-all duration-300 ${
         plan.popular
-          ? "border-2 border-[#2563EB] bg-[#EFF6FF] shadow-xl shadow-[#2563EB]/20 dark:border-[#2563EB] dark:bg-[#162454] dark:ring-2 dark:ring-[#2563EB]/60 dark:shadow-[#2563EB]/20"
+          ? "border-2 border-[#2563EB] shadow-xl shadow-[#2563EB]/20 dark:border-[#2563EB] dark:shadow-[#2563EB]/20"
           : "border border-[#E5E7EB] shadow-md bg-white dark:border-white/7 dark:bg-[#1A2033]/50"
       }`}
+      style={plan.popular ? { background: 'linear-gradient(to bottom, #162454, #0d1535)' } : undefined}
     >
       {plan.popular && (
         <div className="absolute -top-3 left-0 right-0 flex justify-center">

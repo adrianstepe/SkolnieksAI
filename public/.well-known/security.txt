@@ -1,0 +1,4 @@
+Contact: mailto:security@skolnieksai.lv
+Expires: 2027-04-04T00:00:00.000Z
+Preferred-Languages: lv, en
+Canonical: https://www.skolnieksai.lv/.well-known/security.txt
