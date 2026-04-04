@@ -328,9 +328,9 @@ export function ChatContainer() {
                 prev.map((m) =>
                   m.id === assistantId
                     ? {
-                        ...m,
-                        content: m.content + (event.content as string),
-                      }
+                      ...m,
+                      content: m.content + (event.content as string),
+                    }
                     : m,
                 ),
               );
@@ -339,11 +339,11 @@ export function ChatContainer() {
                 prev.map((m) =>
                   m.id === assistantId
                     ? {
-                        ...m,
-                        sources: event.chunks as Message["sources"],
-                        webSources: (event.webSources ?? []) as Message["webSources"],
-                        usedWebSearch: Boolean(event.usedWebSearch),
-                      }
+                      ...m,
+                      sources: event.chunks as Message["sources"],
+                      webSources: (event.webSources ?? []) as Message["webSources"],
+                      usedWebSearch: Boolean(event.usedWebSearch),
+                    }
                     : m,
                 ),
               );
@@ -352,9 +352,9 @@ export function ChatContainer() {
                 prev.map((m) =>
                   m.id === assistantId
                     ? {
-                        ...m,
-                        content: `Kļūda: ${event.message as string}`,
-                      }
+                      ...m,
+                      content: `Kļūda: ${event.message as string}`,
+                    }
                     : m,
                 ),
               );
@@ -514,11 +514,10 @@ export function ChatContainer() {
             <nav className="hidden items-center gap-1 md:flex ml-2">
               <button
                 onClick={() => setActiveTab("learn")}
-                className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                  activeTab === "learn"
+                className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${activeTab === "learn"
                     ? "font-bold text-[#1D4ED8] dark:text-[#3D7CE5]"
                     : "font-semibold text-[#111827] dark:text-[#E8ECF4] hover:bg-[#E5E7EB] dark:hover:bg-[#1A2033]"
-                }`}
+                  }`}
               >
                 Mācīties
               </button>
@@ -530,13 +529,12 @@ export function ChatContainer() {
                       onClick={() => !locked && setActiveTab("tasks")}
                       disabled={locked}
                       title={locked ? "Pieejams pēc 3 sarunām" : undefined}
-                      className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                        locked
+                      className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${locked
                           ? "opacity-40 cursor-not-allowed font-semibold text-[#111827] dark:text-[#E8ECF4]"
                           : activeTab === "tasks"
-                          ? "font-bold text-[#1D4ED8] dark:text-[#3D7CE5]"
-                          : "font-semibold text-[#111827] dark:text-[#E8ECF4] hover:bg-[#E5E7EB] dark:hover:bg-[#1A2033]"
-                      }`}
+                            ? "font-bold text-[#1D4ED8] dark:text-[#3D7CE5]"
+                            : "font-semibold text-[#111827] dark:text-[#E8ECF4] hover:bg-[#E5E7EB] dark:hover:bg-[#1A2033]"
+                        }`}
                     >
                       Uzdevumi
                     </button>
@@ -544,13 +542,12 @@ export function ChatContainer() {
                       onClick={() => !locked && setActiveTab("progress")}
                       disabled={locked}
                       title={locked ? "Pieejams pēc 3 sarunām" : undefined}
-                      className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                        locked
+                      className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${locked
                           ? "opacity-40 cursor-not-allowed font-semibold text-[#111827] dark:text-[#E8ECF4]"
                           : activeTab === "progress"
-                          ? "font-bold text-[#1D4ED8] dark:text-[#3D7CE5]"
-                          : "font-semibold text-[#111827] dark:text-[#E8ECF4] hover:bg-[#E5E7EB] dark:hover:bg-[#1A2033]"
-                      }`}
+                            ? "font-bold text-[#1D4ED8] dark:text-[#3D7CE5]"
+                            : "font-semibold text-[#111827] dark:text-[#E8ECF4] hover:bg-[#E5E7EB] dark:hover:bg-[#1A2033]"
+                        }`}
                     >
                       Progress
                     </button>
@@ -568,7 +565,7 @@ export function ChatContainer() {
             {!isPremium && (
               <button
                 onClick={() => setShowUpgrade(true)}
-                className="text-sm text-[#2563EB] dark:text-[#4F8EF7] hover:opacity-70 transition-opacity"
+                className="rounded-full border border-[#2563EB]/20 bg-[#2563EB]/10 px-4 py-1.5 text-sm font-semibold text-[#2563EB] transition-all hover:bg-[#2563EB]/20 dark:border-[#4F8EF7]/30 dark:bg-[#4F8EF7]/10 dark:text-[#4F8EF7] dark:hover:bg-[#4F8EF7]/20"
               >
                 Uzlabot plānu
               </button>
@@ -610,24 +607,22 @@ export function ChatContainer() {
                 </div>
 
                 <p className="text-sm text-text-muted text-center mb-5 animate-fade-in">
-                  Izvēlies tēmu vai ieraksti savu jautājumu zemāk
+                  Izvēlies tēmu vai ieraksti savu jautājumu
                 </p>
 
                 {/* Floating input */}
                 <div className="w-full max-w-2xl animate-slide-up">
                   {systemError && (
                     <div
-                      className={`mb-3 px-4 py-3 rounded-xl border shrink-0 ${
-                        systemError.type === "general"
+                      className={`mb-3 px-4 py-3 rounded-xl border shrink-0 ${systemError.type === "general"
                           ? "bg-red-500/10 border-red-500/20"
                           : "bg-warning/10 border-warning/20"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start gap-3">
                         <div
-                          className={`shrink-0 mt-0.5 ${
-                            systemError.type === "general" ? "text-red-400" : "text-warning"
-                          }`}
+                          className={`shrink-0 mt-0.5 ${systemError.type === "general" ? "text-red-400" : "text-warning"
+                            }`}
                         >
                           {systemError.type === "rate_limit" ? (
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
@@ -640,9 +635,8 @@ export function ChatContainer() {
                           )}
                         </div>
                         <p
-                          className={`flex-1 text-sm ${
-                            systemError.type === "general" ? "text-red-300" : "text-warning"
-                          }`}
+                          className={`flex-1 text-sm ${systemError.type === "general" ? "text-red-300" : "text-warning"
+                            }`}
                         >
                           {systemError.message}
                           {systemError.type === "billing" && (
@@ -756,17 +750,15 @@ export function ChatContainer() {
                 {/* System error banner */}
                 {systemError && (
                   <div
-                    className={`px-4 py-3 border-t shrink-0 ${
-                      systemError.type === "general"
+                    className={`px-4 py-3 border-t shrink-0 ${systemError.type === "general"
                         ? "bg-red-500/10 border-red-500/20"
                         : "bg-warning/10 border-warning/20"
-                    }`}
+                      }`}
                   >
                     <div className="max-w-3xl mx-auto flex items-start gap-3">
                       <div
-                        className={`shrink-0 mt-0.5 ${
-                          systemError.type === "general" ? "text-red-400" : "text-warning"
-                        }`}
+                        className={`shrink-0 mt-0.5 ${systemError.type === "general" ? "text-red-400" : "text-warning"
+                          }`}
                       >
                         {systemError.type === "rate_limit" ? (
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
@@ -779,9 +771,8 @@ export function ChatContainer() {
                         )}
                       </div>
                       <p
-                        className={`flex-1 text-sm ${
-                          systemError.type === "general" ? "text-red-300" : "text-warning"
-                        }`}
+                        className={`flex-1 text-sm ${systemError.type === "general" ? "text-red-300" : "text-warning"
+                          }`}
                       >
                         {systemError.message}
                         {systemError.type === "billing" && (
@@ -949,11 +940,10 @@ function OnboardingModal({
               <button
                 key={g}
                 onClick={() => onGradeChange(g)}
-                className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold transition-all ${
-                  currentGrade === g
+                className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold transition-all ${currentGrade === g
                     ? "bg-[#2563EB] dark:bg-[#4F8EF7] text-white shadow-md shadow-[#2563EB]/25 dark:shadow-[#4F8EF7]/25 scale-105"
                     : "bg-[#F1F5F9] dark:bg-[#1A2033] border border-[#E5E7EB] dark:border-white/7 text-[#6B7280] dark:text-[#8B95A8] hover:border-[#2563EB]/50 dark:hover:border-[#4F8EF7]/50 hover:text-[#111827] dark:hover:text-[#E8ECF4]"
-                }`}
+                  }`}
               >
                 {g}
               </button>
@@ -1011,10 +1001,10 @@ function ChatSkeleton() {
   return (
     <div className="space-y-6 py-2">
       <SkeletonBubble align="right" widthClass="w-48" />
-      <SkeletonBubble align="left"  widthClass="w-3/4" />
-      <SkeletonBubble align="left"  widthClass="w-2/3" />
+      <SkeletonBubble align="left" widthClass="w-3/4" />
+      <SkeletonBubble align="left" widthClass="w-2/3" />
       <SkeletonBubble align="right" widthClass="w-36" />
-      <SkeletonBubble align="left"  widthClass="w-4/5" />
+      <SkeletonBubble align="left" widthClass="w-4/5" />
     </div>
   );
 }
