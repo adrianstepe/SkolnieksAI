@@ -609,6 +609,10 @@ export function ChatContainer() {
                   </p>
                 </div>
 
+                <p className="text-sm text-text-muted text-center mb-5 animate-fade-in">
+                  Izvēlies tēmu vai ieraksti savu jautājumu zemāk
+                </p>
+
                 {/* Floating input */}
                 <div className="w-full max-w-2xl animate-slide-up">
                   {systemError && (
