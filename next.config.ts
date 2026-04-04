@@ -27,10 +27,12 @@ const csp = [
     // Minimum required paths — full-origin allowlist removed to prevent JSONP/Angular bypasses
     "https://apis.google.com/js/api.js",
     "https://www.gstatic.com/firebasejs/",
+    "https://www.googletagmanager.com",
+    "https://www.google-analytics.com",
   ].join(" "),
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: https:",
+  "img-src 'self' data: https: https://www.google-analytics.com",
   [
     "connect-src",
     "'self'",

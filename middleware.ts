@@ -68,9 +68,9 @@ function extractUidFromAuthHeader(request: NextRequest): string | null {
 function buildCspHeader(nonce: string): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' https://js.stripe.com https://apis.google.com https://www.gstatic.com`,
+    `script-src 'self' 'nonce-${nonce}' https://js.stripe.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https://*.googleapis.com",
+    "img-src 'self' data: https://*.googleapis.com https://www.google-analytics.com",
     "font-src 'self'",
     [
       "connect-src 'self'",
