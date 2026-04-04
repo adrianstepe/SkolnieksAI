@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
 import { getAnalytics, isSupported, logEvent } from "firebase/analytics";
-import { app } from "@/lib/firebase/client";
+import { app, logAnalyticsEvent } from "@/lib/firebase/client";
 import { ChatMessage, TypingIndicator, type Message } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 import { Sidebar, type RecentChat } from "./Sidebar";
@@ -304,10 +304,12 @@ export function ChatContainer() {
         content: text,
       };
 
+      let subjectForAnalytics = subject;
       // Auto-detect subject on the very first message of a new general conversation
       if (subject === "general" && messages.length === 0) {
         const detected = detectSubject(text);
         if (detected) {
+          subjectForAnalytics = detected;
           setSubject(detected);
           setDetectedSubjectLabel(SUBJECT_LABELS[detected] ?? detected);
         }
@@ -435,6 +437,13 @@ export function ChatContainer() {
             }
           }
         }
+        const gradeForAnalytics = profile?.grade ?? grade;
+        void logAnalyticsEvent("message_sent", {
+          subject: subjectForAnalytics,
+          ...(typeof gradeForAnalytics === "number"
+            ? { grade_level: gradeForAnalytics }
+            : {}),
+        });
         refreshProfile();
         // Refresh sidebar after new message
         fetchRecentChats();
@@ -476,11 +485,13 @@ export function ChatContainer() {
         }
 
         if (isBudgetExceeded) {
+          void logAnalyticsEvent("limit_reached", { limit_type: "monthly" });
           setSystemError({
             message: "Tavs mēneša limits ir sasniegts. Uzlabo plānu, lai turpinātu!",
             type: "billing",
           });
         } else if (isDailyLimitExceeded) {
+          void logAnalyticsEvent("limit_reached", { limit_type: "daily" });
           setSystemError({
             message: "Šodien esi sasniedzis dienas jautājumu limitu. Atgriezies rīt vai uzlabo plānu!",
             type: "billing",

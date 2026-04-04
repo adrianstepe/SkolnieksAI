@@ -1,7 +1,12 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
+import {
+  getAnalytics,
+  isSupported,
+  logEvent,
+  type Analytics,
+} from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -27,6 +32,44 @@ if (typeof window !== "undefined") {
       analyticsInstance = getAnalytics(app);
     }
   });
+}
+
+export type AuthAnalyticsMethod = "email" | "google";
+
+/** Logs sign_up / login when Analytics is supported (browser + measurement ID). Fire-and-forget safe. */
+export async function logAuthAnalyticsEvent(
+  eventName: "sign_up" | "login",
+  method: AuthAnalyticsMethod,
+): Promise<void> {
+  if (typeof window === "undefined") return;
+  const supported = await isSupported().catch(() => false);
+  if (!supported) return;
+  try {
+    logEvent(getAnalytics(app), eventName, { method });
+  } catch {
+    // Missing measurement ID or other init failure — do not break auth flow
+  }
+}
+
+/** Generic Analytics event; omits undefined param values. Safe when unsupported or init fails. */
+export async function logAnalyticsEvent(
+  eventName: string,
+  params?: Record<string, string | number | boolean | undefined>,
+): Promise<void> {
+  if (typeof window === "undefined") return;
+  const supported = await isSupported().catch(() => false);
+  if (!supported) return;
+  try {
+    const payload: Record<string, string | number | boolean> = {};
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined) payload[key] = value;
+      }
+    }
+    logEvent(getAnalytics(app), eventName, payload);
+  } catch {
+    // Missing measurement ID or other init failure
+  }
 }
 
 export { app, auth, db, googleProvider, analyticsInstance as analytics };

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/context/auth-context";
+import { logCheckoutStarted } from "@/lib/analytics/revenue";
 
 interface StreakBrokenModalProps {
   /** The streak count that was lost (shown for emotional context). */
@@ -57,13 +58,17 @@ export function StreakBrokenModal({ lostStreak, onClose }: StreakBrokenModalProp
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan: "pro" }),
+        body: JSON.stringify({
+          plan: "pro",
+          consentTimestamp: new Date().toISOString(),
+        }),
       });
 
       if (!res.ok) throw new Error("checkout_failed");
 
       const data = (await res.json()) as { url: string };
       if (data.url) {
+        await logCheckoutStarted({ plan: "pro", source: "streak_broken_modal" });
         window.location.href = data.url;
       }
     } catch {

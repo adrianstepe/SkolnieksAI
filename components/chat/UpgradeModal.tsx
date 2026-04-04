@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/context/auth-context";
+import { logCheckoutStarted } from "@/lib/analytics/revenue";
 import { getExamCountdown } from "@/lib/exams/latvianExams";
 
 interface UpgradeModalProps {
@@ -179,7 +180,7 @@ function PlanCard({
         <div className="relative mt-4">
           {showWarning && (
             <div className="absolute -top-8 left-0 right-0 flex justify-center pointer-events-none z-10">
-              <span className="rounded-md bg-[#1A2033] border border-[#374151] px-2.5 py-1 text-[11px] font-medium text-[#F59E0B] whitespace-nowrap shadow-lg">
+              <span className="rounded-md border border-orange-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-orange-800 shadow-md dark:border-[#374151] dark:bg-[#1A2033] dark:text-[#FBBF24]">
                 Vispirms apstipriniet zemāk
               </span>
             </div>
@@ -204,7 +205,7 @@ function PlanCard({
         <div className="relative mt-4">
           {showWarning && (
             <div className="absolute -top-8 left-0 right-0 flex justify-center pointer-events-none z-10">
-              <span className="rounded-md bg-[#1A2033] border border-[#374151] px-2.5 py-1 text-[11px] font-medium text-[#F59E0B] whitespace-nowrap shadow-lg">
+              <span className="rounded-md border border-orange-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-orange-800 shadow-md dark:border-[#374151] dark:bg-[#1A2033] dark:text-[#FBBF24]">
                 Vispirms apstipriniet zemāk
               </span>
             </div>
@@ -268,10 +269,10 @@ function PlanCard({
                     ? onConsentPro(e.target.checked)
                     : onConsentPremium(e.target.checked)
                 }
-                className={`peer appearance-none h-4 w-4 rounded border-2 cursor-pointer transition-colors duration-150 checked:bg-[#2563EB] checked:border-[#2563EB] bg-white ${
+                className={`peer h-4 w-4 shrink-0 cursor-pointer appearance-none rounded border-2 bg-[#F3F4F6] transition-colors duration-150 checked:border-[#2563EB] checked:bg-[#2563EB] checked:ring-0 dark:bg-[#1A2033] dark:checked:bg-[#2563EB] ${
                   showWarning && !consent
-                    ? "border-[#F59E0B]"
-                    : "border-[#9CA3AF]"
+                    ? "border-orange-500 ring-2 ring-orange-400/60 dark:border-[#F59E0B] dark:ring-orange-500/40"
+                    : "border-[#6B7280] ring-1 ring-black/[0.06] dark:border-[#9CA3AF] dark:ring-white/10"
                 }`}
               />
               <svg
@@ -288,7 +289,12 @@ function PlanCard({
               }`}
             >
               {!consent && (
-                <span className="mr-1 text-[#F59E0B]">•</span>
+                <span
+                  className={`mr-1.5 mt-[3px] inline-block h-2 w-2 shrink-0 rounded-full bg-orange-500 dark:bg-[#F59E0B] ${
+                    showWarning ? "ring-2 ring-orange-400 shadow-sm dark:ring-amber-300/80" : "ring-1 ring-orange-700/30 dark:ring-amber-500/40"
+                  }`}
+                  aria-hidden
+                />
               )}
               Piekrītu tūlītējai piekļuvei un saprotu, ka zaudēju 14 dienu atteikuma tiesības.
             </span>
@@ -347,6 +353,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
 
       const data = (await res.json()) as { url: string };
       if (data.url) {
+        await logCheckoutStarted({ plan, source: "upgrade_modal" });
         window.location.href = data.url;
       }
     } catch (err) {

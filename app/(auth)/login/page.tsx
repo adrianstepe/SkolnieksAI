@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/auth-context";
 import { LogoWordmark } from "@/components/LogoWordmark";
+import { logAuthAnalyticsEvent } from "@/lib/firebase/client";
 
 export default function LoginPage() {
   const { signInWithEmail, signInWithGoogle, getIdToken } = useAuth();
@@ -20,6 +21,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await signInWithEmail(email, password);
+      void logAuthAnalyticsEvent("login", "email");
       router.replace("/");
     } catch (err) {
       setError(mapFirebaseError(err));
@@ -44,6 +46,7 @@ export default function LoginPage() {
           body: JSON.stringify({}),
         });
       }
+      void logAuthAnalyticsEvent("login", "google");
       router.replace("/");
     } catch (err) {
       setError(mapFirebaseError(err));

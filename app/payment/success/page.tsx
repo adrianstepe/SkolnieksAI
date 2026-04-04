@@ -1,11 +1,40 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { logPurchase, type PaidPlanId } from "@/lib/analytics/revenue";
+
+function parsePlan(param: string | null): PaidPlanId | null {
+  return param === "pro" || param === "premium" ? param : null;
+}
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(3);
+
+  useEffect(() => {
+    let active = true;
+    const sessionId = searchParams.get("session_id");
+    const plan = parsePlan(searchParams.get("plan"));
+
+    if (sessionId && plan && typeof window !== "undefined") {
+      const storageKey = `analytics_purchase_${sessionId}`;
+      // Set synchronously before any async work so React 18 Strict Mode’s
+      // mount → unmount → remount does not fire `purchase` twice.
+      if (!sessionStorage.getItem(storageKey)) {
+        sessionStorage.setItem(storageKey, "1");
+        void (async () => {
+          await logPurchase({ sessionId, plan });
+          if (!active) return;
+        })();
+      }
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [searchParams]);
 
   useEffect(() => {
     const timer = setInterval(() => {

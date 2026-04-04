@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Settings, Zap, LogOut, ChevronDown } from "lucide-react";
 import { LogoWordmark } from "@/components/LogoWordmark";
+import { logAnalyticsEvent } from "@/lib/firebase/client";
 import { SUBJECTS } from "./SubjectGradeSelector";
 
 export interface RecentChat {
@@ -152,6 +153,7 @@ export function Sidebar({
         <div className="px-3 pt-3">
           <button
             onClick={() => {
+              void logAnalyticsEvent("chat_created");
               onNewChat?.();
               onMobileClose?.();
             }}

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { sendEmailVerification } from "firebase/auth";
 import { useAuth } from "@/lib/context/auth-context";
 import { LogoWordmark } from "@/components/LogoWordmark";
+import { logAuthAnalyticsEvent } from "@/lib/firebase/client";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -119,6 +120,7 @@ export default function SignupPage() {
       const user = await signUpWithEmail(email, password);
       const token = await user.getIdToken();
       await registerInFirestore(token);
+      void logAuthAnalyticsEvent("sign_up", "email");
       await sendEmailVerification(user);
       router.replace("/verify-email");
     } catch (err) {
@@ -153,6 +155,7 @@ export default function SignupPage() {
       if (token) {
         await registerInFirestore(token);
       }
+      void logAuthAnalyticsEvent("sign_up", "google");
       router.replace("/");
     } catch (err) {
       setError(mapFirebaseError(err));
