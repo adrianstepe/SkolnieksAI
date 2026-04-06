@@ -18,10 +18,12 @@ export function StreakIndicator() {
   // Compute fixed position below the button whenever the popover opens
   useEffect(() => {
     if (!open || !buttonRef.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPopoverStyle({});
       return;
     }
     const rect = buttonRef.current.getBoundingClientRect();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPopoverStyle({
       position: "fixed",
       top: rect.bottom + 8,

@@ -62,7 +62,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   // Hydrate from localStorage after first render
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSettings(loadFromStorage());
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

@@ -293,7 +293,7 @@ function DefaultsSection() {
       const token = await getIdToken();
       if (token) {
         // Map local setting keys to backend expectation
-        const payload: Record<string, any> = {};
+        const payload: Record<string, string | number> = {};
         if (key === "defaultGrade") payload.grade = value;
         if (key === "defaultSubject") payload.subject = value;
 

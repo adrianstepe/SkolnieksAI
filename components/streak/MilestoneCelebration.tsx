@@ -86,16 +86,10 @@ export function MilestoneCelebration() {
 
     if (hit) {
       sessionStorage.setItem(sessionKey(hit), "true");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveMilestone(hit);
     }
   }, [profile]);
-
-  // Auto-dismiss after 5 s
-  useEffect(() => {
-    if (!activeMilestone) return;
-    const timer = setTimeout(() => dismiss(), 5000);
-    return () => clearTimeout(timer);
-  }, [activeMilestone]);
 
   function dismiss() {
     setLeaving(true);
@@ -105,6 +99,13 @@ export function MilestoneCelebration() {
       setLeaving(false);
     }, 300);
   }
+
+  // Auto-dismiss after 5 s
+  useEffect(() => {
+    if (!activeMilestone) return;
+    const timer = setTimeout(() => dismiss(), 5000);
+    return () => clearTimeout(timer);
+  }, [activeMilestone, dismiss]);
 
   if (!activeMilestone) return null;
 

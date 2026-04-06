@@ -36,17 +36,15 @@ export function ChatInput({
   const charLimit = CHAR_LIMIT[profile?.tier ?? "free"];
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [showCameraHint, setShowCameraHint] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setShowCameraHint(!localStorage.getItem("hasSeenCameraHint"));
-    }
-  }, []);
+  const [showCameraHint, setShowCameraHint] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !localStorage.getItem("hasSeenCameraHint");
+  });
 
   // Populate textarea when a starter prompt card is tapped
   useEffect(() => {
     if (!pendingPrompt) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setValue(pendingPrompt);
     onPromptConsumed?.();
     // Resize textarea then focus

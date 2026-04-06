@@ -30,8 +30,8 @@ export async function POST(request: NextRequest) {
   }
 
   const { grade, subject } = parsed.data;
-  
-  const updates: Record<string, any> = {};
+
+  const updates: Record<string, number | string> = {};
   if (grade !== undefined) updates.grade = grade;
   if (subject !== undefined) updates.preferredSubject = subject;
 

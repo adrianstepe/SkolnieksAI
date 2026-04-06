@@ -30,8 +30,8 @@ export default function PrivacyPolicyPage() {
 
         <h2 className="text-xl font-semibold text-text-primary mt-10 mb-4">1. Ievads</h2>
         <p className="mb-6">
-          Šī Privātuma politika skaidro, kā SkolnieksAI ("mēs", "mūsu") vāc, izmanto un aizsargā jūsu personas datus,
-          izmantojot mūsu platformu un pakalpojumus. Mēs esam apņēmušies ievērot Vispārīgo datu aizsardzības regulu (GDPR) 
+          Šī Privātuma politika skaidro, kā SkolnieksAI (&quot;mēs&quot;, &quot;mūsu&quot;) vāc, izmanto un aizsargā jūsu personas datus,
+          izmantojot mūsu platformu un pakalpojumus. Mēs esam apņēmušies ievērot Vispārīgo datu aizsardzības regulu (GDPR)
           un Latvijas Republikas likumdošanu.
         </p>
 

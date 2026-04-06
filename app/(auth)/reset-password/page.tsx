@@ -28,12 +28,12 @@ export default function ResetPasswordPage() {
 
   // Verify the token on mount
   useEffect(() => {
-    if (!token) {
-      setTokenState("not_found");
-      return;
-    }
-
     const verify = async () => {
+      if (!token) {
+        setTokenState("not_found");
+        return;
+      }
+
       try {
         const res = await fetch(
           `/api/auth/verify-reset-token?token=${encodeURIComponent(token)}`,

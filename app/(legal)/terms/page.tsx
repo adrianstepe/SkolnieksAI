@@ -155,7 +155,7 @@ export default function TermsOfServicePage() {
         {/* 8 */}
         <h2 className="text-xl font-semibold text-text-primary mt-10 mb-4">8. Atbildības ierobežojumi</h2>
         <p className="mb-6">
-          SkolnieksAI tiek nodrošināts "tāds, kāds ir" (<em>as is</em>). Mēs cenšamies nodrošināt stabilu
+          SkolnieksAI tiek nodrošināts &quot;tāds, kāds ir&quot; (<em>as is</em>). Mēs cenšamies nodrošināt stabilu
           darbību, taču negarantējam nepārtrauktu pieejamību vai atbilžu precizitāti. Tehnisku problēmu,
           apkopes vai neparedzētu apstākļu dēļ pakalpojums var būt īslaicīgi nepieejams.
         </p>

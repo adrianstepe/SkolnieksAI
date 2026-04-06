@@ -41,20 +41,21 @@ function ParentalVerifyContent() {
 
   // Mount Stripe Elements once the card container is visible
   useEffect(() => {
-    if (!consentId) {
-      setErrorMsg("Saite ir nederīga. Lūdzu, pārbaudiet e-pastu un mēģiniet vēlreiz.");
-      setStep("error");
-      return;
-    }
+    const initialize = async () => {
+      if (!consentId) {
+        setErrorMsg("Saite ir nederīga. Lūdzu, pārbaudiet e-pastu un mēģiniet vēlreiz.");
+        setStep("error");
+        return;
+      }
 
-    const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-    if (!pk) {
-      setErrorMsg("Maksājumu sistēma nav pieejama. Lūdzu, sazinieties ar atbalstu.");
-      setStep("error");
-      return;
-    }
+      const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+      if (!pk) {
+        setErrorMsg("Maksājumu sistēma nav pieejama. Lūdzu, sazinieties ar atbalstu.");
+        setStep("error");
+        return;
+      }
 
-    loadStripe(pk).then((stripe) => {
+      const stripe = await loadStripe(pk);
       if (!stripe) {
         setErrorMsg("Neizdevās ielādēt maksājumu sistēmu. Mēģiniet pārlādēt lapu.");
         setStep("error");
@@ -62,7 +63,9 @@ function ParentalVerifyContent() {
       }
       stripeRef.current = stripe;
       setStep("ready");
-    });
+    };
+
+    void initialize();
   }, [consentId]);
 
   // Mount the card element once the container div is rendered
