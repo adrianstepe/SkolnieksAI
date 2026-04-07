@@ -116,7 +116,7 @@ export function ChatContainer() {
 
     if (
       currentStreak === 1 &&
-      longestStreak >= 3 &&
+      longestStreak >= 2 &&
       !sessionStorage.getItem(sessionKey)
     ) {
       sessionStorage.setItem(sessionKey, "true");

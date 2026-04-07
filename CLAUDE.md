@@ -8,8 +8,8 @@ Latvia's first AI study companion. Aligns to the national curriculum via RAG ove
 
 - **Frontend**: Next.js 14+ (App Router) + Tailwind CSS → Vercel
 - **Auth**: Firebase Auth (email + Google). Firestore for user profiles & usage tracking
-- **Vector DB**: ChromaDB (local/self-hosted). Embeddings: sentence-transformers
-- **RAG**: LangChain + pdfplumber for PDF ingestion → ChromaDB retrieval → LLM
+- **Vector DB**: Chroma Cloud (`skolnieks_content` collection). Embeddings: `@xenova/transformers` (Node.js, no Python). Production queries Chroma Cloud directly via `lib/rag/retriever.ts`.
+- **RAG**: pdfplumber for PDF ingestion → ChromaDB retrieval → LLM. Production retrieval is pure TypeScript (no Python server needed). `RAG_server.py` is legacy/local-dev only.
 - **Free tier AI**: DeepSeek V3.2 (`deepseek-chat`). $0.028/1M cached, $0.28 miss, $0.42 output
 - **Paid tier AI**: Claude Sonnet 4.6 only (via Anthropic API)
 - **Payments**: Stripe Checkout + webhooks
@@ -56,6 +56,12 @@ src/
     ├── openstax/         # OpenStax PDFs
     └── skola2030/        # (Future) Official framework PDFs
 ```
+
+## ChromaDB
+
+- **Production (Vercel)**: `lib/rag/retriever.ts` connects to Chroma Cloud via `chromadb` npm `CloudClient`. Requires env vars: `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE`. Embeddings via `@xenova/transformers` in Node.js — no Python server needed.
+- **Local dev / ingestion**: Python scripts (`RAG_server.py`, `rag/chroma_client.py`) still work for local ingestion. `rag/chroma_client.py::get_chroma_client()` handles local vs cloud routing for Python tools.
+- Only `skolnieks_content` is on Chroma Cloud. `skola2030_chunks` excluded — no license yet.
 
 ## Critical Rules
 

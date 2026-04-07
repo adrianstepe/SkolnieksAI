@@ -18,8 +18,8 @@
               ┌─────────────┼─────────────┐
               ▼             ▼             ▼
       ┌──────────┐  ┌────────────┐  ┌──────────┐
-      │ ChromaDB │  │ DeepSeek   │  │ Claude   │
-      │ (vectors)│  │ V3.2 (free)│  │ Sonnet   │
+      │ Chroma   │  │ DeepSeek   │  │ Claude   │
+      │ Cloud    │  │ V3.2 (free)│  │ Sonnet   │
       └──────────┘  └────────────┘  │ (paid)   │
                                     └──────────┘
 ```
@@ -30,8 +30,9 @@
 2. Middleware verifies Firebase Auth token → reject if invalid
 3. Usage gate: read `users/{uid}/usage/{YYYY-MM}` → check token budget remaining
 4. RAG retrieval:
-   - Embed query with sentence-transformers (same model as ingest)
-   - Query ChromaDB top-k=5 chunks, filtered by subject + grade metadata
+   - Embed query with `@xenova/transformers` (`paraphrase-multilingual-MiniLM-L12-v2`, runs in Node.js)
+   - Query Chroma Cloud (`skolnieks_content` collection) top-k chunks, filtered by subject metadata
+   - No Python server needed — `lib/rag/retriever.ts` connects to Chroma Cloud directly via `chromadb` npm `CloudClient`
    - Future: rerank step for quality
 5. Build prompt: system message (Latvian, Skola2030, grade) + retrieved chunks + user message. Response strategy: factual questions answered directly in the first sentence; math/calculations solved fully step-by-step; essay/homework structure guided with one concrete hint; student who explicitly requests a direct answer always receives one regardless of question type.
 6. Route to LLM: free → DeepSeek V3.2, paid → Claude Sonnet 4.6
@@ -86,20 +87,22 @@ interface LLMClient {
 
 ## ChromaDB Collection
 
-Collection: `knowledge_chunks`
+Collection: `skolnieks_content` (Chroma Cloud)
 
 Document shape:
 - `id`: hash of (pdf_filename + page + chunk_index)
 - `document`: text chunk (~500 tokens)
-- `embedding`: 384-dim (all-MiniLM-L6-v2 or Latvian-tuned)
-- `metadata`: `{ source_pdf, subject, grade_min, grade_max, page_number, section_title }`
+- `embedding`: 384-dim (`paraphrase-multilingual-MiniLM-L12-v2`)
+- `metadata`: `{ source_pdf, subject, grade_min, grade_max, page_number, chunk_index }`
+
+Production retrieval path: `lib/rag/retriever.ts` → `chromadb` npm `CloudClient` → Chroma Cloud. No Python server or localhost:8001 dependency.
 
 ## Deployment Targets
 
 | Service     | Host               | Cost        |
 |-------------|--------------------|-----------  |
 | Frontend+API| Vercel (free tier) | €0/mo       |
-| ChromaDB    | Hetzner VPS        | ~€5/mo      |
+| Chroma Cloud| trychroma.com      | Free tier   |
 | Firebase    | Spark → Blaze      | €0 → usage  |
 | Stripe      | Standard           | 1.4% + €0.25|
 

@@ -78,16 +78,16 @@ export function StreakBrokenModal({ lostStreak, onClose }: StreakBrokenModalProp
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-0 pointer-events-none">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm pointer-events-auto"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Sheet / modal — slides up on mobile, centered on sm+ */}
-      <div className="relative w-full sm:mx-4 sm:max-w-sm animate-slide-up sm:animate-fade-up rounded-t-2xl sm:rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB] dark:bg-[#0F1117] px-6 pt-6 pb-8 sm:p-8">
+      <div className="relative w-full sm:w-auto sm:mx-4 sm:max-w-sm animate-slide-up sm:animate-fade-up rounded-t-2xl sm:rounded-2xl border border-[#E5E7EB] dark:border-white/7 bg-[#F9FAFB] dark:bg-[#0F1117] px-6 pt-6 pb-8 sm:p-8 pointer-events-auto">
         {/* Close */}
         <button
           onClick={onClose}

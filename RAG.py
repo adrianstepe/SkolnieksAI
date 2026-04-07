@@ -10,26 +10,12 @@ from sentence_transformers import SentenceTransformer
 # ---------------------------------------------------------------------------
 SCRIPT_DIR    = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR      = os.path.join(SCRIPT_DIR, "Skola2030")
-CHROMA_DIR    = os.path.join(SCRIPT_DIR, "SkolnieksAI_DB")
-COLLECTION    = "skola2030_chunks"          # matches ARCHITECTURE.md
 
-# Chroma Cloud env vars — if CHROMA_TENANT is set, cloud mode is active
-_CHROMA_TENANT   = os.environ.get("CHROMA_TENANT", "")
-_CHROMA_DATABASE = os.environ.get("CHROMA_DATABASE", "skolnieksai")
-_CHROMA_API_KEY  = os.environ.get("CHROMA_API_KEY", "")
+# Client factory — all ChromaDB init lives in rag/chroma_client.py
+from rag.chroma_client import CHROMA_DIR, get_chroma_client  # noqa: E402
 
-
-def get_chroma_client() -> chromadb.ClientAPI:
-    """Return a Chroma Cloud HttpClient if CHROMA_TENANT is set, else local PersistentClient."""
-    if _CHROMA_TENANT:
-        return chromadb.HttpClient(
-            ssl=True,
-            host="api.trychroma.com",
-            tenant=_CHROMA_TENANT,
-            database=_CHROMA_DATABASE,
-            headers={"x-chroma-token": _CHROMA_API_KEY},
-        )
-    return chromadb.PersistentClient(path=CHROMA_DIR)
+# Legacy alias kept for RAG_server.py import compatibility
+_CHROMA_TENANT = os.environ.get("CHROMA_TENANT", "")
 # Multilingual model — handles Latvian + English in the same vector space.
 # Switched from all-MiniLM-L6-v2 (English-primary) to support Wikipedia LV + OpenStax.
 EMBEDDING_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"

@@ -9,7 +9,6 @@
  *   npm run eval:rag -- --json   # output results as JSON
  */
 
-import { retrieve } from "../lib/rag/retriever";
 import { runRagChain } from "../lib/rag/chain";
 
 // ---------------------------------------------------------------------------

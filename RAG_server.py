@@ -8,7 +8,6 @@ import os
 from contextlib import asynccontextmanager
 from typing import Any
 
-import chromadb
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,7 +15,8 @@ from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel, Field
 from sentence_transformers import SentenceTransformer
 
-from RAG import CHROMA_DIR, CONTENT_COLLECTION, SKOLA2030_COLLECTION, EMBEDDING_MODEL, get_chroma_client, _CHROMA_TENANT
+from RAG import CHROMA_DIR, CONTENT_COLLECTION, SKOLA2030_COLLECTION, EMBEDDING_MODEL, get_chroma_client
+from rag.chroma_client import _API_KEY
 
 # ---------------------------------------------------------------------------
 # API key authentication
@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
     global _model, _content_collection, _skola_collection
     print(f"[startup] Loading embedding model: {EMBEDDING_MODEL}")
     _model = SentenceTransformer(EMBEDDING_MODEL)
-    location = f"Chroma Cloud (tenant={_CHROMA_TENANT})" if _CHROMA_TENANT else CHROMA_DIR
+    location = "Chroma Cloud" if _API_KEY else CHROMA_DIR
     print(f"[startup] Connecting to ChromaDB: {location}")
     client = get_chroma_client()
 

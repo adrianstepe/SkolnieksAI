@@ -6,9 +6,7 @@ import type { RetrievedChunk } from "./retriever";
 import { adminDb } from "@/lib/firebase/admin";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { normalizeSubjectToRagKey, isMetaQuestion, answerMetaQuestion } from "@/lib/curriculum/subjects";
-
-const RAG_API_URL = process.env.RAG_API_URL ?? "http://localhost:8001";
-const RAG_API_KEY = process.env.RAG_API_KEY ?? "";
+import { embedText } from "@/lib/ai/embeddings";
 
 // IMPORTANT: Bump this version string whenever you change:
 // - The system prompt
@@ -61,15 +59,7 @@ function isCacheable(query: string): boolean {
 
 async function getEmbedding(text: string): Promise<number[] | null> {
   try {
-    const res = await fetch(`${RAG_API_URL}/embed`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-API-Key": RAG_API_KEY },
-      body: JSON.stringify({ text }),
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { embedding: number[] };
-    return data.embedding;
+    return await embedText(text);
   } catch {
     return null;
   }

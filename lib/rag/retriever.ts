@@ -1,35 +1,113 @@
-import { ChromaClient, Collection } from "chromadb";
+/**
+ * lib/rag/retriever.ts — Pure TypeScript retriever using Chroma Cloud.
+ *
+ * Replaces the old Python RAG server (localhost:8001) for production use.
+ * Embeds queries via @xenova/transformers (Node.js, no Python needed)
+ * and queries Chroma Cloud directly using the chromadb npm package.
+ */
+
+import { CloudClient, DefaultEmbeddingFunction } from "chromadb";
+import type { Collection } from "chromadb";
 import { embedText } from "@/lib/ai/embeddings";
-import type { ChunkMetadata } from "@/scripts/ingest";
-import { KNOWN_CURRICULUM_SUBJECTS } from "@/lib/rag-client";
 
-const CHROMA_URL = process.env.CHROMA_URL ?? "http://localhost:8000";
-// NOTE: Default matches ingest.ts. "skola2030_chunks" was the old name —
-// kept as CHROMA_COLLECTION override for environments where the old collection
-// is still in use, but the unlicensed skola2030 PDFs must not be ingested
-// until a license is obtained (data/skola2030/ is excluded from DATA_DIRS in ingest.ts).
-const COLLECTION_NAME = process.env.CHROMA_COLLECTION ?? "knowledge_chunks";
+const COLLECTION_NAME = "skolnieks_content";
 
-// Reuse client across requests in the same Node.js process
-let clientInstance: ChromaClient | null = null;
+// ---------------------------------------------------------------------------
+// Shared constants (canonical source — re-exported by lib/rag-client.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * ChromaDB cosine distance: 0 = identical, 2 = opposite.
+ * Path A threshold: distance < 1.0 = confidently relevant.
+ * paraphrase-multilingual-MiniLM-L12-v2 Latvian cross-lingual distances for
+ * genuinely relevant chunks land in the 0.85–0.95 range.
+ */
+export const RAG_DISTANCE_THRESHOLD = 1.0;
+
+/**
+ * Subject values actually stored in ChromaDB (from RAG.py + scripts/ingest.ts).
+ * "general" and "unknown" are intentionally excluded — they must NOT trigger a
+ * where filter so the query searches across all curriculum chunks.
+ */
+export const KNOWN_CURRICULUM_SUBJECTS = new Set([
+  "latvian_literature", "minority_russian", "history", "social_history",
+  "social_sciences", "social_studies", "design_tech", "sports", "arts",
+  "culture", "latvian", "russian", "english", "french", "german",
+  "literature", "math", "biology", "geography", "science", "physics",
+  "chemistry", "programming", "cs", "engineering", "visual_arts", "theater", "music",
+  "informatics", "astronomy",
+]);
+
+// ---------------------------------------------------------------------------
+// Shared types (canonical source — re-exported by lib/rag-client.ts)
+// ---------------------------------------------------------------------------
+
+interface ChunkMeta {
+  source_pdf: string;
+  subject: string;
+  grade_min: number;
+  grade_max: number;
+  page_number: number;
+  chunk_index: number;
+}
+
+export interface RetrieveResult {
+  texts: string[];
+  sources: string[];
+  /** ChromaDB cosine distances per chunk (0–2). Empty if no results. */
+  distances: number[];
+  /** Full metadata per chunk. */
+  metadatas: ChunkMeta[];
+  /**
+   * True when at least one retrieved chunk is confidently relevant.
+   * False when: no chunks returned, OR all distances exceed RAG_DISTANCE_THRESHOLD.
+   */
+  hasConfidentMatch: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Chroma Cloud client (singleton)
+// ---------------------------------------------------------------------------
+
+let clientInstance: CloudClient | null = null;
 let collectionInstance: Collection | null = null;
+
+function getCloudClient(): CloudClient {
+  if (!clientInstance) {
+    const apiKey = process.env.CHROMA_API_KEY;
+    const tenant = process.env.CHROMA_TENANT;
+    const database = process.env.CHROMA_DATABASE ?? "skolnieksai";
+
+    if (!apiKey || !tenant) {
+      throw new Error(
+        "CHROMA_API_KEY and CHROMA_TENANT must be set for Chroma Cloud",
+      );
+    }
+
+    clientInstance = new CloudClient({
+      apiKey,
+      tenant,
+      database,
+    });
+  }
+  return clientInstance;
+}
 
 async function getCollection(): Promise<Collection> {
   if (!collectionInstance) {
-    if (!clientInstance) {
-      clientInstance = new ChromaClient({ path: CHROMA_URL });
-    }
-    // We supply raw embeddings, so no embedding function needed.
-    // Cast to bypass the required embeddingFunction type constraint.
-    collectionInstance = await (clientInstance as unknown as {
-      getCollection: (params: { name: string }) => Promise<Collection>;
-    }).getCollection({ name: COLLECTION_NAME });
+    const client = getCloudClient();
+    // embeddingFunction is required by the SDK type but never invoked
+    // because we always pass raw queryEmbeddings in .query() calls.
+    collectionInstance = await client.getCollection({
+      name: COLLECTION_NAME,
+      embeddingFunction: new DefaultEmbeddingFunction(),
+    });
   }
   return collectionInstance;
 }
 
 // ---------------------------------------------------------------------------
-// Types
+// Types for chain.ts
 // ---------------------------------------------------------------------------
 
 export interface RetrievalFilter {
@@ -39,67 +117,145 @@ export interface RetrievalFilter {
 
 export interface RetrievedChunk {
   content: string;
-  metadata: ChunkMetadata;
+  metadata: {
+    source_pdf: string;
+    subject: string;
+    grade_min: number;
+    grade_max: number;
+    page_number: number;
+    section_title: string;
+  };
   distance: number;
 }
 
 // ---------------------------------------------------------------------------
-// Public API
+// Core retrieval — returns RetrieveResult (same shape as lib/rag-client.ts)
 // ---------------------------------------------------------------------------
 
 /**
- * Embed the query and fetch the top-k most relevant curriculum chunks.
- * Optionally filter by subject and/or grade level.
+ * Embed a query and retrieve matching chunks from Chroma Cloud.
+ * Returns the same RetrieveResult shape used by lib/rag-client.ts so
+ * lib/rag/chain.ts requires zero changes.
+ *
+ * Falls back gracefully (empty result) on any error — never throws.
  */
-export async function retrieve(
-  query: string,
-  filters?: RetrievalFilter,
-  nResults = 3,
-): Promise<RetrievedChunk[]> {
-  const collection = await getCollection();
-  const queryEmbedding = await embedText(query);
+export async function retrieveFromCloud(
+  question: string,
+  topK = 3,
+  subject?: string,
+): Promise<RetrieveResult> {
+  const empty: RetrieveResult = {
+    texts: [],
+    sources: [],
+    distances: [],
+    metadatas: [],
+    hasConfidentMatch: false,
+  };
 
-  // Build ChromaDB where clause.
-  // Only filter by subject when it's a known curriculum value — "general" and
-  // "unknown" must search across all chunks with no subject restriction.
-  const where: Record<string, unknown> = {};
-  if (filters?.subject && KNOWN_CURRICULUM_SUBJECTS.has(filters.subject)) {
-    where.subject = { $eq: filters.subject };
+  try {
+    // 1. Embed the query
+    const queryEmbedding = await embedText(question);
+
+    // 2. Build where clause
+    const whereSubject =
+      subject !== undefined && KNOWN_CURRICULUM_SUBJECTS.has(subject)
+        ? subject
+        : undefined;
+
+    const where: Record<string, unknown> | undefined = whereSubject
+      ? { subject: { $eq: whereSubject } }
+      : undefined;
+
+    // 3. Query Chroma Cloud with 8s timeout to avoid hanging Vercel functions
+    const collection = await getCollection();
+    const results = await Promise.race([
+      collection.query({
+        queryEmbeddings: [queryEmbedding],
+        nResults: topK,
+        where,
+        include: ["documents", "metadatas", "distances"] as never,
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Chroma query timed out (8s)")), 8_000),
+      ),
+    ]);
+
+    const docs = results.documents?.[0] ?? [];
+    const metas = results.metadatas?.[0] ?? [];
+    const distances = results.distances?.[0] ?? [];
+
+    if (docs.length === 0) {
+      console.warn(
+        "[retriever] Chroma Cloud returned 0 chunks — collection may be empty or query had no matches",
+      );
+      return empty;
+    }
+
+    // 4. Build RetrieveResult
+    const texts: string[] = [];
+    const sources: string[] = [];
+    const distArr: number[] = [];
+    const metadatas: RetrieveResult["metadatas"] = [];
+
+    for (let i = 0; i < docs.length; i++) {
+      const doc = docs[i];
+      if (!doc) continue;
+
+      const meta = (metas[i] ?? {}) as Record<string, unknown>;
+      const dist = distances[i] ?? 2;
+
+      const pdf = String(meta.source_pdf ?? "unknown");
+      const subj = String(meta.subject ?? "");
+      const srcType = String(meta.source_type ?? "");
+
+      let label = `${pdf} | ${subj}`;
+      if (srcType) label = `[${srcType}] ${label}`;
+
+      texts.push(doc);
+      sources.push(label);
+      distArr.push(dist);
+      metadatas.push({
+        source_pdf: pdf,
+        subject: subj,
+        grade_min: Number(meta.grade_min ?? 1),
+        grade_max: Number(meta.grade_max ?? 12),
+        page_number: Number(meta.page_number ?? 0),
+        chunk_index: Number(meta.chunk_index ?? 0),
+      });
+    }
+
+    const hasConfidentMatch =
+      texts.length > 0 &&
+      distArr.some((d) => d < RAG_DISTANCE_THRESHOLD);
+
+    // Debug logging
+    const scoreInfo = distArr
+      .map((d, i) => `chunk[${i}] dist=${d.toFixed(3)}`)
+      .join(", ");
+    console.log(
+      `[retriever] Retrieved: ${scoreInfo} | confident=${hasConfidentMatch}`,
+    );
+    console.log(`[retriever] Sources: ${sources.join(", ")}`);
+
+    return { texts, sources, distances: distArr, metadatas, hasConfidentMatch };
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error(`[retriever] Chroma Cloud error: ${err.message}`);
+    }
+    // Reset collection instance on error so next call retries connection
+    collectionInstance = null;
+    return empty;
   }
-  if (filters?.grade !== undefined) {
-    where.$and = [
-      { grade_min: { $lte: filters.grade } },
-      { grade_max: { $gte: filters.grade } },
-    ];
-  }
-
-  const results = await collection.query({
-    queryEmbeddings: [queryEmbedding],
-    nResults,
-    where: Object.keys(where).length > 0 ? where : undefined,
-    include: ["documents", "metadatas", "distances"] as never,
-  });
-
-  const docs = results.documents?.[0] ?? [];
-  const metas = results.metadatas?.[0] ?? [];
-  const distances = results.distances?.[0] ?? [];
-
-  return docs.map((doc, i) => ({
-    content: doc ?? "",
-    metadata: (metas[i] ?? {}) as unknown as ChunkMetadata,
-    distance: distances[i] ?? 1,
-  }));
 }
 
-/**
- * Format retrieved chunks into a context block for prompt injection.
- * Each chunk is numbered and tagged with its source.
- */
+// ---------------------------------------------------------------------------
+// Legacy helper
+// ---------------------------------------------------------------------------
+
 export function formatContext(chunks: RetrievedChunk[]): string {
   return chunks
     .map((chunk, i) => {
-      const { source_pdf, subject, grade_min, grade_max } =
-        chunk.metadata;
+      const { source_pdf, subject, grade_min, grade_max } = chunk.metadata;
       const header = `[${i + 1}] ${source_pdf} | ${subject} | grades ${grade_min}–${grade_max}`;
       return `${header}\n${chunk.content}`;
     })
