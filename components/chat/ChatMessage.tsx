@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -416,13 +416,25 @@ export function ChatMessage({
 }
 
 export function TypingIndicator({ subject }: { subject?: string }) {
+  const [phase, setPhase] = useState<1 | 2>(1);
   const accentColor = getSubjectColor(subject);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setPhase(2), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const shimmerBars = [
+    { width: "w-48", delay: "0s" },
+    { width: "w-36", delay: "0.15s" },
+    { width: "w-28", delay: "0.30s" },
+  ] as const;
 
   return (
     <div className="flex gap-2.5 sm:gap-3 animate-slide-in-left">
       {/* AI avatar */}
       <div
-        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0"
+        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
         style={{ backgroundColor: accentColor }}
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 sm:h-4 sm:w-4">
@@ -432,21 +444,49 @@ export function TypingIndicator({ subject }: { subject?: string }) {
           />
         </svg>
       </div>
+
       <div
-        className="bg-[#F1F5F9] dark:bg-[#1A2033] rounded-2xl rounded-bl-sm px-3.5 py-2.5 sm:px-4 sm:py-3 flex items-center gap-1.5 border-l-2"
+        className="bg-[#F1F5F9] dark:bg-[#1A2033] rounded-2xl rounded-bl-md px-4 py-3 border-l-2"
         style={{ borderLeftColor: accentColor }}
       >
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full animate-typing-dot"
-            style={{
-              backgroundColor: accentColor,
-              opacity: 0.6,
-              animationDelay: `${i * 0.2}s`,
-            }}
-          />
-        ))}
+        {phase === 1 ? (
+          /* Phase 1 — spinning arc + "Domāju..." text */
+          <div className="flex items-center gap-1.5 animate-fade-in">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              className="animate-spin shrink-0"
+              aria-hidden="true"
+            >
+              <circle
+                cx="7"
+                cy="7"
+                r="5.5"
+                stroke="#6B7280"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeDasharray="26"
+                strokeDashoffset="8"
+              />
+            </svg>
+            <span className="text-xs text-[#6B7280] dark:text-[#8B95A8] italic">
+              Domāju...
+            </span>
+          </div>
+        ) : (
+          /* Phase 2 — shimmer bars */
+          <div className="flex flex-col gap-1.5 animate-fade-in">
+            {shimmerBars.map(({ width, delay }, i) => (
+              <div
+                key={i}
+                className={`${width} h-2.5 rounded-full bg-[#2563EB]/20 dark:bg-[#4F8EF7]/15 shimmer-bar`}
+                style={{ animationDelay: delay }}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

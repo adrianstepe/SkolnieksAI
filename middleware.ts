@@ -70,7 +70,7 @@ function buildCspHeader(nonce: string): string {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' https://js.stripe.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https://*.googleapis.com https://www.google-analytics.com",
+    "img-src 'self' data: https://*.googleapis.com https://www.google-analytics.com https://www.google.com",
     "font-src 'self'",
     [
       "connect-src 'self'",
