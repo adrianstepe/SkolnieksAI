@@ -15,7 +15,7 @@ import { embedText } from "@/lib/ai/embeddings";
 // - The AI model (DeepSeek version)
 // - Chunk size, overlap, or retrieval count
 // Changing this invalidates all old cache entries automatically.
-const RAG_CACHE_VERSION = "v8"; // bumped: loosened RAG threshold (1.0→1.15), soft allowlist, borderline-RAG fallback
+const RAG_CACHE_VERSION = "v9"; // bumped: new system prompt (complexity tiers, length rules, tone overhaul)
 
 // ---------------------------------------------------------------------------
 // Path C fallback message (no LLM call — no hallucination possible)
@@ -134,36 +134,53 @@ async function saveToCache(question: string, answer: string, embedding: number[]
 // No uid, email, display name, birth year, tier, or payment info.
 function buildSystemPrompt(subject: string, grade: number): string {
   const complexityRule =
-    grade <= 9
-      ? "≤20 vārdi/teikumā. Aktīvā balss. Jauns termins → ikdienas analoģija. Pielāgo atbildi " + grade + ". klases līmenim un nepārspīlē ar akadēmisko sarežģītību."
-      : "Akadēmiska valoda, abstrakcijas, starppriekšmetu saiknes, zinātniskā terminoloģija atbilstoši " + grade + ". klasei.";
+    grade <= 6
+      ? "Vienkārši vārdi. Maksimums 15 vārdi teikumā. Katrs jauns termins — ar ikdienas piemēru (piem. 'tas ir kā...')."
+      : grade <= 9
+      ? "Skaidrs, nepārblīvēts teksts. Jauni termini — īsi paskaidroti. Piemēri no ikdienas dzīves vai Latvijas konteksta."
+      : "Precīza terminoloģija. Pilni matemātiskie/zinātniskie pieraksti. Skolēns gatavo eksāmenam.";
 
-  const subjectCtx =
-    subject === "general"
-      ? "Vari jautāt par jebko — mācībām, dzīvi, vai vienkārši parunāties."
-      : `Priekšmets: ${subject}. Klase: ${grade}.`;
+  const lengthRule =
+    "ATBILDES GARUMS — obligāti ievēro:\n" +
+    "• Sveiciens / neizglītojošs jautājums → 1–2 teikumi, nekāds papildu saturs\n" +
+    "• Vienkāršs fakts (piem. 'kas ir fotosintēze') → 3–5 teikumi\n" +
+    "• Koncepcijas skaidrojums → 1 īss ievads + skaidrojums + piemērs + 1 jautājums\n" +
+    "• Uzdevums ar aprēķiniem → tikai nepieciešamie soļi, bez ievadvārdiem\n" +
+    "• Nekad neraksti vairāk par nepieciešamo — katrs teikums ir jāpelna";
 
-  return `<system_role>
-Tu esi SkolnieksAI — Latvijas labākais mācību palīgs. ${subjectCtx}
-Lietotājs ir ${grade}. klases skolēns. Tev JĀPASKAIDRO atrastais konteksts, izmantojot vārdu krājumu un jēdzienus, kas ir stingri atbilstoši ${grade}. klases skolēnam Latvijā. Nepārveido atbildi pārāk sarežģīti.
-Mērķis: precīzas, skaidras atbildes latviešu valodā. „tu" forma. Pacietīgs, iedrošinošs.
-</system_role>
-<atbildes_stratēģija>
-ZINĀŠANU JAUTĀJUMS (kas ir / kā notiek / izskaidro / definē / salīdzini) → Atbildi TIEŠI pirmajā teikumā. Tad sniedz kontekstu. NEKAD nesāc ar pretjautājumu.
-APRĒĶINS / UZDEVUMS → Atrisini pilnībā ar soļiem. Parādi metodi.
-ESEJAS RAKSTĪŠANA vai PILNĪGA MĀJASDARBU IZPILDE → Palīdzi strukturēt un domāt, bet neraksti skolēna vietā. VIENS konkrēts mājiens.
-SARUNA / NEAKADĒMISKS → Atbildi kā atbalstošs klasesbiedrs — īsi, silti. NEPĀRADRESĒ uz mācībām.
-TIEŠAS ATBILDES LŪGUMS → Ja skolēns skaidri lūdz tiešu atbildi (piemēram, "vienkārši pasaki", "dod atbildi", "nepalīdzi, bet atbildi") → atbildi tieši, pat ja tas ir esejas vai mājasdarba jautājums. Cieno skolēna izvēli.
-</atbildes_stratēģija>
-<rules>
-VALODA: Tikai LV. ${complexityRule} „pēdiņas"(U+201E/U+201C), – domuzīme, **treknraksts** jēdzieniem. ≤3 rindkopas.
-MATH: $inline$, $$bloks$$. Decimālkomats: $3{,}14$.
-AIZLIEGTS: „Lielisks jautājums!", „Protams!", „Nirsim dziļāk", atkārtot jautājumu, liekvārdība.
-KONTEKSTS: Balsties TIKAI uz dotajiem fragmentiem. Ja fragmenti nesatur atbildi — saki godīgi: „Manā zināšanu bāzē nav precīzas atbildes." NEKAD neizdomā faktus, kurus neredzi kontekstā.
-WEB: Ja konteksts sākas ar „[WEB MEKLĒŠANA — nav zināšanu bāzē]", sāc: „Šī informācija nav manā datubāzē, taču pēc interneta datiem:". Ja konteksts sākas ar „[WEB MEKLĒŠANA]", izmanto interneta informāciju bez šā prefiksa.
+  return `Tu esi SkolnieksAI — Latvijas skolēnu mācību palīgs klasēm 6.–12. klasei.
+Tava misija: palīdzēt skolēnam SAPRAST, nevis dot gatavu atbildi.
+Runā latviski. Vienmēr latviski, pat ja jautājums ir angliski vai krieviski.
+
+SKOLĒNA PROFILS: ${grade}. klase, priekšmets: ${subject}
+${complexityRule}
+
+${lengthRule}
+
+ATBILDES UZBŪVE (tikai izglītojošiem jautājumiem):
+1. Tieša atbilde — uzreiz, bez ievadvārdiem
+2. Skaidrojums ar konkrētu piemēru vai analoģiju
+3. Matemātikā/fizikā/ķīmijā — OBLIGĀTI katrs solis ar īsu komentāru
+4. Noslēguma jautājums, kas mudina domāt (ne "Vai saprati?", bet saturīgs jautājums)
+
+STILS:
+- Draudzīgs un tiešs — kā gudrs klasesbiedrs, nevis mācību grāmata
+- Nekad: "Lielisks jautājums!", "Protams!", "Kā AI es...", "Mani ir apmācījuši..."
+- Sarakstus lieto tikai tad, ja ir 3+ paralēli elementi
+- Neatkārto jautājumu atbildes sākumā
+
+KONTEKSTS:
+- RAG fragments → balsti atbildi uz to, piemin konkrētas lietas no teksta
+- [WEB MEKLĒŠANA] → izmanto, bet norādi ka info no interneta
+- Nav konteksta → atbildi no zināšanām, neizdomā faktus; ja nezini — saki tā
+
+AIZLIEGTS:
+- Atbildēt svešvalodā
+- Pildīt mājasdarbu skolēna vietā — rādi metodi, ne tikai atbildi
+- Rakstīt "es nezinu" bez mēģinājuma palīdzēt
+
 MATEMĀTIKAS FORMATĒŠANA: Vienmēr izmanto LaTeX matemātikai. Inline formulas: $formula$. Bloku formulas jaunā rindā: $$formula$$. NEKAD neliec matemātiku iekš koda blokos (\`\`\` vai \`). Koda bloki ir TIKAI programmēšanas kodam. Atdali matemātiku un tekstu ar jaunām rindām.
-AI IDENTITĀTE (ES MI Akts 50. pants): Tu esi AI mācību palīgs. Tu NEDRĪKSTI apgalvot, ka esi cilvēks, skolotājs vai oficiāla izglītības iestāde. Ja skolēns jautā, vienmēr atzīsti, ka esi AI.
-</rules>`;
+`;
 }
 
 // ---------------------------------------------------------------------------
@@ -379,7 +396,8 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
 // ---------------------------------------------------------------------------
 
 // Path D = meta-question answered from VIIS structured data (no LLM, no RAG)
-export type RagPath = "A" | "B" | "C" | "D";
+// Path E = conversational/greeting — answered directly without RAG or web search
+export type RagPath = "A" | "B" | "C" | "D" | "E";
 
 export type StreamEvent =
   | { type: "delta"; text: string }
@@ -393,6 +411,39 @@ export type StreamEvent =
     };
 
 const ZERO_USAGE = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+
+// ---------------------------------------------------------------------------
+// Conversational shortcut (Path E)
+// ---------------------------------------------------------------------------
+
+function isConversational(query: string): boolean {
+  const q = query.trim().toLowerCase();
+  // Short greetings and chit-chat — no educational value, no search needed
+  if (q.length < 15) return true;
+  const GREETINGS = ["čau", "sveiki", "labdien", "hello", "hi", "hey", "ok",
+    "labi", "paldies", "pateicos", "super", "forši", "tur", "jā", "nē"];
+  return GREETINGS.some(g => q === g || q.startsWith(g + " ") || q.startsWith(g + "!"));
+}
+
+async function* streamFromModel(
+  messages: ChatMessage[],
+  model: "deepseek" | "claude",
+  maxTokens: number,
+): AsyncGenerator<StreamEvent> {
+  const { stream, getUsage } = chatStream(messages, 0.3, model, maxTokens);
+  for await (const delta of stream) {
+    yield { type: "delta", text: delta };
+  }
+  const usage = getUsage();
+  yield {
+    type: "done",
+    chunks: [],
+    webSources: [],
+    usedWebSearch: false,
+    path: "E",
+    usage,
+  };
+}
 
 export async function* runRagChainStream(
   input: RagInput,
@@ -421,6 +472,18 @@ export async function* runRagChainStream(
       };
       return;
     }
+  }
+
+  // ── Path E: conversational/greeting — skip RAG and web search entirely ──
+  if (isConversational(query)) {
+    console.log(`[chain] Path E — conversational shortcut for: "${query}"`);
+    const systemPrompt = buildSystemPrompt(subject, grade);
+    const messages: ChatMessage[] = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: query },
+    ];
+    yield* streamFromModel(messages, model, maxTokens);
+    return;
   }
 
   // ---------------------------------------------------------------------------

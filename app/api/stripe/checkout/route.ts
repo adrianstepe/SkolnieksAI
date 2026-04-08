@@ -13,6 +13,11 @@ const CheckoutSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.error("[stripe/checkout] STRIPE_SECRET_KEY is not set");
+    return NextResponse.json({ error: "stripe_not_configured" }, { status: 500 });
+  }
+
   const decoded = await verifyAuthToken(request);
   if (!decoded) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -36,13 +41,10 @@ export async function POST(request: NextRequest) {
 
   if (!priceId) {
     console.error(
-      `[stripe/checkout] Price ID not configured for plan "${plan}". ` +
-        `Set STRIPE_PRICE_PRO / STRIPE_PRICE_PREMIUM in Vercel environment variables.`,
+      `[stripe/checkout] Missing price ID for plan "${plan}". ` +
+        `Check STRIPE_PRICE_PREMIUM and STRIPE_PRICE_EXAM_PREP env vars in Vercel.`,
     );
-    return NextResponse.json(
-      { error: "price_not_configured" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "price_not_configured" }, { status: 500 });
   }
 
   // Best-effort IP for the PTAC audit trail. Vercel sets x-forwarded-for;

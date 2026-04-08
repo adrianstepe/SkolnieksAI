@@ -300,11 +300,10 @@ export function ChatMessage({
     <div
       className={`flex gap-2.5 sm:gap-3 ${isUser ? "justify-end animate-slide-in-right" : "justify-start animate-slide-in-left"}`}
     >
-      {/* AI avatar — subject-tinted */}
+      {/* AI avatar */}
       {!isUser && (
         <div
-          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-          style={{ backgroundColor: accentColor }}
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] shadow-sm shadow-[#2563EB]/30 flex items-center justify-center shrink-0 mt-1"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 sm:h-4 sm:w-4">
             <path
@@ -434,8 +433,7 @@ export function TypingIndicator({ subject }: { subject?: string }) {
     <div className="flex gap-2.5 sm:gap-3 animate-slide-in-left">
       {/* AI avatar */}
       <div
-        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-        style={{ backgroundColor: accentColor }}
+        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] shadow-sm shadow-[#2563EB]/30 flex items-center justify-center shrink-0 mt-1"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 sm:h-4 sm:w-4">
           <path

@@ -28,28 +28,27 @@ npm run dev
 1. Check current status
 See which files have been modified or are new:
 
-bash
 git status
+
 2. Stage your changes
 Add all modified and new files to the staging area:
 
-bash
 git add .
+
 3. Commit your changes
 Save your staged changes with a descriptive message:
 
-bash
 git commit -m "Your descriptive commit message here"
+
 4. Push to GitHub
 Upload your local commits to the remote repository:
 
-bash
 git push
-Quick One-Liner
-If you want to stage, commit, and push all in one go:
 
-bash
+Quick One-Liner
+
 git add . && git commit -m "Update changes" && git push
+
 
 Modified Files
 Overview page → now an async server component fetching real Firestore numbers
