@@ -13,6 +13,7 @@ import { retrieveFromCloud } from "@/lib/rag/retriever";
 // Re-export constants and types from the canonical source
 export {
   RAG_DISTANCE_THRESHOLD,
+  RAG_SOFT_DISTANCE_THRESHOLD,
   KNOWN_CURRICULUM_SUBJECTS,
   type RetrieveResult,
 } from "@/lib/rag/retriever";

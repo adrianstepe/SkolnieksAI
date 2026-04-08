@@ -60,17 +60,34 @@ function rootDomain(url: string): string {
 }
 
 /**
- * Keep only results from ALLOW_DOMAINS; drop any from BLOCK_DOMAINS.
- * If the allowlist produces 0 results (e.g. scoped query returned unfiltered
- * results on a broad retry) we return an empty array so the chain falls to
- * Path C rather than surfacing off-topic content.
+ * Apply domain policy as a *preference*, not a hard filter:
+ *   1. Always drop results whose root domain is in BLOCK_DOMAINS (cheating sites).
+ *   2. Drop search-engine intermediary URLs (DDG redirect leftovers, empty hosts).
+ *   3. Sort allowlisted domains first so trusted edu sources rank highest.
+ *
+ * The previous implementation hard-filtered to a 7-domain allowlist, which
+ * caused most queries to come back empty and triggered Path C ("I can't find
+ * an answer") even when relevant results existed. The educational scope is
+ * still expressed via the `site:` operators in EDU_SCOPE; this function only
+ * has to enforce the blocklist and rank.
  */
-function filterByDomainPolicy(results: WebSearchResult[]): WebSearchResult[] {
-  return results.filter((r) => {
+function applyDomainPolicy(results: WebSearchResult[]): WebSearchResult[] {
+  const cleaned = results.filter((r) => {
     const domain = rootDomain(r.url);
+    if (!domain) return false;
+    if (domain === "duckduckgo.com") return false;
     if (BLOCK_DOMAINS.some((b) => domain === b || domain.endsWith(`.${b}`))) return false;
-    return ALLOW_DOMAINS.some((a) => domain === a || domain.endsWith(`.${a}`));
+    return true;
   });
+
+  // Stable partition: allowlisted first, others after.
+  const isAllowed = (r: WebSearchResult) => {
+    const domain = rootDomain(r.url);
+    return ALLOW_DOMAINS.some((a) => domain === a || domain.endsWith(`.${a}`));
+  };
+  const allowed = cleaned.filter(isAllowed);
+  const others = cleaned.filter((r) => !isAllowed(r));
+  return [...allowed, ...others];
 }
 
 /**
@@ -92,14 +109,14 @@ export async function webSearch(
   const braveKey = process.env.BRAVE_SEARCH_API_KEY;
   if (braveKey) {
     try {
-      const scoped = filterByDomainPolicy(await searchBrave(scopedQuery, braveKey, fetchCount));
+      const scoped = applyDomainPolicy(await searchBrave(scopedQuery, braveKey, fetchCount));
       if (scoped.length > 0) return scoped.slice(0, maxResults);
     } catch (err) {
       console.warn("[web-search] Brave Search (scoped) failed:", err);
     }
-    // Scoped returned nothing — retry broadly (domain filter still applied)
+    // Scoped returned nothing — retry broadly (blocklist still applied)
     try {
-      const broad = filterByDomainPolicy(await searchBrave(query, braveKey, fetchCount));
+      const broad = applyDomainPolicy(await searchBrave(query, braveKey, fetchCount));
       if (broad.length > 0) return broad.slice(0, maxResults);
     } catch (err) {
       console.warn("[web-search] Brave Search (broad) failed, falling back to DuckDuckGo:", err);
@@ -108,10 +125,10 @@ export async function webSearch(
 
   // DuckDuckGo: try scoped first, then broad
   try {
-    const scoped = filterByDomainPolicy(await searchDuckDuckGo(scopedQuery, fetchCount));
+    const scoped = applyDomainPolicy(await searchDuckDuckGo(scopedQuery, fetchCount));
     if (scoped.length > 0) return scoped.slice(0, maxResults);
-    console.log("[web-search] Scoped DDG returned 0 results after domain filter — retrying broadly");
-    const broad = filterByDomainPolicy(await searchDuckDuckGo(query, fetchCount));
+    console.log("[web-search] Scoped DDG returned 0 results — retrying broadly");
+    const broad = applyDomainPolicy(await searchDuckDuckGo(query, fetchCount));
     return broad.slice(0, maxResults);
   } catch (err) {
     console.warn("[web-search] DuckDuckGo scrape failed:", err);

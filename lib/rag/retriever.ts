@@ -18,11 +18,19 @@ const COLLECTION_NAME = "skolnieks_content";
 
 /**
  * ChromaDB cosine distance: 0 = identical, 2 = opposite.
- * Path A threshold: distance < 1.0 = confidently relevant.
+ * Path A threshold: distance < 1.15 = confidently relevant.
  * paraphrase-multilingual-MiniLM-L12-v2 Latvian cross-lingual distances for
- * genuinely relevant chunks land in the 0.85–0.95 range.
+ * genuinely relevant chunks land in the 0.85–0.95 range, but cross-lingual
+ * phrasing variance regularly pushes valid hits to 1.00–1.10. Threshold of
+ * 1.0 left zero headroom and dropped relevant chunks; 1.15 keeps obvious
+ * mismatches out (those land 1.3+) while admitting borderline-good matches.
  */
-export const RAG_DISTANCE_THRESHOLD = 1.0;
+export const RAG_DISTANCE_THRESHOLD = 1.15;
+/**
+ * Soft threshold: chunks with distance < this are still usable as
+ * last-resort context when web search also fails (instead of refusing).
+ */
+export const RAG_SOFT_DISTANCE_THRESHOLD = 1.4;
 
 /**
  * Subject values actually stored in ChromaDB (from RAG.py + scripts/ingest.ts).

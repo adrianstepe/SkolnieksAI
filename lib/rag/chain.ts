@@ -1,4 +1,5 @@
 import { retrieveContext } from "@/lib/rag-client";
+import { RAG_SOFT_DISTANCE_THRESHOLD } from "@/lib/rag/retriever";
 import { webSearch, type WebSearchResult } from "@/lib/search/web";
 import { chat, chatStream, type ChatMessage } from "@/lib/ai/deepseek";
 import type { DeepSeekResponse } from "@/lib/ai/deepseek";
@@ -14,7 +15,7 @@ import { embedText } from "@/lib/ai/embeddings";
 // - The AI model (DeepSeek version)
 // - Chunk size, overlap, or retrieval count
 // Changing this invalidates all old cache entries automatically.
-const RAG_CACHE_VERSION = "v7"; // bumped: added EU AI Act Art. 50 identity guardrail to system prompt
+const RAG_CACHE_VERSION = "v8"; // bumped: loosened RAG threshold (1.0→1.15), soft allowlist, borderline-RAG fallback
 
 // ---------------------------------------------------------------------------
 // Path C fallback message (no LLM call — no hallucination possible)
@@ -237,6 +238,28 @@ function formatRagContext(texts: string[], sources: string[]): string {
     .join("\n\n---\n\n");
 }
 
+/**
+ * Borderline-RAG fallback: when both confident RAG and web search fail,
+ * salvage chunks whose distance is below the soft threshold (1.4) and
+ * label the context so the LLM knows to caveat the answer.
+ * Returns null if no chunks qualify.
+ */
+function buildSoftRagContext(
+  raw: import("@/lib/rag-client").RetrieveResult,
+  texts: string[],
+): string | null {
+  const usableIdx: number[] = [];
+  for (let i = 0; i < raw.distances.length; i++) {
+    if (raw.distances[i] < RAG_SOFT_DISTANCE_THRESHOLD) usableIdx.push(i);
+  }
+  if (usableIdx.length === 0) return null;
+
+  const body = usableIdx
+    .map((idx, n) => `[${n + 1}] ${raw.sources[idx] ?? "nezināms avots"}\n${texts[idx]}`)
+    .join("\n\n---\n\n");
+  return `[ZINĀŠANU BĀZE — daļēja sakritība]\n${body}`;
+}
+
 // ---------------------------------------------------------------------------
 // Web search helper — returns null on empty/failure (signals Path C)
 // ---------------------------------------------------------------------------
@@ -324,13 +347,20 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
       console.log(`[chain] Path B — web search fallback for: "${query}"`);
       context = web.context;
     } else {
-      // Path C — return honest answer without any LLM call
-      console.log(`[chain] Path C — no results for: "${query}"`);
-      return {
-        content: PATH_C_RESPONSE,
-        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-        chunks,
-      };
+      // Both confident RAG and web failed — try borderline RAG before refusing
+      const soft = buildSoftRagContext(raw, texts);
+      if (soft !== null) {
+        console.log(`[chain] Path A* — borderline RAG fallback for: "${query}"`);
+        context = soft;
+      } else {
+        // Path C — return honest answer without any LLM call
+        console.log(`[chain] Path C — no results for: "${query}"`);
+        return {
+          content: PATH_C_RESPONSE,
+          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+          chunks,
+        };
+      }
     }
   }
 
@@ -409,7 +439,7 @@ export async function* runRagChainStream(
   if (raw.hasConfidentMatch) {
     // ── Path A: RAG confident ──────────────────────────────────────────────
     path = "A";
-    console.log(`[chain] Path A — RAG confident (best distance < 1.0) for: "${query}"`);
+    console.log(`[chain] Path A — RAG confident (best distance < 1.15) for: "${query}"`);
     context = formatRagContext(texts, sources);
   } else {
     // RAG not confident — try web search
@@ -422,23 +452,34 @@ export async function* runRagChainStream(
       context = web.context;
       webSources = web.sources;
     } else {
-      // ── Path C: both RAG and web returned nothing — NO LLM call ─────────
-      path = "C";
-      console.log(`[chain] Path C — no results from RAG or web for: "${query}"`);
+      // Both confident RAG and web failed — try borderline RAG before refusing.
+      // Use chunks with distance < RAG_SOFT_DISTANCE_THRESHOLD as last-resort
+      // context. This prevents Path C from firing on questions where RAG has
+      // related-but-not-perfect chunks and web search is empty/blocked.
+      const soft = buildSoftRagContext(raw, texts);
+      if (soft !== null) {
+        path = "A";
+        console.log(`[chain] Path A* — borderline RAG fallback for: "${query}"`);
+        context = soft;
+      } else {
+        // ── Path C: both RAG and web returned nothing — NO LLM call ─────────
+        path = "C";
+        console.log(`[chain] Path C — no results from RAG or web for: "${query}"`);
 
-      // Stream the fallback message character-by-character (looks natural)
-      for (const char of PATH_C_RESPONSE) {
-        yield { type: "delta", text: char };
+        // Stream the fallback message character-by-character (looks natural)
+        for (const char of PATH_C_RESPONSE) {
+          yield { type: "delta", text: char };
+        }
+        yield {
+          type: "done",
+          chunks,
+          webSources: [],
+          usedWebSearch: true,
+          path: "C",
+          usage: ZERO_USAGE,
+        };
+        return;
       }
-      yield {
-        type: "done",
-        chunks,
-        webSources: [],
-        usedWebSearch: true,
-        path: "C",
-        usage: ZERO_USAGE,
-      };
-      return;
     }
   }
 

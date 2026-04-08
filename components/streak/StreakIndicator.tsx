@@ -1,18 +1,23 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/context/auth-context";
 
 /**
  * Compact streak badge shown in the chat header.
  * Displays the flame icon, current streak count, and an ice badge if a freeze
  * is active. Clicking opens a dropdown popover below the button.
+ *
+ * Both the tooltip and popover are rendered via React portals into document.body
+ * so they escape any overflow:hidden or z-index stacking context in the navbar.
  */
 export function StreakIndicator() {
   const { profile } = useAuth();
   const [open, setOpen] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({});
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Compute fixed position below the button whenever the popover opens
@@ -23,14 +28,29 @@ export function StreakIndicator() {
       return;
     }
     const rect = buttonRef.current.getBoundingClientRect();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPopoverStyle({
       position: "fixed",
       top: rect.bottom + 8,
       right: window.innerWidth - rect.right,
-      zIndex: 200,
+      zIndex: 250,
     });
   }, [open]);
+
+  // Compute fixed position above the button for the tooltip
+  useEffect(() => {
+    if (!tooltipVisible || open || !buttonRef.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTooltipStyle({});
+      return;
+    }
+    const rect = buttonRef.current.getBoundingClientRect();
+    setTooltipStyle({
+      position: "fixed",
+      bottom: window.innerHeight - rect.top + 8,
+      right: window.innerWidth - rect.right,
+      zIndex: 250,
+    });
+  }, [tooltipVisible, open]);
 
   if (!profile || profile.currentStreak === 0) return null;
 
@@ -40,18 +60,6 @@ export function StreakIndicator() {
 
   return (
     <div className="relative">
-      {/* Tooltip bubble */}
-      {tooltipVisible && !open && (
-        <div
-          role="tooltip"
-          className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 w-max max-w-[220px] rounded-lg border border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#1A2033] px-3 py-2 text-xs font-medium text-[#111827] dark:text-[#E8ECF4] shadow-xl animate-fade-up"
-        >
-          {streakLabel}
-          {/* Arrow */}
-          <span className="absolute -bottom-1.5 right-4 h-3 w-3 rotate-45 border-b border-r border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#1A2033]" />
-        </div>
-      )}
-
       <button
         ref={buttonRef}
         onClick={() => setOpen((o) => !o)}
@@ -103,78 +111,110 @@ export function StreakIndicator() {
         )}
       </button>
 
-      {/* Popover */}
-      {open && (
-        <>
-          {/* Click-away overlay */}
+      {/* Tooltip — rendered in a portal so it escapes navbar clipping */}
+      {tooltipVisible &&
+        !open &&
+        createPortal(
           <div
-            className="fixed inset-0"
-            style={{ zIndex: 190 }}
-            onClick={() => setOpen(false)}
-            aria-hidden="true"
-          />
-
-          <div
-            className="w-52 animate-fade-up rounded-xl border border-[#E5E7EB] dark:border-white/7 bg-white dark:bg-[#1A2033] p-4 shadow-xl"
-            style={popoverStyle}
+            role="tooltip"
+            className="pointer-events-none relative w-max max-w-[220px] rounded-lg border border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#1A2033] px-3 py-2 text-xs font-medium text-[#111827] dark:text-[#E8ECF4] shadow-xl animate-fade-up"
+            style={tooltipStyle}
           >
-            {/* Streak count */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F59E0B]/15">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="h-5 w-5 text-[#F59E0B]"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M13.5 4.938a7 7 0 1 1-7.84 11.357A4.5 4.5 0 0 0 10 11.25a.75.75 0 0 1 0-1.5 3 3 0 0 0 .574-5.938 5.524 5.524 0 0 1-1.035 2.796.75.75 0 0 1-1.277-.54V5.25a.75.75 0 0 1 .75-.75h.013c.11 0 .218.013.322.038a7.018 7.018 0 0 1 4.153.4Z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div>
-                <p className="text-base font-bold text-[#111827] dark:text-[#E8ECF4] tabular-nums leading-tight">
-                  {currentStreak} {currentStreak === 1 ? "diena" : currentStreak < 5 ? "dienas" : "dienu"}
-                </p>
-                <p className="text-xs text-[#6B7280] dark:text-[#8B95A8]">pašreizējā sērija</p>
-              </div>
-            </div>
+            {streakLabel}
+            {/* Arrow pointing down toward the button */}
+            <span className="absolute -bottom-1.5 right-4 h-3 w-3 rotate-45 border-b border-r border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#1A2033]" />
+          </div>,
+          document.body,
+        )}
 
-            {/* Longest streak */}
-            <div className="flex items-center justify-between rounded-lg bg-[#F3F4F6] dark:bg-[#0F1117] px-3 py-2 mb-2">
-              <span className="text-xs text-[#6B7280] dark:text-[#8B95A8]">Labākā sērija</span>
-              <span className="text-xs font-bold text-[#111827] dark:text-[#E8ECF4] tabular-nums">
-                {longestStreak} {longestStreak === 1 ? "diena" : longestStreak < 5 ? "dienas" : "dienu"}
-              </span>
-            </div>
+      {/* Popover — rendered in a portal so it escapes navbar clipping */}
+      {open &&
+        createPortal(
+          <>
+            {/* Click-away overlay */}
+            <div
+              className="fixed inset-0"
+              style={{ zIndex: 240 }}
+              onClick={() => setOpen(false)}
+              aria-hidden="true"
+            />
 
-            {/* Freeze status */}
-            {streakFreeze ? (
-              <div className="flex items-center gap-2 rounded-lg bg-[#60A5FA]/10 border border-[#60A5FA]/20 px-3 py-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="h-3.5 w-3.5 shrink-0 text-[#60A5FA]"
-                  aria-hidden="true"
-                >
-                  <path d="M10 2a.75.75 0 0 1 .75.75v.536l.416-.24a.75.75 0 0 1 .75 1.3l-.416.24.416.24a.75.75 0 0 1-.75 1.3l-.416-.24v.482a.75.75 0 0 1-1.5 0v-.482l-.416.24a.75.75 0 1 1-.75-1.3l.416-.24-.416-.24a.75.75 0 0 1 .75-1.3l.416.24V2.75A.75.75 0 0 1 10 2Z" />
-                </svg>
-                <span className="text-xs font-medium text-[#60A5FA]">
-                  Aizsardzība aktīva
+            <div
+              className="w-52 animate-fade-up rounded-xl border border-[#E5E7EB] dark:border-white/7 bg-white dark:bg-[#1A2033] p-4 shadow-xl"
+              style={popoverStyle}
+            >
+              {/* Streak count */}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F59E0B]/15">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="h-5 w-5 text-[#F59E0B]"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M13.5 4.938a7 7 0 1 1-7.84 11.357A4.5 4.5 0 0 0 10 11.25a.75.75 0 0 1 0-1.5 3 3 0 0 0 .574-5.938 5.524 5.524 0 0 1-1.035 2.796.75.75 0 0 1-1.277-.54V5.25a.75.75 0 0 1 .75-.75h.013c.11 0 .218.013.322.038a7.018 7.018 0 0 1 4.153.4Z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-base font-bold text-[#111827] dark:text-[#E8ECF4] tabular-nums leading-tight">
+                    {currentStreak}{" "}
+                    {currentStreak === 1
+                      ? "diena"
+                      : currentStreak < 5
+                        ? "dienas"
+                        : "dienu"}
+                  </p>
+                  <p className="text-xs text-[#6B7280] dark:text-[#8B95A8]">
+                    pašreizējā sērija
+                  </p>
+                </div>
+              </div>
+
+              {/* Longest streak */}
+              <div className="flex items-center justify-between rounded-lg bg-[#F3F4F6] dark:bg-[#0F1117] px-3 py-2 mb-2">
+                <span className="text-xs text-[#6B7280] dark:text-[#8B95A8]">
+                  Labākā sērija
+                </span>
+                <span className="text-xs font-bold text-[#111827] dark:text-[#E8ECF4] tabular-nums">
+                  {longestStreak}{" "}
+                  {longestStreak === 1
+                    ? "diena"
+                    : longestStreak < 5
+                      ? "dienas"
+                      : "dienu"}
                 </span>
               </div>
-            ) : (
-              <p className="text-[11px] text-[#9CA3AF] dark:text-[#5A6478] text-center leading-relaxed">
-                Piesakies katru dienu, lai saglabātu sēriju!
-              </p>
-            )}
-          </div>
-        </>
-      )}
+
+              {/* Freeze status */}
+              {streakFreeze ? (
+                <div className="flex items-center gap-2 rounded-lg bg-[#60A5FA]/10 border border-[#60A5FA]/20 px-3 py-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="h-3.5 w-3.5 shrink-0 text-[#60A5FA]"
+                    aria-hidden="true"
+                  >
+                    <path d="M10 2a.75.75 0 0 1 .75.75v.536l.416-.24a.75.75 0 0 1 .75 1.3l-.416.24.416.24a.75.75 0 0 1-.75 1.3l-.416-.24v.482a.75.75 0 0 1-1.5 0v-.482l-.416.24a.75.75 0 1 1-.75-1.3l.416-.24-.416-.24a.75.75 0 0 1 .75-1.3l.416.24V2.75A.75.75 0 0 1 10 2Z" />
+                  </svg>
+                  <span className="text-xs font-medium text-[#60A5FA]">
+                    Aizsardzība aktīva
+                  </span>
+                </div>
+              ) : (
+                <p className="text-[11px] text-[#9CA3AF] dark:text-[#5A6478] text-center leading-relaxed">
+                  Piesakies katru dienu, lai saglabātu sēriju!
+                </p>
+              )}
+            </div>
+          </>,
+          document.body,
+        )}
     </div>
   );
 }
