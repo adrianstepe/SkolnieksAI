@@ -92,10 +92,14 @@ function applyDomainPolicy(results: WebSearchResult[]): WebSearchResult[] {
 
 /**
  * Run a web search and return up to `maxResults` snippets.
- * Tries Brave Search first (if key configured), falls back to DuckDuckGo.
- * First attempts a scoped query (Latvian edu sites); if that returns nothing,
- * retries with a broader query so Path C is only hit when truly no info exists.
- * All results are filtered through the domain allowlist/blocklist before return.
+ *
+ * Priority order (optimised for reliability from Vercel datacenter IPs):
+ *   1. Brave Search API  — if BRAVE_SEARCH_API_KEY is set (2 000 free/month)
+ *   2. Wikipedia LV REST API — free, no key, never blocked from cloud hosts,
+ *      excellent curriculum coverage (Wikimedia explicitly allows bot access)
+ *   3. DuckDuckGo HTML scrape — zero-cost but unreliable from datacenter IPs;
+ *      used as last resort only
+ *
  * Returns an empty array on any failure — web search is best-effort.
  */
 export async function webSearch(
@@ -114,16 +118,27 @@ export async function webSearch(
     } catch (err) {
       console.warn("[web-search] Brave Search (scoped) failed:", err);
     }
-    // Scoped returned nothing — retry broadly (blocklist still applied)
     try {
       const broad = applyDomainPolicy(await searchBrave(query, braveKey, fetchCount));
       if (broad.length > 0) return broad.slice(0, maxResults);
     } catch (err) {
-      console.warn("[web-search] Brave Search (broad) failed, falling back to DuckDuckGo:", err);
+      console.warn("[web-search] Brave Search (broad) failed, falling back to Wikipedia:", err);
     }
   }
 
-  // DuckDuckGo: try scoped first, then broad
+  // Wikipedia LV REST API — primary fallback (reliable from Vercel)
+  try {
+    const wiki = await searchWikipediaLv(query, maxResults);
+    if (wiki.length > 0) {
+      console.log(`[web-search] Wikipedia LV returned ${wiki.length} result(s)`);
+      return wiki;
+    }
+    console.log("[web-search] Wikipedia LV returned 0 results — trying DuckDuckGo");
+  } catch (err) {
+    console.warn("[web-search] Wikipedia LV failed:", err);
+  }
+
+  // DuckDuckGo: last resort (may be blocked from Vercel datacenter IPs)
   try {
     const scoped = applyDomainPolicy(await searchDuckDuckGo(scopedQuery, fetchCount));
     if (scoped.length > 0) return scoped.slice(0, maxResults);
@@ -134,6 +149,55 @@ export async function webSearch(
     console.warn("[web-search] DuckDuckGo scrape failed:", err);
     return [];
   }
+}
+
+// ---------------------------------------------------------------------------
+// Wikipedia LV REST API  (free, no key, Wikimedia allows bot access)
+// https://lv.wikipedia.org/w/rest.php/v1/search/page?q=QUERY&limit=N
+// ---------------------------------------------------------------------------
+
+interface WikipediaSearchPage {
+  key: string;
+  title: string;
+  description?: string;
+  excerpt?: string;
+}
+
+interface WikipediaSearchResponse {
+  pages?: WikipediaSearchPage[];
+}
+
+async function searchWikipediaLv(
+  query: string,
+  maxResults: number,
+): Promise<WebSearchResult[]> {
+  const url = `https://lv.wikipedia.org/w/rest.php/v1/search/page?q=${encodeURIComponent(query)}&limit=${maxResults}`;
+
+  const res = await fetch(url, {
+    headers: {
+      "Accept": "application/json",
+      "User-Agent": "SkolnieksAI/1.0 (educational tool; https://skolnieksai.lv) node-fetch",
+    },
+    signal: AbortSignal.timeout(6_000),
+  });
+
+  if (!res.ok) throw new Error(`Wikipedia REST ${res.status}`);
+
+  const data = (await res.json()) as WikipediaSearchResponse;
+  const pages = data.pages ?? [];
+
+  return pages
+    .filter((p) => p.title && (p.excerpt || p.description))
+    .map((p) => {
+      const slug = p.key.replace(/ /g, "_");
+      const snippet = p.excerpt ? stripHtml(p.excerpt) : (p.description ?? "");
+      return {
+        title: p.title,
+        snippet: snippet.slice(0, 300),
+        url: `https://lv.wikipedia.org/wiki/${encodeURIComponent(slug)}`,
+        favicon: "https://www.google.com/s2/favicons?domain=wikipedia.org&sz=32",
+      };
+    });
 }
 
 // ---------------------------------------------------------------------------
