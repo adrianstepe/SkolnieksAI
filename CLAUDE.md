@@ -61,6 +61,10 @@ src/
 
 - **POST /api/chat**: Main chat endpoint. When `conversationId` is present and client sends fewer than 2 history messages (page-refresh edge case), the server fetches the last 6 messages from Firestore (`conversations/{id}/messages`, ordered by `createdAt` desc, limit 6) using the Admin SDK with a 2-second timeout, then passes them to `runRagChainStream`. If the fetch fails, continues with empty history (degraded gracefully, never 500s).
 
+## Web Search Query Translation
+
+`fetchWebContext` in `lib/rag/chain.ts` detects non-Latvian queries (heuristic: no Latvian diacritics + presence of common English function words like "what/is/the/how") and translates them to Latvian via a tiny DeepSeek call **before** calling `webSearch`. Falls back to appending `latviski` if the translation call fails. Reason: Tavily/Wikipedia LV return ~0 results for raw English queries, which previously dropped users into Path C. The original query is still passed to the LLM unchanged — the system prompt's "always respond in Latvian" rule keeps the answer in Latvian regardless of input language.
+
 ## ChromaDB
 
 - **Production (Vercel)**: `lib/rag/retriever.ts` connects to Chroma Cloud via `chromadb` npm `CloudClient`. Requires env vars: `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE`. Embeddings via `@xenova/transformers` in Node.js — no Python server needed.
