@@ -57,6 +57,10 @@ src/
     └── skola2030/        # (Future) Official framework PDFs
 ```
 
+## API Routes
+
+- **POST /api/chat**: Main chat endpoint. When `conversationId` is present and client sends fewer than 2 history messages (page-refresh edge case), the server fetches the last 6 messages from Firestore (`conversations/{id}/messages`, ordered by `createdAt` desc, limit 6) using the Admin SDK with a 2-second timeout, then passes them to `runRagChainStream`. If the fetch fails, continues with empty history (degraded gracefully, never 500s).
+
 ## ChromaDB
 
 - **Production (Vercel)**: `lib/rag/retriever.ts` connects to Chroma Cloud via `chromadb` npm `CloudClient`. Requires env vars: `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE`. Embeddings via `@xenova/transformers` in Node.js — no Python server needed.

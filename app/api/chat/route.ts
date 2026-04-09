@@ -198,12 +198,47 @@ export async function POST(request: NextRequest) {
     console.error("Streak update failed:", err),
   );
 
-  const { subject, grade, model, conversationHistory, conversationId } = parsed.data;
+  const { subject, grade, model, conversationId } = parsed.data;
+  let { conversationHistory } = parsed.data;
 
   // Prompt injection is mitigated via strict system instructions in the LLM prompt,
   // not by stripping user input here (regex-based HTML removal breaks valid inputs
   // such as math inequalities and is trivially bypassed anyway).
   const message = parsed.data.message;
+
+  // --- Server-side history reconstruction (page-refresh edge case) ---
+  // When the client sends an existing conversationId but empty history (e.g. after
+  // a page refresh that cleared React state), fetch the last 6 messages from
+  // Firestore so the LLM has context. If the client already sent ≥2 messages,
+  // trust the client to avoid a redundant read.
+  if (conversationId && (!conversationHistory || conversationHistory.length < 2)) {
+    try {
+      const historySnap = await Promise.race([
+        adminDb
+          .collection("conversations")
+          .doc(conversationId)
+          .collection("messages")
+          .orderBy("createdAt", "desc")
+          .limit(6)
+          .get(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("history_fetch_timeout")), 2000),
+        ),
+      ]);
+      const fetchedHistory = (historySnap as FirebaseFirestore.QuerySnapshot)
+        .docs
+        .reverse()
+        .map((doc) => {
+          const d = doc.data();
+          return { role: d.role as "user" | "assistant", content: d.content as string };
+        });
+      if (fetchedHistory.length > 0) {
+        conversationHistory = fetchedHistory;
+      }
+    } catch (err) {
+      console.error("Server-side history fetch failed, continuing with empty history:", err);
+    }
+  }
 
   // Tier-based model routing: only premium and school_pro may use Claude
   const effectiveModel =

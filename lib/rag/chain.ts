@@ -1,6 +1,6 @@
 import { retrieveContext } from "@/lib/rag-client";
 import { RAG_SOFT_DISTANCE_THRESHOLD } from "@/lib/rag/retriever";
-import { webSearch, type WebSearchResult } from "@/lib/search/web";
+import { webSearch, type WebSearchResult, type SearchIntent } from "@/lib/search/web";
 import { chat, chatStream, type ChatMessage } from "@/lib/ai/deepseek";
 import type { DeepSeekResponse } from "@/lib/ai/deepseek";
 import type { RetrievedChunk } from "./retriever";
@@ -8,6 +8,7 @@ import { adminDb } from "@/lib/firebase/admin";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { normalizeSubjectToRagKey, isMetaQuestion, answerMetaQuestion } from "@/lib/curriculum/subjects";
 import { embedText } from "@/lib/ai/embeddings";
+import { classifyIntent, shouldSkipRag, shouldSkipWebSearch, getWebSearchDomainStrategy, type Intent } from "@/lib/rag/intent";
 
 // IMPORTANT: Bump this version string whenever you change:
 // - The system prompt
@@ -15,7 +16,7 @@ import { embedText } from "@/lib/ai/embeddings";
 // - The AI model (DeepSeek version)
 // - Chunk size, overlap, or retrieval count
 // Changing this invalidates all old cache entries automatically.
-const RAG_CACHE_VERSION = "v9"; // bumped: new system prompt (complexity tiers, length rules, tone overhaul)
+const RAG_CACHE_VERSION = "v12"; // bumped: history window 3→6, server-side reconstruction
 
 // ---------------------------------------------------------------------------
 // Path C fallback message (no LLM call — no hallucination possible)
@@ -286,10 +287,17 @@ interface WebContext {
   sources: WebSource[];
 }
 
-async function fetchWebContext(query: string, ragEmpty: boolean, maxSources = 3): Promise<WebContext | null> {
+async function fetchWebContext(
+  query: string,
+  ragEmpty: boolean,
+  maxSources = 3,
+  intent: Intent = "AMBIGUOUS",
+): Promise<WebContext | null> {
+  const strategy = getWebSearchDomainStrategy(intent);
+  const searchIntent: SearchIntent = strategy === "allowlist" ? "LATVIA_SPECIFIC" : "STEM_FACTUAL";
   let results: WebSearchResult[] = [];
   try {
-    results = await webSearch(query, maxSources);
+    results = await webSearch(query, maxSources, searchIntent);
   } catch (err) {
     console.warn(`[chain] Web search threw: ${err instanceof Error ? err.message : String(err)}`);
     return null;
@@ -327,7 +335,7 @@ function buildMessages(
   query: string,
   conversationHistory: ChatMessage[],
 ): ChatMessage[] {
-  const recentHistory = conversationHistory.slice(-3);
+  const recentHistory = conversationHistory.slice(-6);
   return [
     { role: "system", content: systemPrompt },
     { role: "user", content: `Konteksts:\n\n${context}` },
@@ -353,12 +361,15 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
 
   let context: string;
 
+  const { intent: nonStreamIntent } = classifyIntent(query);
+
   if (raw.hasConfidentMatch) {
     // Path A
     console.log(`[chain] Path A — RAG confident for: "${query}"`);
     context = formatRagContext(texts, sources);
   } else {
-    const web = await fetchWebContext(query, raw.texts.length === 0, maxWebSources);
+    const skipWeb = shouldSkipWebSearch(nonStreamIntent, false);
+    const web = skipWeb ? null : await fetchWebContext(query, raw.texts.length === 0, maxWebSources, nonStreamIntent);
     if (web !== null) {
       // Path B
       console.log(`[chain] Path B — web search fallback for: "${query}"`);
@@ -397,7 +408,8 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
 
 // Path D = meta-question answered from VIIS structured data (no LLM, no RAG)
 // Path E = conversational/greeting — answered directly without RAG or web search
-export type RagPath = "A" | "B" | "C" | "D" | "E";
+// Path G = generative intent (math, code, generation verb) — skip RAG + web, call LLM directly
+export type RagPath = "A" | "B" | "C" | "D" | "E" | "F" | "G";
 
 export type StreamEvent =
   | { type: "delta"; text: string }
@@ -486,6 +498,28 @@ export async function* runRagChainStream(
     return;
   }
 
+  // ── Intent classification — corpus-aware routing ──────────────────────────
+  const { intent, matchedRule } = classifyIntent(query);
+  console.log(`[chain] intent_classified: ${intent} rule=${matchedRule} query="${query.slice(0, 80)}"`);
+
+  // ── Path G: generative intent — skip RAG + web, call LLM with general knowledge ──
+  if (shouldSkipRag(intent)) {
+    console.log(`[chain] Path G — generative (${matchedRule}): "${query}"`);
+    const systemPrompt = buildSystemPrompt(subject, grade);
+    const messages: ChatMessage[] = [
+      { role: "system", content: systemPrompt },
+      ...(conversationHistory as ChatMessage[]).slice(-3),
+      { role: "user", content: query },
+    ];
+    const { stream, getUsage } = chatStream(messages, 0.3, model, maxTokens);
+    for await (const delta of stream) {
+      yield { type: "delta", text: delta };
+    }
+    const usage = getUsage();
+    yield { type: "done", chunks: [], webSources: [], usedWebSearch: false, path: "G", usage };
+    return;
+  }
+
   // ---------------------------------------------------------------------------
   // Retrieve + three-path routing
   // ---------------------------------------------------------------------------
@@ -505,8 +539,9 @@ export async function* runRagChainStream(
     console.log(`[chain] Path A — RAG confident (best distance < 1.15) for: "${query}"`);
     context = formatRagContext(texts, sources);
   } else {
-    // RAG not confident — try web search
-    const web = await fetchWebContext(query, raw.texts.length === 0, maxWebSources);
+    // RAG not confident — check intent before spending a web search call
+    const skipWeb = shouldSkipWebSearch(intent, false);
+    const web = skipWeb ? null : await fetchWebContext(query, raw.texts.length === 0, maxWebSources, intent);
 
     if (web !== null) {
       // ── Path B: web search returned results ─────────────────────────────
