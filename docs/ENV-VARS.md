@@ -20,9 +20,10 @@ NEXT_PUBLIC_FIREBASE_APP_ID=...
 FIREBASE_SERVICE_ACCOUNT_KEY=...     # Server-side ONLY. JSON string of service account
                                      # Or use GOOGLE_APPLICATION_CREDENTIALS path
 
-# --- ChromaDB ---
-CHROMA_URL=http://localhost:8000     # Local dev ChromaDB instance
-CHROMA_COLLECTION=knowledge_chunks   # Collection name
+# --- ChromaDB (Chroma Cloud) ---
+CHROMA_API_KEY=...                   # Chroma Cloud API key
+CHROMA_TENANT=...                    # Chroma Cloud tenant name
+CHROMA_DATABASE=skolnieksai          # Chroma Cloud database (default: skolnieksai)
 ```
 
 ## Required for Production
@@ -54,6 +55,12 @@ UPSTASH_REDIS_REST_TOKEN=...         # Upstash Redis REST token
                                      # Create at console.upstash.com → New Database → REST API
                                      # Middleware fails-open if these are missing (Firestore daily
                                      # caps remain as the backstop)
+
+# --- Admin Dashboard ---
+ADMIN_USERNAME=...                   # Admin login username
+ADMIN_PASSWORD=...                   # Admin login password
+ADMIN_SESSION_SECRET=...             # Random hex secret for admin session cookie
+                                     # Generate: openssl rand -hex 32
 
 # --- App Config ---
 NEXT_PUBLIC_APP_URL=https://skolnieks.ai  # Production URL

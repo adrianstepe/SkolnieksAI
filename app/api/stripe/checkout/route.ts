@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("[stripe/checkout] Firestore consent write failed:", err);
     return NextResponse.json(
-      { error: "consent_write_failed", detail: String(err) },
+      { error: "consent_write_failed" },
       { status: 500 },
     );
   }
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("[stripe/checkout] Stripe error:", err);
     return NextResponse.json(
-      { error: "stripe_error", detail: String(err) },
+      { error: "stripe_error" },
       { status: 500 },
     );
   }

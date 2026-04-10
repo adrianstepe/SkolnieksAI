@@ -6,13 +6,23 @@
  * Defaults gracefully to 0 if a collection is missing or empty.
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+function isAdminAuthorized(request: NextRequest): boolean {
+  const session = request.cookies.get("admin_session");
+  const expected = process.env.ADMIN_SESSION_SECRET;
+  if (!expected || !session?.value) return false;
+  return session.value === expected;
+}
+
+export async function GET(request: NextRequest) {
+  if (!isAdminAuthorized(request)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   try {
     // Run all count queries in parallel to keep latency low
     const [usersSnap, convsSnap] = await Promise.all([

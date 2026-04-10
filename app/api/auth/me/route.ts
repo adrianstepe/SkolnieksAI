@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthToken } from "@/lib/firebase/auth";
 import { adminDb } from "@/lib/firebase/admin";
 
-/** Free tier: ~150,000 tokens/month ≈ 60 questions */
-const FREE_TOKEN_BUDGET = 150_000;
-/** Pro: 1,500,000 tokens/month */
-const PRO_TOKEN_BUDGET = 1_500_000;
-/** Premium: 3,000,000 tokens/month */
-const PREMIUM_TOKEN_BUDGET = 3_000_000;
+/** Free tier: ~250,000 tokens/month ≈ 100 questions */
+const FREE_TOKEN_BUDGET = 250_000;
+/** Pro: 2,000,000 tokens/month */
+const PRO_TOKEN_BUDGET = 2_000_000;
+/** Premium: 4,000,000 tokens/month */
+const PREMIUM_TOKEN_BUDGET = 4_000_000;
 
 function getBudgetForTier(tier: string): number {
   switch (tier) {

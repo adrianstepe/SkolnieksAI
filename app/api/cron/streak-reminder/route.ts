@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error("[streak-reminder] Fatal error during sweep:", err);
     return NextResponse.json(
-      { error: "internal_error", detail: String(err) },
+      { error: "internal_error" },
       { status: 500 },
     );
   }

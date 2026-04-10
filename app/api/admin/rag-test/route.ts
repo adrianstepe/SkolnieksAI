@@ -42,7 +42,18 @@ export interface RagTestResult {
   durationMs: number;
 }
 
+function isAdminAuthorized(request: NextRequest): boolean {
+  const session = request.cookies.get("admin_session");
+  const expected = process.env.ADMIN_SESSION_SECRET;
+  if (!expected || !session?.value) return false;
+  return session.value === expected;
+}
+
 export async function POST(req: NextRequest) {
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   const start = Date.now();
 
   let body: { query?: unknown; topK?: unknown };

@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("[stripe/cancel] Stripe error:", err);
     return NextResponse.json(
-      { error: "stripe_error", detail: String(err) },
+      { error: "stripe_error" },
       { status: 500 },
     );
   }
