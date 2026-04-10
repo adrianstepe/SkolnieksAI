@@ -26,17 +26,17 @@ export async function GET(request: NextRequest) {
   try {
     // Run all count queries in parallel to keep latency low
     const [usersSnap, convsSnap] = await Promise.all([
-      adminDb.collection("users").count().get(),
-      adminDb.collection("conversations").count().get(),
+      adminDb.collection("users").get().then(s => ({ data: () => ({ count: s.size }) })),
+      adminDb.collection("conversations").get().then(s => ({ data: () => ({ count: s.size }) })),
     ]);
 
     const totalUsers = usersSnap.data().count ?? 0;
     const totalConversations = convsSnap.data().count ?? 0;
 
-    // Count messages via collection group (single index scan, no document fetch)
+    // Count messages via collection group
     let totalMessages = 0;
     try {
-      const msgsSnap = await adminDb.collectionGroup("messages").count().get();
+      const msgsSnap = await adminDb.collectionGroup("messages").get().then(s => ({ data: () => ({ count: s.size }) }));
       totalMessages = msgsSnap.data().count ?? 0;
     } catch {
       // Collection group index may not exist yet — treat as N/A (0)
@@ -52,8 +52,8 @@ export async function GET(request: NextRequest) {
       const activeSnap = await adminDb
         .collection("users")
         .where("lastActive", ">=", todayStart)
-        .count()
-        .get();
+        .get()
+        .then(s => ({ data: () => ({ count: s.size }) }));
       activeToday = activeSnap.data().count ?? 0;
     } catch {
       // field may not exist on all documents — ignore
