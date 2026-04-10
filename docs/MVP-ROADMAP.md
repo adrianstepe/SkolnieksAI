@@ -53,7 +53,7 @@ Target launch: Late April / Early May 2026.
 
 **Goal:** Payments working. Token budget unlocked for paid users. Safe to share URL.
 
-- [x] Stripe products + prices created (Premium, Exam Prep)
+- [x] Stripe products + prices created (Pro, Premium)
 - [x] `POST /api/stripe/checkout` — create Checkout session
 - [x] `POST /api/webhooks/stripe` — handle subscription events
 - [x] Tier upgrade/downgrade reflected in Firestore immediately

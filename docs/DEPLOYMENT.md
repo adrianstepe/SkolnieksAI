@@ -136,8 +136,8 @@ SkolnieksAI uses [Resend](https://resend.com) for all transactional email (passw
 1. Create Stripe account (stripe.com).
 2. Get API keys from Dashboard → Developers → API keys.
 3. Create Products + Prices:
-   - Premium: €5.99/month recurring
-   - Exam Prep: €14.99/month recurring
+   - Pro: €5.99/month recurring
+   - Premium: €14.99/month recurring
    - School Pro: €20/student/year recurring (custom quantity)
 
 ### Webhook Setup

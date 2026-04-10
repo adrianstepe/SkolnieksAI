@@ -68,8 +68,8 @@ With optimization (high cache hit rates): ~$0.0005 per query.
 | Domain          | €1          |
 | **Total**       | **€46–471** |
 
-Break-even at ~€46/month = 8 Premium subscribers.
-Break-even at €350/month (10k free users) = ~60 Premium subscribers.
+Break-even at ~€46/month = 8 Pro subscribers.
+Break-even at €350/month (10k free users) = ~60 Pro subscribers.
 
 ## Token Budget Design
 
@@ -84,16 +84,16 @@ Monthly token cap: 250,000 tokens (input + output combined)
 
 Showing "You have 47 questions left" creates anxiety and feels restrictive.
 Instead: let them use naturally until budget runs out, then show:
-"Šodien esi daudz mācījies! Lai turpinātu, izmēģini Premium plānu."
-(You've learned a lot today! To continue, try the Premium plan.)
+"Šodien esi daudz mācījies! Lai turpinātu, izmēģini Pro plānu."
+(You've learned a lot today! To continue, try the Pro plan.)
 
 ## Pricing Tiers
 
 | Tier       | Price      | LLM           | Token Budget     |
 |------------|------------|---------------|------------------|
 | Free       | €0         | DeepSeek V3.2 | 250K tokens/mo   |
-| Premium    | €5.99/mo   | Claude Sonnet | 1.5M tokens/mo   |
-| Exam Prep  | €14.99/mo  | Claude Sonnet | 3M tokens/mo     |
+| Pro        | €5.99/mo   | Claude Sonnet | 1.5M tokens/mo   |
+| Premium    | €14.99/mo  | Claude Sonnet | 3M tokens/mo     |
 | School Pro | €20/student/yr or €1,000/mo | Claude Sonnet | 3M tokens/mo |
 
 *"Unlimited" = soft cap at 1.5M/3M tokens/month. Extremely generous — no normal student hits this.
