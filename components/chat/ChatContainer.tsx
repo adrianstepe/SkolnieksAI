@@ -49,7 +49,7 @@ function readUpgradeOpenFromLocation(): boolean {
 
 export function ChatContainer() {
   const { settings } = useSettings();
-  const { user, usage, profile, signOut, getIdToken, refreshProfile } =
+  const { user, usage, profile, signOut, getIdToken, refreshProfile, loading: profileLoading } =
     useAuth();
   const pathname = usePathname() ?? "/";
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -75,6 +75,7 @@ export function ChatContainer() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [recentChats, setRecentChats] = useState<RecentChat[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
+  const [chatsLoading, setChatsLoading] = useState(false);
 
   const [systemError, setSystemError] = useState<SystemError>(null);
   const [detectedSubjectLabel, setDetectedSubjectLabel] = useState<string | null>(null);
@@ -143,6 +144,7 @@ export function ChatContainer() {
 
   // Fetch recent conversations on mount and after sending
   const fetchRecentChats = useCallback(async () => {
+    setChatsLoading(true);
     try {
       const token = await getIdToken();
       if (!token) return;
@@ -167,6 +169,8 @@ export function ChatContainer() {
       }
     } catch {
       // Silently fail — sidebar will just show empty
+    } finally {
+      setChatsLoading(false);
     }
   }, [getIdToken]);
 
@@ -583,6 +587,8 @@ export function ChatContainer() {
         onUpgradeOpen={openUpgrade}
         onSignOut={signOut}
         isPremium={isPremium}
+        chatsLoading={chatsLoading}
+        profileLoading={profileLoading}
       />
 
       {/* Main area */}

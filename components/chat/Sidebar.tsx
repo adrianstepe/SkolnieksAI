@@ -31,6 +31,8 @@ interface SidebarProps {
   onUpgradeOpen?: () => void;
   onSignOut?: () => void;
   isPremium?: boolean;
+  chatsLoading?: boolean;
+  profileLoading?: boolean;
 }
 
 export function Sidebar({
@@ -52,6 +54,8 @@ export function Sidebar({
   onUpgradeOpen,
   onSignOut,
   isPremium = false,
+  chatsLoading = false,
+  profileLoading = false,
 }: SidebarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -231,7 +235,17 @@ export function Sidebar({
                 Pēdējās sarunas
               </p>
               <div className="space-y-0.5">
-                {recentChats.length > 0 ? (
+                {chatsLoading ? (
+                  [...Array(4)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-lg">
+                      <div className="h-3.5 w-3.5 shrink-0 rounded bg-[#E5E7EB] dark:bg-[#1A2033] animate-pulse" />
+                      <div
+                        className="h-3 rounded bg-[#E5E7EB] dark:bg-[#1A2033] animate-pulse"
+                        style={{ width: `${55 + i * 8}%` }}
+                      />
+                    </div>
+                  ))
+                ) : recentChats.length > 0 ? (
                   recentChats.map((chat) => (
                     <div
                       key={chat.id}
@@ -303,7 +317,9 @@ export function Sidebar({
                   Iestatījumi
                 </button>
 
-                {!isPremium && (
+                {profileLoading ? (
+                  <div className="h-8 w-full rounded-lg bg-[#E5E7EB] dark:bg-[#1A2033] animate-pulse mx-1 my-0.5" />
+                ) : !isPremium ? (
                   <button
                     onClick={() => { setMenuOpen(false); onUpgradeOpen?.(); }}
                     className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-accent font-medium hover:bg-accent/10 transition-colors"
@@ -311,7 +327,7 @@ export function Sidebar({
                     <Zap className="h-4 w-4 text-accent" />
                     Uzlabot plānu
                   </button>
-                )}
+                ) : null}
               </div>
 
               <div className="border-t border-[#D1D5DB] dark:border-white/7 py-1">
