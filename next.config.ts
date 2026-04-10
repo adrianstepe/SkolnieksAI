@@ -10,53 +10,6 @@ const commonSecurityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 ];
 
-// CSP for all HTML routes.
-// 'nonce-PLACEHOLDER' is replaced at request time by middleware with a real nonce.
-// 'strict-dynamic' trusts scripts loaded by a nonced script, so dynamically injected
-// sub-resources from Firebase Auth no longer need individual origin allowlist entries.
-// apis.google.com/js/api.js and gstatic.com/firebasejs/ are kept as allowlist fallbacks
-// for browsers that don't support 'strict-dynamic', scoped to minimum required paths
-// rather than the full origins (which host JSONP/Angular bypass vectors).
-const csp = [
-  "default-src 'self'",
-  [
-    "script-src",
-    "'self'",
-    "'nonce-PLACEHOLDER'",
-    "'strict-dynamic'",
-    // Minimum required paths — full-origin allowlist removed to prevent JSONP/Angular bypasses
-    "https://apis.google.com/js/api.js",
-    "https://www.gstatic.com/firebasejs/",
-    "https://www.googletagmanager.com",
-    "https://www.google-analytics.com",
-  ].join(" "),
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: https: https://www.google-analytics.com",
-  [
-    "connect-src",
-    "'self'",
-    "https://firebase.googleapis.com",
-    "https://firebaseinstallations.googleapis.com",
-    "https://*.googleapis.com",
-    "https://www.google-analytics.com",
-    "https://region1.google-analytics.com",
-    "https://region2.google-analytics.com",
-    "https://*.firebaseio.com",
-    "wss://*.firebaseio.com",
-    "https://identitytoolkit.googleapis.com",
-    "https://securetoken.googleapis.com",
-    "https://api.stripe.com",
-  ].join(" "),
-  "frame-src https://accounts.google.com https://*.firebaseapp.com https://js.stripe.com",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "upgrade-insecure-requests",
-]
-  .join("; ");
-
 const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
@@ -65,13 +18,11 @@ const nextConfig: NextConfig = {
 
   async headers() {
     return [
-      // All routes: full security header set including CSP
+      // All routes: non-CSP security headers.
+      // CSP is set per-request by middleware.ts (needs a fresh nonce each time).
       {
         source: "/(.*)",
-        headers: [
-          ...commonSecurityHeaders,
-          { key: "Content-Security-Policy", value: csp },
-        ],
+        headers: [...commonSecurityHeaders],
       },
       // Static assets: explicit security + long-lived cache headers
       // (/_next/static/* was previously missing these entirely)

@@ -489,6 +489,10 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
       if (soft !== null) {
         console.log(`[chain] Path A* — borderline RAG fallback for: "${query}"`);
         context = soft;
+      } else if (nonStreamIntent === "STEM_FACTUAL") {
+        // Path F — LLM answers from base knowledge (web was intentionally skipped)
+        console.log(`[chain] Path F — STEM base-knowledge fallback for: "${query}"`);
+        context = "[Nav konteksta no zināšanu bāzes — atbildi no vispārējām zināšanām]";
       } else {
         // Path C — return honest answer without any LLM call
         console.log(`[chain] Path C — no results for: "${query}"`);
@@ -688,6 +692,13 @@ export async function* runRagChainStream(
         path = "A";
         console.log(`[chain] Path A* — borderline RAG fallback for: "${query}"`);
         context = soft;
+      } else if (intent === "STEM_FACTUAL") {
+        // ── Path F: STEM miss — LLM answers from base knowledge ─────────────
+        // Web search was intentionally skipped for STEM (LLM knows it well).
+        // Don't return Path C — let the LLM answer from general knowledge.
+        path = "F";
+        console.log(`[chain] Path F — STEM base-knowledge fallback for: "${query}"`);
+        context = "[Nav konteksta no zināšanu bāzes — atbildi no vispārējām zināšanām]";
       } else {
         // ── Path C: both RAG and web returned nothing — NO LLM call ─────────
         path = "C";
