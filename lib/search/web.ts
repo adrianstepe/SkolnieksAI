@@ -29,8 +29,8 @@ export interface WebSearchResult {
   favicon: string; // https://www.google.com/s2/favicons?domain=X&sz=32
 }
 
-/** Max results returned by webSearch — hard-capped at 3 until paying users exist. */
-const MAX_RESULTS_CAP = 3;
+/** Safety ceiling — callers are responsible for tier-gating below this. */
+const MAX_RESULTS_CAP = 12;
 
 /**
  * Approved Latvian educational sources.

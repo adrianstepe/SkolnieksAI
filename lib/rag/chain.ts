@@ -241,6 +241,23 @@ function getTopK(query: string): number {
   return 3;
 }
 
+/**
+ * Decides how many web search results to actually fetch based on query
+ * complexity, bounded by the tier ceiling.
+ *
+ * Simple definition ("kas ir X") → 1 result is enough.
+ * Short factual question (< 12 words, no compound) → 2 results.
+ * Complex / compound / multi-concept → full tier limit.
+ */
+function getAdaptiveWebSources(query: string, tierMax: number): number {
+  const words = query.trim().split(/\s+/);
+  const isSimpleDef = /^(kas\s+ir|ko\s+nozīmē|defin)/i.test(query.trim());
+  const isCompound = /\s+(un|kā|kāpēc|salīdzini|atšķirība|starpība|paskaidro)\s+/i.test(query);
+  if (isSimpleDef && words.length < 8 && !isCompound) return Math.min(1, tierMax);
+  if (words.length < 12 && !isCompound) return Math.min(2, tierMax);
+  return tierMax;
+}
+
 function chunksFromRaw(raw: import("@/lib/rag-client").RetrieveResult, cleanedTexts: string[]): RetrievedChunk[] {
   return cleanedTexts.map((text, i) => ({
     content: text,
@@ -460,7 +477,8 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
     }
 
     const skipWeb = shouldSkipWebSearch(nonStreamIntent, false);
-    const web = skipWeb ? null : await fetchWebContext(query, raw.texts.length === 0, maxWebSources, nonStreamIntent);
+    const adaptiveSources = getAdaptiveWebSources(query, maxWebSources);
+    const web = skipWeb ? null : await fetchWebContext(query, raw.texts.length === 0, adaptiveSources, nonStreamIntent);
     if (web !== null) {
       // Path B
       console.log(`[chain] Path B — web search fallback for: "${query}"`);
@@ -651,7 +669,8 @@ export async function* runRagChainStream(
 
     // RAG not confident — check intent before spending a web search call
     const skipWeb = shouldSkipWebSearch(intent, false);
-    const web = skipWeb ? null : await fetchWebContext(query, raw.texts.length === 0, maxWebSources, intent);
+    const adaptiveSources = getAdaptiveWebSources(query, maxWebSources);
+    const web = skipWeb ? null : await fetchWebContext(query, raw.texts.length === 0, adaptiveSources, intent);
 
     if (web !== null) {
       // ── Path B: web search returned results ─────────────────────────────
