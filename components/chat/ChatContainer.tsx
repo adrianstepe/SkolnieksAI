@@ -49,7 +49,7 @@ function readUpgradeOpenFromLocation(): boolean {
 
 export function ChatContainer() {
   const { settings } = useSettings();
-  const { user, usage, profile, signOut, getIdToken, refreshProfile, loading: profileLoading } =
+  const { user, usage, profile, signOut, getIdToken, refreshProfile } =
     useAuth();
   const pathname = usePathname() ?? "/";
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -558,6 +558,10 @@ export function ChatContainer() {
     profile?.tier === "pro" ||
     profile?.tier === "premium" ||
     profile?.tier === "school_pro";
+
+  // True while user is authenticated but profile hasn't fetched yet — used to
+  // suppress the upgrade button flash for premium users on refresh.
+  const profileLoading = user !== null && profile === null;
 
   const displayName = profile?.displayName ?? user?.displayName ?? user?.email?.split("@")[0];
   const firstName = displayName?.split(" ")[0] ?? "Skolnieks";

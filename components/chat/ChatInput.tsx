@@ -95,7 +95,13 @@ export function ChatInput({
   const showCounter = charCount > charLimit * 0.75;
 
   const card = (
-    <div className={`flex flex-col bg-white dark:bg-[#151926] rounded-2xl border border-[#E5E7EB] dark:border-white/7 px-4 pt-3 pb-2 transition-all duration-150 focus-within:border-[#2563EB]/50 dark:focus-within:border-[#4F8EF7]/50 focus-within:ring-2 focus-within:ring-[#2563EB]/15 dark:focus-within:ring-[#4F8EF7]/15 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.08)] dark:focus-within:shadow-[0_0_0_3px_rgba(79,142,247,0.08)] ${floating ? "shadow-lg shadow-black/10 dark:shadow-black/30" : "shadow-sm dark:shadow-none"}`}>
+    <div
+      className={`flex flex-col bg-white dark:bg-[#151926] rounded-2xl border border-[#E5E7EB] dark:border-white/7 px-4 pt-3 pb-2 transition-all duration-150 focus-within:border-[#2563EB]/50 dark:focus-within:border-[#4F8EF7]/50 focus-within:ring-2 focus-within:ring-[#2563EB]/15 dark:focus-within:ring-[#4F8EF7]/15 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.08)] dark:focus-within:shadow-[0_0_0_3px_rgba(79,142,247,0.08)] ${floating ? "shadow-lg shadow-black/10 dark:shadow-black/30" : "shadow-sm dark:shadow-none"} cursor-text`}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("button")) return;
+        textareaRef.current?.focus();
+      }}
+    >
           {/* Textarea — full width, expands from 1 row up to 200px */}
           <textarea
             ref={textareaRef}

@@ -28,6 +28,22 @@ const PATH_C_RESPONSE =
   "vaicāt par konkrētu mācību priekšmetu vai tēmu.";
 
 // ---------------------------------------------------------------------------
+// Content safety — offensive query patterns (Path D: zero tokens)
+// ---------------------------------------------------------------------------
+
+const BLOCKED_PATTERNS = [
+  "nēģer", "nigger", "nigga", "fuck", "shit", "pizd", "huj", "bitch",
+  // extend as needed
+] as const;
+
+const OFFENSIVE_BLOCK_RESPONSE = "Lūdzu, uzturi pieklājīgu sarunu! 😊";
+
+function isOffensiveQuery(query: string): boolean {
+  const q = query.toLowerCase();
+  return BLOCKED_PATTERNS.some((p) => q.includes(p));
+}
+
+// ---------------------------------------------------------------------------
 // WebSource — public type consumed by UI
 // ---------------------------------------------------------------------------
 
@@ -425,6 +441,14 @@ async function fetchWebContext(
 // Message builder
 // ---------------------------------------------------------------------------
 
+const CONTENT_SAFETY_PREAMBLE =
+  "SVARĪGI — SATURA DROŠĪBA:\n" +
+  "Ja lietotāja ziņojums satur rupjības, aizvainojošus vārdus, rasismu, diskrimināciju,\n" +
+  "vai jebkādu aizskarošu saturu — atbildi TIKAI ar šo tekstu: \"Lūdzu, uzturi pieklājīgu\n" +
+  "sarunu! 😊\" — un nekādā gadījumā neturpini par šo tēmu.\n" +
+  "Ja lietotājs vienkārši grib parunāties vai uzdod vispārīgus jautājumus, atbildi\n" +
+  "draudzīgi un īsi latviešu valodā.\n\n";
+
 // GDPR: Verified — no PII sent to LLM providers. Only query + curriculum context + conversation history.
 function buildMessages(
   systemPrompt: string,
@@ -434,7 +458,7 @@ function buildMessages(
 ): ChatMessage[] {
   const recentHistory = conversationHistory.slice(-6);
   return [
-    { role: "system", content: systemPrompt },
+    { role: "system", content: CONTENT_SAFETY_PREAMBLE + systemPrompt },
     { role: "user", content: `Konteksts:\n\n${context}` },
     { role: "assistant", content: "Sapratu." },
     ...recentHistory,
@@ -449,6 +473,16 @@ function buildMessages(
 export async function runRagChain(input: RagInput): Promise<RagResult> {
   const { query, grade, model = "deepseek", maxTokens = 800, conversationHistory = [], maxWebSources = 3 } = input;
   const subject = normalizeSubjectToRagKey(input.subject) ?? input.subject;
+
+  // ── Path D (offensive): block before web search or LLM — zero tokens ────
+  if (isOffensiveQuery(query)) {
+    console.warn("[BLOCKED] Offensive query intercepted");
+    return {
+      content: OFFENSIVE_BLOCK_RESPONSE,
+      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+      chunks: [],
+    };
+  }
 
   const topK = getTopK(query);
   const raw = await retrieveContext(query, topK, subject);
@@ -578,6 +612,23 @@ export async function* runRagChainStream(
   // Normalize subject via VIIS lookup → correct RAG filter key
   const normalizedSubject = normalizeSubjectToRagKey(input.subject) ?? input.subject;
   const subject = normalizedSubject;
+
+  // ── Path D (offensive): block before web search or LLM — zero tokens ────
+  if (isOffensiveQuery(query)) {
+    console.warn("[BLOCKED] Offensive query intercepted");
+    for (const char of OFFENSIVE_BLOCK_RESPONSE) {
+      yield { type: "delta", text: char };
+    }
+    yield {
+      type: "done",
+      chunks: [],
+      webSources: [],
+      usedWebSearch: false,
+      path: "D",
+      usage: ZERO_USAGE,
+    };
+    return;
+  }
 
   // ── Path D: meta-question about curriculum structure → answer from VIIS ──
   if (isMetaQuestion(query)) {

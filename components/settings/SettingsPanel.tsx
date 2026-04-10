@@ -414,6 +414,7 @@ function PreferencesSection() {
 function SubscriptionSection() {
   const { profile, getIdToken } = useAuth();
   const [loadingPortal, setLoadingPortal] = useState(false);
+  const [noStripeCustomer, setNoStripeCustomer] = useState(false);
 
   const isPremium =
     profile?.tier === "pro" ||
@@ -431,9 +432,14 @@ function SubscriptionSection() {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
+      const data = (await res.json()) as { url?: string; error?: string };
       if (data.url) {
         window.location.href = data.url;
+      } else if (data.error === "no_stripe_customer") {
+        setNoStripeCustomer(true);
+        setLoadingPortal(false);
+      } else {
+        setLoadingPortal(false);
       }
     } catch (err) {
       console.error(err);
@@ -445,20 +451,33 @@ function SubscriptionSection() {
     <section>
       <SectionTitle>Abonements</SectionTitle>
       <div className="space-y-2.5 py-1">
-        <button
-          onClick={handleManageSubscription}
-          disabled={loadingPortal}
-          className="w-full rounded-xl bg-white dark:bg-[#1A2033] border border-[#D1D5DB] dark:border-white/7 px-4 py-2.5 text-sm font-medium text-[#111827] dark:text-[#E8ECF4] transition-colors hover:bg-[#F3F4F6] dark:hover:bg-[#1A2033]/70 disabled:opacity-50 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] dark:focus-visible:ring-[#3D7CE5]"
-        >
-          {loadingPortal ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#1D4ED8]/30 dark:border-[#3D7CE5]/30 border-t-[#1D4ED8] dark:border-t-[#3D7CE5]" />
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-[#1D4ED8] dark:text-[#3D7CE5]">
-              <path fillRule="evenodd" d="M2.5 4A1.5 1.5 0 0 0 1 5.5V6h18v-.5A1.5 1.5 0 0 0 17.5 4h-15ZM19 8.5H1v6A1.5 1.5 0 0 0 2.5 16h15a1.5 1.5 0 0 0 1.5-1.5v-6ZM3 13.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" />
-            </svg>
-          )}
-          {loadingPortal ? "Notiek pāradresēšana..." : "Pārvaldīt abonementu"}
-        </button>
+        {noStripeCustomer ? (
+          <div className="rounded-xl border border-[#D1D5DB] dark:border-white/7 bg-[#F9FAFB] dark:bg-[#1A2033] px-4 py-3 text-sm text-[#6B7280] dark:text-[#8B95A8]">
+            Abonements aktivizēts manuāli — tiešsaistes pārvaldība nav pieejama. Ja nepieciešama palīdzība, sazinies ar{" "}
+            <a
+              href="mailto:atbalsts@skolnieksai.lv"
+              className="font-medium text-[#1D4ED8] dark:text-[#3D7CE5] hover:underline"
+            >
+              atbalsts@skolnieksai.lv
+            </a>
+            .
+          </div>
+        ) : (
+          <button
+            onClick={handleManageSubscription}
+            disabled={loadingPortal}
+            className="w-full rounded-xl bg-white dark:bg-[#1A2033] border border-[#D1D5DB] dark:border-white/7 px-4 py-2.5 text-sm font-medium text-[#111827] dark:text-[#E8ECF4] transition-colors hover:bg-[#F3F4F6] dark:hover:bg-[#1A2033]/70 disabled:opacity-50 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] dark:focus-visible:ring-[#3D7CE5]"
+          >
+            {loadingPortal ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#1D4ED8]/30 dark:border-[#3D7CE5]/30 border-t-[#1D4ED8] dark:border-t-[#3D7CE5]" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-[#1D4ED8] dark:text-[#3D7CE5]">
+                <path fillRule="evenodd" d="M2.5 4A1.5 1.5 0 0 0 1 5.5V6h18v-.5A1.5 1.5 0 0 0 17.5 4h-15ZM19 8.5H1v6A1.5 1.5 0 0 0 2.5 16h15a1.5 1.5 0 0 0 1.5-1.5v-6ZM3 13.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" />
+              </svg>
+            )}
+            {loadingPortal ? "Notiek pāradresēšana..." : "Pārvaldīt abonementu"}
+          </button>
+        )}
 
         {/* EU Directive 2023/2673 — withdrawal button must be native, visible,
             and not hidden behind the Stripe Customer Portal. */}
