@@ -30,8 +30,8 @@
 2. Middleware verifies Firebase Auth token → reject if invalid
 3. Usage gate: read `users/{uid}/usage/{YYYY-MM}` → check token budget remaining
 4. RAG retrieval:
-   - Embed query with `@xenova/transformers` (`paraphrase-multilingual-MiniLM-L12-v2`, runs in Node.js)
-   - Query Chroma Cloud (`skolnieks_content` collection) top-k chunks, filtered by subject metadata
+   - Embed query with Jina v3 API (`jina-embeddings-v3`, 1024-dim, `retrieval.query` task)
+   - Query Chroma Cloud (`skolnieks_content_v2` collection) top-k chunks, filtered by subject metadata
    - No Python server needed — `lib/rag/retriever.ts` connects to Chroma Cloud directly via `chromadb` npm `CloudClient`
    - Future: rerank step for quality
 5. Build prompt: system message (Latvian, Skola2030, grade) + retrieved chunks + user message. Response strategy: factual questions answered directly in the first sentence; math/calculations solved fully step-by-step; essay/homework structure guided with one concrete hint; student who explicitly requests a direct answer always receives one regardless of question type.
@@ -87,12 +87,12 @@ interface LLMClient {
 
 ## ChromaDB Collection
 
-Collection: `skolnieks_content` (Chroma Cloud)
+Collection: `skolnieks_content_v2` (Chroma Cloud)
 
 Document shape:
 - `id`: hash of (pdf_filename + page + chunk_index)
 - `document`: text chunk (~500 tokens)
-- `embedding`: 384-dim (`paraphrase-multilingual-MiniLM-L12-v2`)
+- `embedding`: 1024-dim (`jina-embeddings-v3`, `retrieval.passage` task)
 - `metadata`: `{ source_pdf, subject, grade_min, grade_max, page_number, chunk_index }`
 
 Production retrieval path: `lib/rag/retriever.ts` → `chromadb` npm `CloudClient` → Chroma Cloud. No Python server or localhost:8001 dependency.

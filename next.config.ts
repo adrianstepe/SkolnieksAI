@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
-  serverExternalPackages: ["chromadb", "@xenova/transformers"],
+  serverExternalPackages: ["chromadb"],
 
   async headers() {
     return [

@@ -8,7 +8,7 @@ Latvia's first AI study companion. Aligns to the national curriculum via RAG ove
 
 - **Frontend**: Next.js 14+ (App Router) + Tailwind CSS → Vercel
 - **Auth**: Firebase Auth (email + Google). Firestore for user profiles & usage tracking
-- **Vector DB**: Chroma Cloud (`skolnieks_content` collection). Embeddings: `@xenova/transformers` (Node.js, no Python). Production queries Chroma Cloud directly via `lib/rag/retriever.ts`.
+- **Vector DB**: Chroma Cloud (`skolnieks_content_v2` collection, 1024-dim). Embeddings: Jina v3 API (`jina-embeddings-v3`). Production queries Chroma Cloud directly via `lib/rag/retriever.ts`.
 - **RAG**: pdfplumber for PDF ingestion → ChromaDB retrieval → LLM. Production retrieval is pure TypeScript (no Python server needed). `RAG_server.py` is legacy/local-dev only.
 - **Free tier AI**: DeepSeek V3.2 (`deepseek-chat`). $0.028/1M cached, $0.28 miss, $0.42 output
 - **Paid tier AI**: Claude Sonnet 4.6 only (via Anthropic API)
@@ -67,9 +67,9 @@ src/
 
 ## ChromaDB
 
-- **Production (Vercel)**: `lib/rag/retriever.ts` connects to Chroma Cloud via `chromadb` npm `CloudClient`. Requires env vars: `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE`. Embeddings via `@xenova/transformers` in Node.js — no Python server needed.
+- **Production (Vercel)**: `lib/rag/retriever.ts` connects to Chroma Cloud via `chromadb` npm `CloudClient`. Requires env vars: `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE`, `JINA_API_KEY`. Embeddings via Jina v3 API — no Python server needed.
 - **Local dev / ingestion**: Python scripts (`RAG_server.py`, `rag/chroma_client.py`) still work for local ingestion. `rag/chroma_client.py::get_chroma_client()` handles local vs cloud routing for Python tools.
-- Only `skolnieks_content` is on Chroma Cloud. `skola2030_chunks` excluded — no license yet.
+- `skolnieks_content_v2` (Jina v3, 1024-dim) is the active collection on Chroma Cloud. `skolnieks_content` (legacy MiniLM, 384-dim) kept as fallback. `skola2030_chunks` excluded — no license yet.
 
 ## Critical Rules
 

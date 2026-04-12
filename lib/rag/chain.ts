@@ -16,7 +16,7 @@ import { classifyIntent, shouldSkipRag, shouldSkipWebSearch, getWebSearchDomainS
 // - The AI model (DeepSeek version)
 // - Chunk size, overlap, or retrieval count
 // Changing this invalidates all old cache entries automatically.
-const RAG_CACHE_VERSION = "v12"; // bumped: new Latvian-quality-focused prompt, prefix-cache optimized
+const RAG_CACHE_VERSION = "v13"; // bumped: Jina v3 embeddings (1024-dim), new embedding space invalidates all cache
 
 // ---------------------------------------------------------------------------
 // Path C fallback message (no LLM call — no hallucination possible)
@@ -77,7 +77,7 @@ function isCacheable(query: string): boolean {
 
 async function getEmbedding(text: string): Promise<number[] | null> {
   try {
-    return await embedText(text);
+    return await embedText(text, "retrieval.query");
   } catch {
     return null;
   }

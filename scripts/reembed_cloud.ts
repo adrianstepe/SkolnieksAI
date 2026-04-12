@@ -22,7 +22,7 @@
  */
 
 import { CloudClient, DefaultEmbeddingFunction } from "chromadb";
-import { embedBatch } from "../lib/ai/embeddings";
+import { embedTexts } from "../lib/ai/embeddings";
 
 const COLLECTION = "skolnieks_content";
 const BATCH_SIZE = 25;            // Smaller batches = less data per request
@@ -124,7 +124,7 @@ async function main() {
 
   // Warm up the embedding model
   console.log("Loading embedding model (first call)...");
-  await embedBatch(["warm up"]);
+  await embedTexts(["warm up"], "retrieval.passage");
   console.log("Model loaded.\n");
 
   let processed = 0;
@@ -151,7 +151,7 @@ async function main() {
 
     if (!dryRun) {
       // Generate new embeddings
-      const embeddings = await embedBatch(texts);
+      const embeddings = await embedTexts(texts, "retrieval.passage");
 
       // Update with retry
       await withRetry(`UPDATE offset=${offset}`, () =>

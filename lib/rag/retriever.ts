@@ -2,7 +2,7 @@
  * lib/rag/retriever.ts — Pure TypeScript retriever using Chroma Cloud.
  *
  * Replaces the old Python RAG server (localhost:8001) for production use.
- * Embeds queries via @xenova/transformers (Node.js, no Python needed)
+ * Embeds queries via Jina v3 API (1024-dim, asymmetric retrieval)
  * and queries Chroma Cloud directly using the chromadb npm package.
  */
 
@@ -10,7 +10,7 @@ import { CloudClient, DefaultEmbeddingFunction } from "chromadb";
 import type { Collection } from "chromadb";
 import { embedText } from "@/lib/ai/embeddings";
 
-const COLLECTION_NAME = "skolnieks_content";
+const COLLECTION_NAME = "skolnieks_content_v2";
 
 // ---------------------------------------------------------------------------
 // Shared constants (canonical source — re-exported by lib/rag-client.ts)
@@ -162,7 +162,7 @@ export async function retrieveFromCloud(
 
   try {
     // 1. Embed the query
-    const queryEmbedding = await embedText(question);
+    const queryEmbedding = await embedText(question, "retrieval.query");
 
     // 2. Build where clause
     const whereSubject =

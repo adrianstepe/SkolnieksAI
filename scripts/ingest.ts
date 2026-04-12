@@ -14,7 +14,7 @@ import fs from "fs";
 import path from "path";
 import pdfParse from "pdf-parse";
 import { ChromaClient, Collection } from "chromadb";
-import { embedBatch } from "../lib/ai/embeddings";
+import { embedTexts } from "../lib/ai/embeddings";
 import { chunkText } from "../lib/utils/chunker";
 
 // ---------------------------------------------------------------------------
@@ -228,7 +228,7 @@ async function processPdf(
       process.stdout.write(
         `  Embedding + upserting chunks ${totalUpserted + 1}–${totalUpserted + batchIds.length}...`,
       );
-      const embeddings = await embedBatch(batchDocs);
+      const embeddings = await embedTexts(batchDocs, "retrieval.passage");
       await upsertBatch(collection, batchIds, embeddings, batchDocs, batchMeta);
       totalUpserted += batchIds.length;
       batchIds.length = 0;

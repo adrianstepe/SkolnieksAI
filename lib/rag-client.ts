@@ -2,7 +2,7 @@
  * lib/rag-client.ts — RAG retrieval interface.
  *
  * Production (Vercel): queries Chroma Cloud directly via lib/rag/retriever.ts.
- * No Python server needed — embeddings run in Node.js via @xenova/transformers.
+ * No Python server needed — embeddings via Jina v3 API (jina-embeddings-v3, 1024-dim).
  *
  * Constants and types are defined in lib/rag/retriever.ts (canonical source)
  * and re-exported here so existing imports across the codebase keep working.
