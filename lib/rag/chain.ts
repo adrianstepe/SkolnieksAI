@@ -17,7 +17,7 @@ import { fetchTezaurusContext } from "@/lib/rag/tezaurs";
 // - The AI model (DeepSeek version)
 // - Chunk size, overlap, or retrieval count
 // Changing this invalidates all old cache entries automatically.
-const RAG_CACHE_VERSION = "v15"; // bumped: Tēzaurs ļ-palatalization fix, darbīb stem, Nepiemīt guard in formatters
+const RAG_CACHE_VERSION = "v16"; // bumped: Tēzaurs ļ-palatalization fix, darbīb stem, Nepiemīt guard in formatters + Latvian Grammar Support
 
 // ---------------------------------------------------------------------------
 // Path C fallback message (no LLM call — no hallucination possible)

@@ -28,7 +28,7 @@ const TEZAURS_SUBJECTS = new Set(["latvian"]);
 
 // Grammar-trigger keyword stems (case-insensitive substring match).
 // If ANY appear in the user query, Tēzaurs lookup runs regardless of subject.
-const GRAMMAR_TRIGGERS = [
+export const GRAMMAR_TRIGGERS = [
   "locījum", "deklināc", "konjugāc", "vārdšķir", "dzimt",
   "vienskaitl", "daudzskaitl", "kā loka", "kā loku", "kāda forma",
   "kāds laiks", "kā raksta", "kā pareizi", "ģenitīv", "datīv",

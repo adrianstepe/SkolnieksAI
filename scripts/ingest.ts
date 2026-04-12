@@ -13,7 +13,7 @@
 import fs from "fs";
 import path from "path";
 import pdfParse from "pdf-parse";
-import { ChromaClient, Collection } from "chromadb";
+import { ChromaClient, CloudClient, Collection } from "chromadb";
 import { embedTexts } from "../lib/ai/embeddings";
 import { chunkText } from "../lib/utils/chunker";
 
@@ -30,6 +30,11 @@ const DATA_DIRS = [
   // path.resolve(process.cwd(), "data/skola2030"),
 ];
 
+// Directories scanned for .txt educational content files
+const TEXT_DATA_DIRS = [
+  path.resolve(process.cwd(), "data/latvian-grammar"),
+];
+
 // Batch size for ChromaDB upserts
 const UPSERT_BATCH = 100;
 
@@ -39,10 +44,12 @@ const UPSERT_BATCH = 100;
 
 export interface ChunkMetadata {
   source_pdf: string;
+  source_type?: string;
   subject: string;
   grade_min: number;
   grade_max: number;
   page_number: number;
+  chunk_index?: number;
   section_title: string;
 }
 
@@ -126,20 +133,21 @@ function extractSectionTitle(pageText: string): string {
 // ---------------------------------------------------------------------------
 
 async function getOrCreateCollection(
-  client: ChromaClient,
+  client: ChromaClient | CloudClient,
   reset: boolean,
+  collectionName: string
 ): Promise<Collection> {
   if (reset) {
     try {
-      await client.deleteCollection({ name: COLLECTION_NAME });
-      console.log(`Dropped existing collection "${COLLECTION_NAME}"`);
+      await client.deleteCollection({ name: collectionName });
+      console.log(`Dropped existing collection "${collectionName}"`);
     } catch {
       // collection didn't exist — that's fine
     }
   }
 
   const collection = await client.getOrCreateCollection({
-    name: COLLECTION_NAME,
+    name: collectionName,
     metadata: {
       description: "Knowledge base curriculum chunks",
       hnsw_space: "cosine",
@@ -243,62 +251,194 @@ async function processPdf(
 }
 
 // ---------------------------------------------------------------------------
+// Process a single .txt file
+// ---------------------------------------------------------------------------
+
+// Section-aware chunking for grammar text files
+function chunkGrammarText(text: string): string[] {
+  // Split by blank lines or Markdown headers
+  const rawSections = text.split(/\n\s*\n|(?=\n##\s)/);
+  const chunks: string[] = [];
+
+  for (const section of rawSections) {
+    const trimmed = section.trim();
+    if (!trimmed) continue;
+
+    // If a section is suspiciously long (e.g., > 1500 chars) AND doesn't look like a table
+    if (trimmed.length > 1500 && !trimmed.includes('|')) {
+      // Split by nearest paragraph/newline within the heavy section
+      const subParagraphs = trimmed.split(/\n/);
+      let currentChunk = "";
+
+      for (const para of subParagraphs) {
+        if ((currentChunk.length + para.length) > 1500) {
+          if (currentChunk.trim()) chunks.push(currentChunk.trim());
+          currentChunk = para + "\n";
+        } else {
+          currentChunk += para + "\n";
+        }
+      }
+      if (currentChunk.trim()) chunks.push(currentChunk.trim());
+    } else {
+      chunks.push(trimmed);
+    }
+  }
+  return chunks;
+}
+
+// ---------------------------------------------------------------------------
+// Process a single .txt file
+// ---------------------------------------------------------------------------
+
+async function processTextFile(
+  filePath: string,
+  collection: Collection,
+): Promise<number> {
+  const filename = path.basename(filePath);
+
+  console.log(`\nProcessing Grammar File: ${filename}`);
+
+  const fullText = fs.readFileSync(filePath, "utf-8"); // UTF-8 ensures Latvian diacritics are preserved
+  const rawChunks = chunkGrammarText(fullText);
+  console.log(`  Raw chunks (section-aware): ${rawChunks.length}`);
+
+  const batchIds: string[] = [];
+  const batchDocs: string[] = [];
+  const batchMeta: ChunkMetadata[] = [];
+  let totalUpserted = 0;
+
+  for (let i = 0; i < rawChunks.length; i++) {
+    const chunk = rawChunks[i];
+    
+    // Attempt to extract a header if present
+    const headerMatch = chunk.match(/^(?:##\s|===)?(.+)$/m);
+    const sectionTitle = headerMatch ? headerMatch[1].trim().replace(/===/g, '') : "";
+
+    const id = `${filename}::chunk::${i}`;
+
+    batchIds.push(id);
+    batchDocs.push(chunk);
+    batchMeta.push({
+      source_pdf: filename,
+      source_type: "latvian_grammar_internal",
+      subject: "latviešu valoda",
+      grade_min: 6,
+      grade_max: 12,
+      page_number: 0,
+      chunk_index: i,
+      section_title: sectionTitle,
+    });
+
+    if (batchIds.length === UPSERT_BATCH || i === rawChunks.length - 1) {
+      process.stdout.write(
+        `  Embedding + upserting chunks ${totalUpserted + 1}–${totalUpserted + batchIds.length}...`,
+      );
+      const embeddings = await embedTexts(batchDocs, "retrieval.passage");
+      await upsertBatch(collection, batchIds, embeddings, batchDocs, batchMeta);
+      totalUpserted += batchIds.length;
+      batchIds.length = 0;
+      batchDocs.length = 0;
+      batchMeta.length = 0;
+      process.stdout.write(" done\n");
+    }
+  }
+
+  console.log(`  Total upserted: ${totalUpserted} chunks`);
+  return totalUpserted;
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
 async function main() {
   const args = process.argv.slice(2);
   const reset = args.includes("--reset");
+  const isGrammarOnly = args.includes("--grammar-only");
+  
   const fileIdx = args.indexOf("--file");
   const singleFile = fileIdx >= 0 ? args[fileIdx + 1] : null;
 
-  const client = new ChromaClient({ path: CHROMA_URL });
+  const targetCollectionIdx = args.indexOf("--target-collection");
+  const TARGET_COLLECTION = targetCollectionIdx >= 0 
+    ? args[targetCollectionIdx + 1] 
+    : (process.env.INGEST_TARGET || COLLECTION_NAME);
 
-  // Health check
-  try {
-    await client.heartbeat();
-    console.log(`Connected to ChromaDB at ${CHROMA_URL}`);
-  } catch {
-    console.error(
-      `ERROR: Cannot reach ChromaDB at ${CHROMA_URL}\n` +
-        `Start it with: docker compose up -d`,
-    );
-    process.exit(1);
+  let client: ChromaClient | CloudClient;
+  if (process.env.CHROMA_API_KEY && process.env.CHROMA_TENANT) {
+    client = new CloudClient({
+      apiKey: process.env.CHROMA_API_KEY,
+      tenant: process.env.CHROMA_TENANT,
+      database: process.env.CHROMA_DATABASE ?? "skolnieksai",
+    });
+    console.log("Connected to Chroma Cloud");
+  } else {
+    client = new ChromaClient({ path: CHROMA_URL });
+    try {
+      await client.heartbeat();
+      console.log(`Connected to ChromaDB at ${CHROMA_URL}`);
+    } catch {
+      console.error(
+        `ERROR: Cannot reach ChromaDB at ${CHROMA_URL}\n` +
+          `Start it with: docker compose up -d`,
+      );
+      process.exit(1);
+    }
   }
 
-  const collection = await getOrCreateCollection(client, reset);
+  const collection = await getOrCreateCollection(client, reset, TARGET_COLLECTION);
 
   let pdfFiles: string[] = [];
+  let txtFiles: string[] = [];
+
   if (singleFile) {
-    pdfFiles = [path.resolve(singleFile)];
+    const resolved = path.resolve(singleFile);
+    if (resolved.toLowerCase().endsWith(".txt")) {
+      txtFiles = [resolved];
+    } else {
+      pdfFiles = [resolved];
+    }
   } else {
-    for (const dir of DATA_DIRS) {
+    if (!isGrammarOnly) {
+      for (const dir of DATA_DIRS) {
+        if (fs.existsSync(dir)) {
+          const files = fs.readdirSync(dir)
+            .filter((f) => f.toLowerCase().endsWith(".pdf"))
+            .map((f) => path.join(dir, f));
+          pdfFiles.push(...files);
+        }
+      }
+    }
+    for (const dir of TEXT_DATA_DIRS) {
       if (fs.existsSync(dir)) {
         const files = fs.readdirSync(dir)
-          .filter((f) => f.toLowerCase().endsWith(".pdf"))
+          .filter((f) => f.toLowerCase().endsWith(".txt"))
           .map((f) => path.join(dir, f));
-        pdfFiles.push(...files);
+        txtFiles.push(...files);
       }
     }
   }
 
-  if (pdfFiles.length === 0) {
+  if (pdfFiles.length === 0 && txtFiles.length === 0) {
     console.warn(
-      `No PDFs found in ${DATA_DIRS.join(", ")}.\n` +
-        `Place OpenStax or Wikipedia PDFs there and re-run.`,
+      `No files found in ${[...DATA_DIRS, ...TEXT_DATA_DIRS].join(", ")}.\n` +
+        `Place PDFs or .txt files in those directories and re-run.`,
     );
     process.exit(0);
   }
 
-  console.log(`Found ${pdfFiles.length} PDF(s) to ingest`);
+  console.log(`Found ${pdfFiles.length} PDF(s) and ${txtFiles.length} text file(s) to ingest`);
 
   let total = 0;
   for (const filePath of pdfFiles) {
     total += await processPdf(filePath, collection);
   }
+  for (const filePath of txtFiles) {
+    total += await processTextFile(filePath, collection);
+  }
 
   const count = await collection.count();
-  console.log(`\nIngestion complete. Collection "${COLLECTION_NAME}" now has ${count} chunks.`);
+  console.log(`\nIngestion complete. Collection "${TARGET_COLLECTION}" now has ${count} chunks.`);
 }
 
 main().catch((err) => {

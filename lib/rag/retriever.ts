@@ -9,8 +9,10 @@
 import { CloudClient, DefaultEmbeddingFunction } from "chromadb";
 import type { Collection } from "chromadb";
 import { embedText } from "@/lib/ai/embeddings";
+import { GRAMMAR_TRIGGERS } from "./tezaurs";
 
 const COLLECTION_NAME = "skolnieks_content_v2";
+const LATVIAN_GRAMMAR_COLLECTION = "latvian_grammar_v1";
 
 // ---------------------------------------------------------------------------
 // Shared constants (canonical source — re-exported by lib/rag-client.ts)
@@ -52,6 +54,7 @@ export const KNOWN_CURRICULUM_SUBJECTS = new Set([
 
 interface ChunkMeta {
   source_pdf: string;
+  source_type?: string;
   subject: string;
   grade_min: number;
   grade_max: number;
@@ -78,7 +81,7 @@ export interface RetrieveResult {
 // ---------------------------------------------------------------------------
 
 let clientInstance: CloudClient | null = null;
-let collectionInstance: Collection | null = null;
+const collectionInstances = new Map<string, Collection>();
 
 function getCloudClient(): CloudClient {
   if (!clientInstance) {
@@ -101,17 +104,18 @@ function getCloudClient(): CloudClient {
   return clientInstance;
 }
 
-async function getCollection(): Promise<Collection> {
-  if (!collectionInstance) {
+async function getCollection(name: string = COLLECTION_NAME): Promise<Collection> {
+  if (!collectionInstances.has(name)) {
     const client = getCloudClient();
     // embeddingFunction is required by the SDK type but never invoked
     // because we always pass raw queryEmbeddings in .query() calls.
-    collectionInstance = await client.getCollection({
-      name: COLLECTION_NAME,
+    const collection = await client.getCollection({
+      name: name,
       embeddingFunction: new DefaultEmbeddingFunction(),
     });
+    collectionInstances.set(name, collection);
   }
-  return collectionInstance;
+  return collectionInstances.get(name)!;
 }
 
 // ---------------------------------------------------------------------------
@@ -174,15 +178,75 @@ export async function retrieveFromCloud(
       ? { subject: { $eq: whereSubject } }
       : undefined;
 
-    // 3. Query Chroma Cloud with 8s timeout to avoid hanging Vercel functions
-    const collection = await getCollection();
+    // 3. Query Chroma Cloud
+    // Fan-out checking logic matching user specification exactly
+    const isLatvianGrammarRelevant =
+      subject === "latviešu valoda" || subject === "latvian" ||
+      GRAMMAR_TRIGGERS.some((kw) => question.toLowerCase().includes(kw.toLowerCase()));
+
+    const queries = [
+      getCollection(COLLECTION_NAME).then((coll) =>
+        coll.query({
+          queryEmbeddings: [queryEmbedding],
+          nResults: topK,
+          where,
+          include: ["documents", "metadatas", "distances"] as never,
+        })
+      ),
+    ];
+
+    if (isLatvianGrammarRelevant) {
+      console.log(`[Retriever] Fan-out triggered for grammar query. Searching both collections.`);
+      queries.push(
+        getCollection(LATVIAN_GRAMMAR_COLLECTION).then((coll) =>
+          coll.query({
+            queryEmbeddings: [queryEmbedding],
+            nResults: topK,
+            // don't strict filter grammar collection as all chunks are grammar
+            include: ["documents", "metadatas", "distances"] as never,
+          })
+        )
+      );
+    }
+
+    const queryPromise = Promise.all(queries).then((allResults) => {
+      // Merge results
+      const combinedDocs: string[] = [];
+      const combinedMetas: Record<string, unknown>[] = [];
+      const combinedDists: number[] = [];
+
+      for (const res of allResults) {
+        if (res.documents?.[0]) combinedDocs.push(...(res.documents[0] as string[]));
+        if (res.metadatas?.[0]) combinedMetas.push(...(res.metadatas[0] as Record<string, unknown>[]));
+        if (res.distances?.[0]) combinedDists.push(...(res.distances[0] as number[]));
+      }
+
+      // If we merged, we need to sort and slice
+      if (allResults.length > 1 && combinedDocs.length > 0) {
+        const zipped = combinedDocs.map((doc, i) => ({
+          doc,
+          meta: combinedMetas[i],
+          dist: combinedDists[i],
+        }));
+        zipped.sort((a, b) => a.dist - b.dist);
+        const top = zipped.slice(0, topK);
+
+        return {
+          documents: [top.map((z) => z.doc)],
+          metadatas: [top.map((z) => z.meta)],
+          distances: [top.map((z) => z.dist)],
+        };
+      } else {
+        return {
+          documents: [combinedDocs],
+          metadatas: [combinedMetas],
+          distances: [combinedDists],
+        };
+      }
+    });
+
     const results = await Promise.race([
-      collection.query({
-        queryEmbeddings: [queryEmbedding],
-        nResults: topK,
-        where,
-        include: ["documents", "metadatas", "distances"] as never,
-      }),
+      queryPromise,
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("Chroma query timed out (8s)")), 8_000),
       ),
@@ -224,6 +288,7 @@ export async function retrieveFromCloud(
       distArr.push(dist);
       metadatas.push({
         source_pdf: pdf,
+        source_type: srcType,
         subject: subj,
         grade_min: Number(meta.grade_min ?? 1),
         grade_max: Number(meta.grade_max ?? 12),
@@ -250,8 +315,8 @@ export async function retrieveFromCloud(
     if (err instanceof Error) {
       console.error(`[retriever] Chroma Cloud error: ${err.message}`);
     }
-    // Reset collection instance on error so next call retries connection
-    collectionInstance = null;
+    // Reset collection instances on error so next call retries connection
+    collectionInstances.clear();
     return empty;
   }
 }
