@@ -56,7 +56,7 @@ __pycache__/
 *.pyo
 
 # large openstax data directory
-/data/openstax/
+/data/
 
 # chromadb model cache
 .cache/
