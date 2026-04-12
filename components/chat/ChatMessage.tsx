@@ -376,42 +376,6 @@ export function ChatMessage({
           </div>
         )}
 
-        {/* Source citation — design studio style */}
-        {!isUser && message.sources && message.sources.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {message.sources.map((source, i) => (
-              <div
-                key={`${source.id}-${i}`}
-                className="flex items-start gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-[#F1F5F9] dark:bg-[#1A2033]/30 border border-[#E5E7EB] dark:border-white/7"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-3.5 h-3.5 mt-0.5 shrink-0"
-                  style={{ color: accentColor }}
-                >
-                  <path d="M10.75 16.82A7.462 7.462 0 0 1 15 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0 0 18 15.06V3.44a.75.75 0 0 0-.525-.72A8.963 8.963 0 0 0 15 2.25a8.963 8.963 0 0 0-4.25 1.063v13.507ZM9.25 4.313A8.963 8.963 0 0 0 5 2.25c-.862 0-1.7.121-2.475.345a.75.75 0 0 0-.525.72v11.62a.75.75 0 0 0 .954.721A7.506 7.506 0 0 1 5 15.5c1.579 0 3.042.487 4.25 1.32V4.313Z" />
-                </svg>
-                <div className="min-w-0">
-                  <p
-                    className="text-[11px] font-medium"
-                    style={{ color: accentColor }}
-                  >
-                    {source.subject}
-                    {source.sourceTitle ? ` — ${source.sourceTitle}` : source.section ? ` — ${source.section}` : ""}
-                  </p>
-                  <p className="text-[10px] text-[#6B7280] dark:text-[#8B95A8] mt-0.5">
-                    {source.sourceType === "openstax" ? "OpenStax CC BY 4.0"
-                      : source.sourceType === "wikipedia_lv" ? "Wikipedia LV CC BY-SA 4.0"
-                      : "Nezināms avots"}
-                    {source.page > 0 ? ` · lpp. ${source.page}` : ""}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
