@@ -14,16 +14,20 @@ export const stripe: Stripe = new Proxy({} as Stripe, {
   get: (_, prop) => Reflect.get(getStripe(), prop as string),
 });
 
-export function getPriceId(plan: "pro" | "premium"): string {
-  const key = plan === "pro" ? "STRIPE_PRICE_PRO" : "STRIPE_PRICE_PREMIUM";
-  const id = process.env[key] ?? "";
-  return id;
+export type PlanId = "pro" | "premium";
+export type BillingInterval = "monthly" | "annual";
+
+export function getPriceId(plan: PlanId, interval: BillingInterval = "monthly"): string {
+  const envKeys: Record<PlanId, Record<BillingInterval, string>> = {
+    pro: { monthly: "STRIPE_PRICE_PRO", annual: "STRIPE_PRO_ANNUAL_PRICE_ID" },
+    premium: { monthly: "STRIPE_PRICE_PREMIUM", annual: "STRIPE_PREMIUM_ANNUAL_PRICE_ID" },
+  };
+  return process.env[envKeys[plan][interval]] ?? "";
 }
 
 // Kept for backward-compatibility with any callers that import PRICE_IDS.
+// Returns monthly prices by default.
 export const PRICE_IDS = {
-  get pro() { return getPriceId("pro"); },
-  get premium() { return getPriceId("premium"); },
+  get pro() { return getPriceId("pro", "monthly"); },
+  get premium() { return getPriceId("premium", "monthly"); },
 } as const;
-
-export type PlanId = keyof typeof PRICE_IDS;

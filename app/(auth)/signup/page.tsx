@@ -46,6 +46,13 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Pre-fill invite code from ?invite= URL param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const invite = params.get("invite");
+    if (invite) setInviteCode(invite.toUpperCase());
+  }, []);
+
   // --- Birth year dropdown state ---
   const [yearOpen, setYearOpen] = useState(false);
   const yearDropdownRef = useRef<HTMLDivElement>(null);
