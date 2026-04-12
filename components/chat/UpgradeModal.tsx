@@ -429,7 +429,11 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
 
       const data = (await res.json()) as { url: string };
       if (data.url) {
-        await logCheckoutStarted({ plan, source: "upgrade_modal" });
+        await logCheckoutStarted({
+          plan,
+          interval,
+          source: "upgrade_modal",
+        });
         window.location.href = data.url;
       }
     } catch (err) {

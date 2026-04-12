@@ -105,8 +105,8 @@ export async function POST(request: NextRequest) {
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${appUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
-    cancel_url: `${appUrl}/payment/cancel`,
+    success_url: `${appUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}&interval=${interval}`,
+    cancel_url: `${appUrl}/payment/cancel?plan=${encodeURIComponent(plan)}&interval=${encodeURIComponent(interval)}`,
     metadata: {
       firebaseUid: decoded.uid,
       plan,

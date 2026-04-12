@@ -1,11 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+
+type PlanParam = "pro" | "premium";
+type IntervalParam = "monthly" | "annual";
+
+function parsePlan(raw: string | null): PlanParam | null {
+  return raw === "pro" || raw === "premium" ? raw : null;
+}
+
+function parseInterval(raw: string | null): IntervalParam | null {
+  return raw === "monthly" || raw === "annual" ? raw : null;
+}
+
+/** Shown when the user returns from Stripe Checkout (query params from session). */
+function abandonedCheckoutLine(plan: PlanParam, interval: IntervalParam): string {
+  const labels: Record<PlanParam, Record<IntervalParam, string>> = {
+    pro: {
+      monthly: "Pro — €5,99/mēn.",
+      annual: "Pro — €59,99/gadā",
+    },
+    premium: {
+      monthly: "Premium — €14,99/mēn.",
+      annual: "Premium — €143,99/gadā",
+    },
+  };
+  return labels[plan][interval];
+}
 
 export default function PaymentCancelPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(3);
+
+  const checkoutContext = useMemo(() => {
+    const plan = parsePlan(searchParams.get("plan"));
+    const interval = parseInterval(searchParams.get("interval"));
+    if (!plan || !interval) return null;
+    return abandonedCheckoutLine(plan, interval);
+  }, [searchParams]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -42,6 +76,15 @@ export default function PaymentCancelPage() {
         <p className="mt-2 text-text-secondary">
           Maksājums netika veikts. Tu vari mēģināt vēlreiz jebkurā laikā.
         </p>
+
+        {checkoutContext && (
+          <p className="mt-4 rounded-lg bg-surface px-4 py-3 text-sm text-text-secondary">
+            Atceltais maksājums:{" "}
+            <span className="font-semibold text-text-primary">
+              {checkoutContext}
+            </span>
+          </p>
+        )}
 
         <p className="mt-6 text-sm text-text-muted">
           Pāradresēšana pēc {countdown} sekundēm...

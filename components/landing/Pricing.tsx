@@ -7,7 +7,23 @@ import { LATVIAN_EXAM_DATES_2026 } from "@/lib/exams/latvianExams";
 
 type Interval = "monthly" | "annual";
 
-const PLANS = [
+/** Subtext under the CTA: `null` = none; per-interval string or `"countdown"` placeholder. */
+type PlanCtaSub = null | Record<Interval, string | "countdown" | null>;
+
+type PlanRow = {
+  id: "free" | "pro" | "exam";
+  name: string;
+  monthly: string;
+  annual: string;
+  annualMonthly?: string;
+  features: readonly string[];
+  cta: Record<Interval, string>;
+  ctaStyle: "outline" | "primary" | "accent";
+  badge: null | "popular" | "exam";
+  ctaSub: PlanCtaSub;
+};
+
+const PLANS: readonly PlanRow[] = [
   {
     id: "free" as const,
     name: "Bezmaksas",
@@ -149,16 +165,9 @@ export function Pricing() {
           const isExam = plan.badge === "exam";
           const price = interval === "monthly" ? plan.monthly : plan.annual;
           const periodLabel = interval === "monthly" ? "/mēn." : "/gadā";
-          const ctaText =
-            typeof plan.cta === "string"
-              ? plan.cta
-              : plan.cta[interval];
+          const ctaText = plan.cta[interval];
           const rawCtaSub =
-            plan.ctaSub === null
-              ? null
-              : typeof plan.ctaSub === "string"
-                ? plan.ctaSub
-                : plan.ctaSub[interval];
+            plan.ctaSub === null ? null : plan.ctaSub[interval];
           const ctaSub =
             rawCtaSub === "countdown"
               ? daysToExam !== null

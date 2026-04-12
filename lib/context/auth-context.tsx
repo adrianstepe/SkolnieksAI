@@ -26,6 +26,8 @@ export interface UserProfile {
   email: string | null;
   displayName: string | null;
   tier: UserTier;
+  /** Set when the user has an active Stripe subscription (from webhook). */
+  billingInterval?: "monthly" | "annual";
   grade: number | null;
   onboardingComplete?: boolean;
   currentStreak: number;

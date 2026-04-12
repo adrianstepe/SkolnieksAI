@@ -33,8 +33,10 @@ CHROMA_DATABASE=skolnieksai          # Chroma Cloud database (default: skolnieks
 STRIPE_SECRET_KEY=sk_live_...        # Live mode secret key
 STRIPE_WEBHOOK_SECRET=whsec_...      # Webhook endpoint signing secret
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...  # Client-side
-STRIPE_PRICE_PRO=price_...           # Stripe Price ID for Pro plan (server-side only)
-STRIPE_PRICE_PREMIUM=price_...       # Stripe Price ID for Premium/Eksāmenu plan (server-side only)
+STRIPE_PRICE_PRO=price_...           # Stripe Price ID — Pro, monthly (server-side only)
+STRIPE_PRICE_PREMIUM=price_...       # Stripe Price ID — Premium, monthly (server-side only)
+STRIPE_PRO_ANNUAL_PRICE_ID=price_...    # Pro yearly price (e.g. €59.99/yr) — server-side only
+STRIPE_PREMIUM_ANNUAL_PRICE_ID=price_... # Premium yearly price (e.g. €143.99/yr) — server-side only
 
 # --- Anthropic (paid tier) ---
 ANTHROPIC_API_KEY=sk-ant-...         # Claude API key for premium users

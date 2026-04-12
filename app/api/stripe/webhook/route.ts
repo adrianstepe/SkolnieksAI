@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { FieldValue, type DocumentReference } from "firebase-admin/firestore";
 import { stripe } from "@/lib/stripe/client";
 import { adminDb } from "@/lib/firebase/admin";
+
+/** Zeros the current calendar month usage doc (same shape as `invoice.paid`). */
+async function resetCurrentMonthUsage(userRef: DocumentReference): Promise<void> {
+  const now = new Date();
+  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  await userRef.collection("usage").doc(yearMonth).set(
+    { inputTokens: 0, outputTokens: 0, queryCount: 0, dailyCount: 0 },
+    { merge: true },
+  );
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -87,15 +98,12 @@ export async function POST(request: NextRequest) {
         currentPeriodEnd: new Date(periodEnd * 1000).toISOString(),
       });
 
-      // Annual subscribers only get invoice.paid once per year, so reset
-      // the monthly usage budget now to ensure they start fresh.
+      // Annual: first charge does not reliably pair with a separate monthly
+      // `invoice.paid` cadence the way monthly subscriptions do — reset the
+      // current month’s token budget here so paid limits apply immediately.
       if (interval === "annual") {
-        const now = new Date();
-        const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-        await userRef.collection("usage").doc(yearMonth).set(
-          { inputTokens: 0, outputTokens: 0, queryCount: 0, dailyCount: 0 },
-          { merge: true },
-        );
+        await resetCurrentMonthUsage(userRef);
+        await userRef.update({ paymentFailed: false });
       }
 
       break;
@@ -122,6 +130,7 @@ export async function POST(request: NextRequest) {
           tier: "free",
           stripeSubscriptionId: null,
           currentPeriodEnd: null,
+          billingInterval: FieldValue.delete(),
         });
       }
 
@@ -149,13 +158,7 @@ export async function POST(request: NextRequest) {
 
       if (!paidUsersSnapshot.empty) {
         const userDoc = paidUsersSnapshot.docs[0];
-        const now = new Date();
-        const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-        await userDoc.ref.collection("usage").doc(yearMonth).set(
-          { inputTokens: 0, outputTokens: 0, queryCount: 0, dailyCount: 0 },
-          { merge: true },
-        );
-        // Clear any payment failure flags from prior failed attempts
+        await resetCurrentMonthUsage(userDoc.ref);
         await userDoc.ref.update({ paymentFailed: false });
       }
 
