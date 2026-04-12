@@ -9,6 +9,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { normalizeSubjectToRagKey, isMetaQuestion, answerMetaQuestion } from "@/lib/curriculum/subjects";
 import { embedText } from "@/lib/ai/embeddings";
 import { classifyIntent, shouldSkipRag, shouldSkipWebSearch, getWebSearchDomainStrategy, type Intent } from "@/lib/rag/intent";
+import { fetchTezaurusContext } from "@/lib/rag/tezaurs";
 
 // IMPORTANT: Bump this version string whenever you change:
 // - The system prompt
@@ -16,7 +17,7 @@ import { classifyIntent, shouldSkipRag, shouldSkipWebSearch, getWebSearchDomainS
 // - The AI model (DeepSeek version)
 // - Chunk size, overlap, or retrieval count
 // Changing this invalidates all old cache entries automatically.
-const RAG_CACHE_VERSION = "v13"; // bumped: Jina v3 embeddings (1024-dim), new embedding space invalidates all cache
+const RAG_CACHE_VERSION = "v15"; // bumped: Tēzaurs ļ-palatalization fix, darbīb stem, Nepiemīt guard in formatters
 
 // ---------------------------------------------------------------------------
 // Path C fallback message (no LLM call — no hallucination possible)
@@ -502,7 +503,12 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
   }
 
   const topK = getTopK(query);
-  const raw = await retrieveContext(query, topK, subject);
+  // fetchTezaurusContext only needs query + subject — no dependency on raw.
+  // Run both in parallel to eliminate Tēzaurs latency from the critical path.
+  const [raw, tezaurusCtx] = await Promise.all([
+    retrieveContext(query, topK, subject),
+    fetchTezaurusContext(query, subject),
+  ]);
   const texts = raw.texts.map((t) => cleanChunkText(t).slice(0, 800));
   const sources = raw.sources;
   const chunks = chunksFromRaw(raw, texts);
@@ -554,6 +560,12 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
         };
       }
     }
+  }
+
+  // ── Tēzaurs morphological augmentation (Latvian grammar queries) ──────
+  // tezaurusCtx was fetched in parallel with retrieveContext above.
+  if (tezaurusCtx) {
+    context = tezaurusCtx + "\n\n" + context;
   }
 
   const systemPrompt = buildSystemPrompt(subject, grade);
@@ -705,7 +717,12 @@ export async function* runRagChainStream(
   // Retrieve + three-path routing
   // ---------------------------------------------------------------------------
   const topK = getTopK(query);
-  const raw = await retrieveContext(query, topK, subject);
+  // fetchTezaurusContext only needs query + subject — no dependency on raw.
+  // Run both in parallel to eliminate Tēzaurs latency from the critical path.
+  const [raw, tezaurusCtx] = await Promise.all([
+    retrieveContext(query, topK, subject),
+    fetchTezaurusContext(query, subject),
+  ]);
   const texts = raw.texts.map((t) => cleanChunkText(t).slice(0, 800));
   const sources = raw.sources;
   const chunks = chunksFromRaw(raw, texts);
@@ -787,6 +804,12 @@ export async function* runRagChainStream(
         return;
       }
     }
+  }
+
+  // ── Tēzaurs morphological augmentation (Latvian grammar queries) ──────
+  // tezaurusCtx was fetched in parallel with retrieveContext above.
+  if (tezaurusCtx) {
+    context = tezaurusCtx + "\n\n" + context;
   }
 
   const systemPrompt = buildSystemPrompt(subject, grade);
