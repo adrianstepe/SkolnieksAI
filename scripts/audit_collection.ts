@@ -10,7 +10,7 @@
 
 import { CloudClient, DefaultEmbeddingFunction } from "chromadb";
 
-const COLLECTION = "skolnieks_content";
+const COLLECTION = "skolnieks_content_v2";
 const FETCH_BATCH_SIZE = 200; // Chroma Cloud max page size is 200
 
 // ---------------------------------------------------------------------------
@@ -21,9 +21,16 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function classifySource(sourceName: string): "OpenStax" | "Wikipedia" | "Other" {
+function classifySource(
+  sourceName: string,
+  sourceType?: unknown,
+): "OpenStax" | "Wikipedia" | "Other" {
+  // Prefer metadata.source_type when present — filenames don't contain "openstax"
+  const t = typeof sourceType === "string" ? sourceType.toLowerCase() : "";
+  if (t === "openstax") return "OpenStax";
+  if (t.startsWith("wikipedia")) return "Wikipedia";
+  // Fallback: inspect filename
   const s = sourceName.toLowerCase();
-  if (/openstax/.test(s)) return "OpenStax";
   if (/wiki/.test(s)) return "Wikipedia";
   return "Other";
 }
@@ -140,13 +147,18 @@ async function main() {
   // -------------------------------------------------------------------------
   const sourceCounts = new Map<string, number>();
   const sourceChunks = new Map<string, RawChunk[]>();
+  // Tracks one representative source_type per source key for classification
+  const sourceTypes = new Map<string, unknown>();
 
   for (const chunk of allChunks) {
     const rawVal = chunk.metadata[resolvedSourceField];
     const src = rawVal !== undefined ? String(rawVal) : "(no source field)";
 
     sourceCounts.set(src, (sourceCounts.get(src) ?? 0) + 1);
-    if (!sourceChunks.has(src)) sourceChunks.set(src, []);
+    if (!sourceChunks.has(src)) {
+      sourceChunks.set(src, []);
+      sourceTypes.set(src, chunk.metadata["source_type"]);
+    }
     sourceChunks.get(src)!.push(chunk);
   }
 
@@ -161,7 +173,7 @@ async function main() {
   let otherTotal = 0;
 
   for (const [src, count] of sortedSources) {
-    const cat = classifySource(src);
+    const cat = classifySource(src, sourceTypes.get(src));
     if (cat === "OpenStax") openstaxTotal += count;
     else if (cat === "Wikipedia") wikiTotal += count;
     else otherTotal += count;
@@ -191,7 +203,7 @@ async function main() {
   const top20 = sortedSources.slice(0, 20);
   const longestName = Math.min(60, Math.max(...top20.map(([s]) => s.length)));
   for (const [src, count] of top20) {
-    const tag = classifySource(src);
+    const tag = classifySource(src, sourceTypes.get(src));
     const label = src.length > 60 ? src.slice(0, 57) + "..." : src;
     console.log(`  [${tag.padEnd(9)}] ${label.padEnd(longestName)}  ${count} chunks`);
   }

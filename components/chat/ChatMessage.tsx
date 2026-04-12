@@ -401,7 +401,7 @@ export function ChatMessage({
                   <p className="text-[10px] text-[#6B7280] dark:text-[#8B95A8] mt-0.5">
                     {source.sourceType === "openstax" ? "OpenStax CC BY 4.0"
                       : source.sourceType === "wikipedia_lv" ? "Wikipedia LV CC BY-SA 4.0"
-                      : "Skola2030"}
+                      : "Nezināms avots"}
                     {source.page > 0 ? ` · lpp. ${source.page}` : ""}
                   </p>
                 </div>
