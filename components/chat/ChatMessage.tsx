@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import rehypeHighlight from "rehype-highlight";
 import { SourcesBubble } from "@/components/SourcesBubble";
 import { useStreamingMarkdown } from "@/hooks/useStreamingMarkdown";
 import { MathErrorBoundary } from "@/components/chat/MathErrorBoundary";
@@ -153,8 +155,8 @@ function AssistantMessageContent({ answer }: { answer: string }) {
   return (
     <MathErrorBoundary rawContent={safeContent}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
+        remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+        rehypePlugins={[rehypeKatex, rehypeHighlight]}
       >
         {safeContent}
       </ReactMarkdown>
@@ -343,7 +345,7 @@ export function ChatMessage({
 
               {parsed && parsed.answer && (
                 <>
-                  <div className="break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_p]:mb-2 [&_p:last-child]:mb-0 [&_code]:font-mono [&_code]:text-sm [&_code]:bg-[#F9FAFB] dark:[&_code]:bg-[#0F1117] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded">
+                  <div className="markdown-prose break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_p]:mb-2 [&_p:last-child]:mb-0 [&_code]:font-mono [&_code]:text-sm [&_code]:bg-[#F9FAFB] dark:[&_code]:bg-[#0F1117] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mt-3 [&_h2]:mb-1.5 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-2.5 [&_h3]:mb-1 [&_h1:first-child]:mt-0 [&_h2:first-child]:mt-0 [&_h3:first-child]:mt-0 [&_blockquote]:border-l-2 [&_blockquote]:border-[#4F8EF7] [&_blockquote]:pl-3 [&_blockquote]:my-2 [&_blockquote]:text-[#6B7280] dark:[&_blockquote]:text-[#8B95A8] [&_blockquote]:italic [&_hr]:my-3 [&_hr]:border-[#E5E7EB] dark:[&_hr]:border-white/10 prose-table:w-full">
                     <AssistantMessageContent answer={parsed.answer} />
                   </div>
 

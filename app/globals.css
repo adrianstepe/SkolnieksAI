@@ -382,3 +382,62 @@ code, pre { font-family: var(--font-mono); }
 .katex {
   font-size: 1em; /* prevent KaTeX from rendering too large on mobile */
 }
+
+/* ── Markdown tables ── */
+.markdown-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125em;
+  margin: 0.75em 0;
+  display: block;
+  overflow-x: auto;
+}
+.markdown-prose thead {
+  background: var(--color-surface);
+}
+.markdown-prose th {
+  padding: 0.45em 0.75em;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.markdown-prose td {
+  padding: 0.4em 0.75em;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border-light);
+  vertical-align: top;
+}
+.markdown-prose tbody tr:last-child td {
+  border-bottom: none;
+}
+.markdown-prose tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ── Syntax highlighting (rehype-highlight / highlight.js) ── */
+.hljs {
+  background: var(--color-input-bg);
+  color: var(--color-text-primary);
+  border-radius: 8px;
+  padding: 1em;
+  overflow-x: auto;
+  font-size: 0.875em;
+  font-family: var(--font-mono);
+  border: 1px solid var(--color-border);
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in  { color: #4F8EF7; }
+.hljs-string,
+.hljs-attr      { color: #4ADE80; }
+.hljs-number,
+.hljs-literal   { color: #F59E0B; }
+.hljs-comment   { color: var(--color-text-muted); font-style: italic; }
+.hljs-function,
+.hljs-title     { color: #A78BFA; }
+.hljs-variable,
+.hljs-params    { color: var(--color-text-secondary); }
+.hljs-type,
+.hljs-class     { color: #38BDF8; }
