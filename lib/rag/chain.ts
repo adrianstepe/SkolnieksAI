@@ -503,10 +503,11 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
   }
 
   const topK = getTopK(query);
+  const { intent: nonStreamIntent } = classifyIntent(query);
   // fetchTezaurusContext only needs query + subject — no dependency on raw.
   // Run both in parallel to eliminate Tēzaurs latency from the critical path.
   const [raw, tezaurusCtx] = await Promise.all([
-    retrieveContext(query, topK, subject),
+    retrieveContext(query, topK, subject, nonStreamIntent),
     fetchTezaurusContext(query, subject),
   ]);
   const texts = raw.texts.map((t) => cleanChunkText(t).slice(0, 800));
@@ -514,8 +515,6 @@ export async function runRagChain(input: RagInput): Promise<RagResult> {
   const chunks = chunksFromRaw(raw, texts);
 
   let context: string;
-
-  const { intent: nonStreamIntent } = classifyIntent(query);
 
   if (raw.hasConfidentMatch) {
     // Path A
@@ -720,7 +719,7 @@ export async function* runRagChainStream(
   // fetchTezaurusContext only needs query + subject — no dependency on raw.
   // Run both in parallel to eliminate Tēzaurs latency from the critical path.
   const [raw, tezaurusCtx] = await Promise.all([
-    retrieveContext(query, topK, subject),
+    retrieveContext(query, topK, subject, intent),
     fetchTezaurusContext(query, subject),
   ]);
   const texts = raw.texts.map((t) => cleanChunkText(t).slice(0, 800));

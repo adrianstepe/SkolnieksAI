@@ -7,9 +7,10 @@
  */
 
 import { CloudClient, DefaultEmbeddingFunction } from "chromadb";
-import type { Collection } from "chromadb";
+import type { Collection, QueryResponse } from "chromadb";
 import { embedText } from "@/lib/ai/embeddings";
 import { GRAMMAR_TRIGGERS } from "./tezaurs";
+import type { Intent } from "./intent";
 
 const COLLECTION_NAME = "skolnieks_content_v2";
 const LATVIAN_GRAMMAR_COLLECTION = "latvian_grammar_v1";
@@ -155,6 +156,7 @@ export async function retrieveFromCloud(
   question: string,
   topK = 3,
   subject?: string,
+  intent?: Intent,
 ): Promise<RetrieveResult> {
   const empty: RetrieveResult = {
     texts: [],
@@ -179,24 +181,36 @@ export async function retrieveFromCloud(
       : undefined;
 
     // 3. Query Chroma Cloud
-    // Fan-out checking logic matching user specification exactly
+    // LATVIAN_GRAMMAR intent: skip main corpus entirely — only query grammar collection
+    // to prevent STEM chunks (e.g. math "loks"/arc) from polluting morphology answers.
+    // Otherwise fall back to the existing fan-out heuristic.
+    const isGrammarIntent = intent === "LATVIAN_GRAMMAR";
     const isLatvianGrammarRelevant =
+      isGrammarIntent ||
       subject === "latviešu valoda" || subject === "latvian" ||
       GRAMMAR_TRIGGERS.some((kw) => question.toLowerCase().includes(kw.toLowerCase()));
 
-    const queries = [
-      getCollection(COLLECTION_NAME).then((coll) =>
-        coll.query({
-          queryEmbeddings: [queryEmbedding],
-          nResults: topK,
-          where,
-          include: ["documents", "metadatas", "distances"] as never,
-        })
-      ),
-    ];
+    const queries: Promise<QueryResponse>[] = [];
+
+    if (!isGrammarIntent) {
+      queries.push(
+        getCollection(COLLECTION_NAME).then((coll) =>
+          coll.query({
+            queryEmbeddings: [queryEmbedding],
+            nResults: topK,
+            where,
+            include: ["documents", "metadatas", "distances"] as never,
+          })
+        )
+      );
+    }
 
     if (isLatvianGrammarRelevant) {
-      console.log(`[Retriever] Fan-out triggered for grammar query. Searching both collections.`);
+      if (isGrammarIntent) {
+        console.log(`[Retriever] LATVIAN_GRAMMAR intent — querying grammar collection only.`);
+      } else {
+        console.log(`[Retriever] Fan-out triggered for grammar query. Searching both collections.`);
+      }
       queries.push(
         getCollection(LATVIAN_GRAMMAR_COLLECTION).then((coll) =>
           coll.query({

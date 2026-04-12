@@ -31,7 +31,7 @@
  *   AMBIGUOUS — default; everything else falls through here.
  */
 
-export type Intent = "GENERATIVE" | "STEM_FACTUAL" | "LATVIA_SPECIFIC" | "AMBIGUOUS";
+export type Intent = "GENERATIVE" | "STEM_FACTUAL" | "LATVIA_SPECIFIC" | "LATVIAN_GRAMMAR" | "AMBIGUOUS";
 
 export interface ClassifyResult {
   intent: Intent;
@@ -47,6 +47,11 @@ const R_CODE           = /```|(?:function\s|def\s|import\s|console\.log|print\(|
 const R_GEN_VERBS      = /^(uzraksti|sastādi|izveido|sacerē|noformulē|pārtulko|iztulko|atrisini|aprēķini|izrēķini|pārfrāzē|saīsinā|paplašini)\b/iu;
 const R_GREETING_SHORT = /^(čau|sveiki?|labdien|labrīt|labvakar|paldies|labi|jā|nē|ok|okay|hi|hello|hey)\b/iu;
 const R_ASSISTANT_META = /^(kā tev iet|kas tu esi|ko tu vari|kurš tevi)/iu;
+
+// ── LATVIAN_GRAMMAR rules ────────────────────────────────────────────────────
+
+/** Morphology, declension, conjugation, spelling, syntax — grammar-only queries. */
+const R_GRAMMAR = /\b(loka|loki|locīt|locījum|komats|pareizrakstīb|sinonīm|antonīm|skaņ[au]|gramatik|darbības vār|lietvār|īpašības vār|apstākļa vār|vietniekvār|skaitļa vār|divdabi|infinitīv|konjugāci|deklinācij|teikuma locekl|sintaks|morfoloģij|vārdšķir|vārddarināšan)\b/iu;
 
 // ── LATVIA_SPECIFIC rules ───────────────────────────────────────────────────
 
@@ -75,6 +80,9 @@ export function classifyIntent(query: string): ClassifyResult {
   if (R_GEN_VERBS.test(q))                        return { intent: "GENERATIVE", matchedRule: "G5:gen_verbs" };
   if (q.length <= 25 && R_GREETING_SHORT.test(q)) return { intent: "GENERATIVE", matchedRule: "G6:greeting" };
   if (R_ASSISTANT_META.test(q))                   return { intent: "GENERATIVE", matchedRule: "G7:meta" };
+
+  // LATVIAN_GRAMMAR — only query the grammar collection; skip main corpus to avoid STEM pollution
+  if (R_GRAMMAR.test(q)) return { intent: "LATVIAN_GRAMMAR", matchedRule: "LG1:grammar" };
 
   // LATVIA_SPECIFIC — needs Latvian web sources; RAG corpus (OpenStax EN) weak here
   if (R_LV_HISTORY.test(q))  return { intent: "LATVIA_SPECIFIC", matchedRule: "L1:lv_history" };
@@ -110,6 +118,7 @@ export function shouldSkipWebSearch(intent: Intent, hasConfidentRag: boolean): b
   void hasConfidentRag; // reserved: may gate AMBIGUOUS in a future tuning pass
   if (intent === "GENERATIVE") return true;
   if (intent === "STEM_FACTUAL") return true;
+  if (intent === "LATVIAN_GRAMMAR") return true;
   return false;
 }
 

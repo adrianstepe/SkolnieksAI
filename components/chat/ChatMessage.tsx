@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { SourcesBubble } from "@/components/SourcesBubble";
@@ -152,7 +153,7 @@ function AssistantMessageContent({ answer }: { answer: string }) {
   return (
     <MathErrorBoundary rawContent={safeContent}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
+        remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
       >
         {safeContent}

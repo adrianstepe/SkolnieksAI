@@ -9,6 +9,7 @@
  */
 
 import { retrieveFromCloud } from "@/lib/rag/retriever";
+import type { Intent } from "@/lib/rag/intent";
 
 // Re-export constants and types from the canonical source
 export {
@@ -26,6 +27,7 @@ export async function retrieveContext(
   question: string,
   topK = 3,
   subject?: string,
+  intent?: Intent,
 ) {
-  return retrieveFromCloud(question, topK, subject);
+  return retrieveFromCloud(question, topK, subject, intent);
 }
