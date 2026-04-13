@@ -10,7 +10,7 @@ cd C:\Users\adria\.antigravity\SkolnieksAI
 
 ```bash
 .\skolnieksai-env\Scripts\activate
-$env:RAG_API_KEY="c1476dae0bf9be6e8d439b7f1f61f2e338fc2d3b2838505cf2c07a751fc5511f"; uvicorn RAG_server:app --port 8001 --reload
+$env:RAG_API_KEY="c1476dae0bf9be6e8d439b7f1f61f2e338fc2d3b2838505cf2c07a751fc5511f"; uvicorn RAG_server:app --port 8001 --reload    
 
 ```
 
