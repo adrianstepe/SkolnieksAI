@@ -55,16 +55,16 @@ const R_GRAMMAR = /\b(loka|loki|locīt|locījum|komats|pareizrakstīb|sinonīm|a
 
 // ── LATVIA_SPECIFIC rules ───────────────────────────────────────────────────
 
-const R_LV_HISTORY  = /\b(brīvības cīņas|barikādes|atmoda|okupācija|deportācijas|ulmanis|čakste|latvijas vēsture|1918|1991|18\.\s*novembris)\b/iu;
-const R_LV_LIT      = /\b(rainis|aspazija|blaumanis|poruks|čaks|vācietis|belševica|latviešu literatūra|dainas)\b/iu;
-const R_LV_GEO      = /\b(latgale|kurzeme|vidzeme|zemgale|sēlija|daugava|gauja|rīga|daugavpils|liepāja)\b/iu;
-const R_CURRICULUM  = /\b(skola2030|visc|izm|centralizēt|eksāmen|valsts pārbaudes)\b/iu;
-const R_LV_CIVICS   = /\b(saeima|satversme|likumi\.lv|pašvaldīb)\b/iu;
+const R_LV_HISTORY  = /\b(brīvības cīņas|barikādes|atmoda|okupācij|deportācij|ulmanis|čakste|latvijas vēstur|1918|1991|18\.\s*novembris)/iu;
+const R_LV_LIT      = /\b(rainis|raiņ|aspazij|blaumanis|blaumaņ|poruks|poruk|čaks|čak|vācietis|belševic|latviešu literatūr|dain)/iu;
+const R_LV_GEO      = /\b(latgal|kurzem|vidzem|zemgal|sēlij|daugav|gauj|rīg|daugavpil|liepāj)/iu;
+const R_CURRICULUM  = /\b(skola2030|visc|izm|centralizēt|eksāmen|valsts pārbaudes)/iu;
+const R_LV_CIVICS   = /\b(saeim|satversm|likumi\.lv|pašvaldīb)/iu;
 
 // ── STEM_FACTUAL rules ──────────────────────────────────────────────────────
 
-const R_STEM_LV   = /\b(fotosintēze|šūna|atom|molekul|gravitāc|enerģij|spēk|ātrum|paātrinā|funkcij|integrāl|atvasinājum|vienādojum|reakcij|elektron|proton|neitron)\b/iu;
-const R_STEM_EN   = /\b(photosynthesis|cell|atom|molecule|gravity|energy|force|velocity|acceleration|function|integral|derivative|equation|reaction)\b/iu;
+const R_STEM_LV   = /\b(fotosintēz|šūn|atom|molekul|gravitāc|enerģij|spēk|ātrum|paātrinā|funkcij|integrāl|atvasinājum|vienādojum|reakcij|elektron|proton|neitron)/iu;
+const R_STEM_EN   = /\b(photosynthes|cell|atom|molecul|gravit|energy|force|velocit|accelerat|function|integral|derivativ|equation|reaction)/iu;
 const R_KAS_IR    = /^kas\s+ir\s+\w*(atom|molekul|enerģij|gravitāc|šūna|fotosintēz|elektron|proton|reakcij|integral|funkcij)/iu;
 
 // ── Classifier ──────────────────────────────────────────────────────────────
