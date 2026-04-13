@@ -64,11 +64,13 @@ function extractUidFromAuthHeader(request: NextRequest): string | null {
 /**
  * Build the Content-Security-Policy header value for a given nonce.
  * style-src keeps 'unsafe-inline' for Tailwind; tighten with style nonces later.
+ * 'unsafe-eval' is injected only in development for Turbopack HMR/error overlays.
  */
 function buildCspHeader(nonce: string): string {
+  const isDev = process.env.NODE_ENV === "development";
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' https://js.stripe.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com`,
+    `script-src 'self' 'nonce-${nonce}' ${isDev ? "'unsafe-eval' " : ""}https://js.stripe.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https://*.googleapis.com https://www.google-analytics.com https://www.google.com",
     "font-src 'self'",
