@@ -90,17 +90,17 @@ function IntervalToggle({
 }) {
   return (
     <div className="flex justify-center mb-8">
-      <div className="relative inline-flex items-center rounded-full bg-[#F3F4F6] dark:bg-[#1A2033] border border-[#E5E7EB] dark:border-white/7 p-1">
+      <div className="relative grid grid-cols-2 items-center rounded-full bg-[#F3F4F6] dark:bg-[#1A2033] border border-[#E5E7EB] dark:border-white/7 p-1 w-72">
         <div
           className="absolute top-1 bottom-1 rounded-full bg-[#2563EB] transition-all duration-300 ease-out"
           style={{
-            left: interval === "monthly" ? "4px" : "calc(50% + 0px)",
+            left: interval === "monthly" ? "4px" : "calc(50%)",
             width: "calc(50% - 4px)",
           }}
         />
         <button
           onClick={() => onChange("monthly")}
-          className={`relative z-10 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors duration-200 ${
+          className={`relative z-10 flex items-center justify-center rounded-full py-1.5 text-sm font-semibold transition-colors duration-200 ${
             interval === "monthly"
               ? "text-white"
               : "text-[#6B7280] dark:text-[#8B95A8] hover:text-[#374151] dark:hover:text-[#E8ECF4]"
@@ -110,7 +110,7 @@ function IntervalToggle({
         </button>
         <button
           onClick={() => onChange("annual")}
-          className={`relative z-10 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors duration-200 flex items-center gap-1.5 ${
+          className={`relative z-10 flex items-center justify-center gap-1.5 rounded-full py-1.5 text-sm font-semibold transition-colors duration-200 ${
             interval === "annual"
               ? "text-white"
               : "text-[#6B7280] dark:text-[#8B95A8] hover:text-[#374151] dark:hover:text-[#E8ECF4]"
@@ -392,7 +392,7 @@ function PlanCard({
 export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
   const { getIdToken, profile } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
-  const [interval, setInterval] = useState<Interval>("monthly");
+  const [interval, setInterval] = useState<Interval>("annual");
 
   // EU distance selling — Consumer Rights Directive Art. 16(m).
   const [consentPro, setConsentPro] = useState(false);

@@ -100,18 +100,18 @@ function IntervalToggle({
 }) {
   return (
     <div className="flex justify-center mb-12">
-      <div className="relative flex items-center rounded-full bg-surface border border-border p-1 w-72">
+      <div className="relative grid grid-cols-2 items-center rounded-full bg-surface border border-border p-1 w-72">
         {/* Animated pill background */}
         <div
           className="absolute top-1 bottom-1 rounded-full bg-primary transition-all duration-300 ease-out"
           style={{
-            left: interval === "monthly" ? "4px" : "calc(50% + 2px)",
-            width: "calc(50% - 6px)",
+            left: interval === "monthly" ? "4px" : "calc(50%)",
+            width: "calc(50% - 4px)",
           }}
         />
         <button
           onClick={() => onChange("monthly")}
-          className={`relative z-10 flex-1 rounded-full py-2 text-sm font-semibold transition-colors duration-200 text-center ${
+          className={`relative z-10 flex items-center justify-center rounded-full py-2 text-sm font-semibold transition-colors duration-200 ${
             interval === "monthly"
               ? "text-white"
               : "text-white/60 hover:text-white/80"
@@ -121,7 +121,7 @@ function IntervalToggle({
         </button>
         <button
           onClick={() => onChange("annual")}
-          className={`relative z-10 flex-1 rounded-full py-2 text-sm font-semibold transition-colors duration-200 flex items-center justify-center gap-1.5 ${
+          className={`relative z-10 flex items-center justify-center gap-1.5 rounded-full py-2 text-sm font-semibold transition-colors duration-200 ${
             interval === "annual"
               ? "text-white"
               : "text-white/60 hover:text-white/80"
