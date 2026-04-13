@@ -44,7 +44,7 @@ const PLANS: readonly PlanRow[] = [
     name: "Pro",
     monthly: "€5.99",
     annual: "€59.99",
-    annualMonthly: "€5.00",
+    annualMonthly: "€4.99",
     features: [
       "20 jautājumi dienā (800 mēnesī)",
       "Pilns skaidrojums ar risinājuma soļiem",
@@ -64,7 +64,7 @@ const PLANS: readonly PlanRow[] = [
     name: "Premium",
     monthly: "€14.99",
     annual: "€143.99",
-    annualMonthly: "€12.00",
+    annualMonthly: "€11.99",
     features: [
       "Visprecīzākais AI modelis (augstākā atbilžu kvalitāte)",
       "Eksāmenu līmeņa uzdevumu ģenerēšana",
@@ -100,18 +100,18 @@ function IntervalToggle({
 }) {
   return (
     <div className="flex justify-center mb-12">
-      <div className="relative inline-flex items-center rounded-full bg-surface border border-border p-1">
+      <div className="relative flex items-center rounded-full bg-surface border border-border p-1 w-72">
         {/* Animated pill background */}
         <div
           className="absolute top-1 bottom-1 rounded-full bg-primary transition-all duration-300 ease-out"
           style={{
-            left: interval === "monthly" ? "4px" : "calc(50% + 0px)",
-            width: "calc(50% - 4px)",
+            left: interval === "monthly" ? "4px" : "calc(50% + 2px)",
+            width: "calc(50% - 6px)",
           }}
         />
         <button
           onClick={() => onChange("monthly")}
-          className={`relative z-10 rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200 ${
+          className={`relative z-10 flex-1 rounded-full py-2 text-sm font-semibold transition-colors duration-200 text-center ${
             interval === "monthly"
               ? "text-white"
               : "text-white/60 hover:text-white/80"
@@ -121,15 +121,15 @@ function IntervalToggle({
         </button>
         <button
           onClick={() => onChange("annual")}
-          className={`relative z-10 rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
+          className={`relative z-10 flex-1 rounded-full py-2 text-sm font-semibold transition-colors duration-200 flex items-center justify-center gap-1.5 ${
             interval === "annual"
               ? "text-white"
               : "text-white/60 hover:text-white/80"
           }`}
         >
           Gada
-          <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400 whitespace-nowrap">
-            Ietaupi 2 mēnešus
+          <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold text-emerald-400 leading-none">
+            −2 mēn.
           </span>
         </button>
       </div>
@@ -138,7 +138,7 @@ function IntervalToggle({
 }
 
 export function Pricing() {
-  const [interval, setInterval] = useState<Interval>("monthly");
+  const [interval, setInterval] = useState<Interval>("annual");
   const daysToExam = getDaysToExam();
 
   return (
