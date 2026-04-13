@@ -4,5 +4,11 @@
       "path": "/api/cron/streak-reminder",
       "schedule": "0 18 * * *"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  },
+  "ignoreCommand": "git diff HEAD^ HEAD --name-only | grep -qvE '^(scripts/|docs/|data/|.*\\.md$|\\.gitignore|\\.env\\.example|LICENSE|README)'"
 }
