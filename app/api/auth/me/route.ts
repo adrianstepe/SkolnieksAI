@@ -46,6 +46,12 @@ export async function GET(request: NextRequest) {
   const userData = userDoc.data() as Record<string, unknown>;
   const tier = (userData.tier as string) ?? "free";
 
+  const rawBillingInterval = userData.billingInterval;
+  const billingInterval =
+    rawBillingInterval === "annual" || rawBillingInterval === "monthly"
+      ? rawBillingInterval
+      : undefined;
+
   // Read streak fields directly — streak is only incremented when the user
   // actually sends a chat message (POST /api/chat), not on every page load.
   const streak = {
@@ -73,6 +79,7 @@ export async function GET(request: NextRequest) {
       email: userData.email ?? null,
       displayName: userData.displayName ?? null,
       tier,
+      ...(billingInterval !== undefined ? { billingInterval } : {}),
       grade: userData.grade ?? null,
       onboardingComplete: userData.onboardingComplete === true,
       currentStreak: streak.currentStreak,

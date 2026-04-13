@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { FieldValue, type DocumentReference } from "firebase-admin/firestore";
 import { stripe } from "@/lib/stripe/client";
 import { adminDb } from "@/lib/firebase/admin";
+
+/** Zeros the current calendar month usage doc (same shape as `invoice.paid`). */
+async function resetCurrentMonthUsage(userRef: DocumentReference): Promise<void> {
+  const now = new Date();
+  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  await userRef.collection("usage").doc(yearMonth).set(
+    { inputTokens: 0, outputTokens: 0, queryCount: 0, dailyCount: 0 },
+    { merge: true },
+  );
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -36,6 +47,7 @@ export async function POST(request: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session;
       const firebaseUid = session.metadata?.firebaseUid;
       const plan = session.metadata?.plan;
+      const interval = session.metadata?.interval ?? "monthly";
 
       if (!firebaseUid || !plan) {
         console.error("Missing metadata in checkout session:", session.id);
@@ -77,15 +89,22 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      await adminDb
-        .collection("users")
-        .doc(firebaseUid)
-        .update({
-          tier: resolvedTier,
-          stripeCustomerId: customerId,
-          stripeSubscriptionId: subscriptionId,
-          currentPeriodEnd: new Date(periodEnd * 1000).toISOString(),
-        });
+      const userRef = adminDb.collection("users").doc(firebaseUid);
+      await userRef.update({
+        tier: resolvedTier,
+        billingInterval: interval,
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: subscriptionId,
+        currentPeriodEnd: new Date(periodEnd * 1000).toISOString(),
+      });
+
+      // Annual: first charge does not reliably pair with a separate monthly
+      // `invoice.paid` cadence the way monthly subscriptions do — reset the
+      // current month’s token budget here so paid limits apply immediately.
+      if (interval === "annual") {
+        await resetCurrentMonthUsage(userRef);
+        await userRef.update({ paymentFailed: false });
+      }
 
       break;
     }
@@ -111,7 +130,36 @@ export async function POST(request: NextRequest) {
           tier: "free",
           stripeSubscriptionId: null,
           currentPeriodEnd: null,
+          billingInterval: FieldValue.delete(),
         });
+      }
+
+      break;
+    }
+
+    case "invoice.paid": {
+      // Reset monthly usage budget when an invoice is paid.
+      // Monthly subscribers trigger this every month; annual subscribers
+      // trigger it once per year (initial budget reset for annual plans
+      // happens in checkout.session.completed above).
+      const paidInvoice = event.data.object as Stripe.Invoice;
+      const paidCustomerId =
+        typeof paidInvoice.customer === "string"
+          ? paidInvoice.customer
+          : paidInvoice.customer?.id;
+
+      if (!paidCustomerId) break;
+
+      const paidUsersSnapshot = await adminDb
+        .collection("users")
+        .where("stripeCustomerId", "==", paidCustomerId)
+        .limit(1)
+        .get();
+
+      if (!paidUsersSnapshot.empty) {
+        const userDoc = paidUsersSnapshot.docs[0];
+        await resetCurrentMonthUsage(userDoc.ref);
+        await userDoc.ref.update({ paymentFailed: false });
       }
 
       break;

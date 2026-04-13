@@ -68,7 +68,11 @@ export function StreakBrokenModal({ lostStreak, onClose }: StreakBrokenModalProp
 
       const data = (await res.json()) as { url: string };
       if (data.url) {
-        await logCheckoutStarted({ plan: "pro", source: "streak_broken_modal" });
+        await logCheckoutStarted({
+          plan: "pro",
+          interval: "monthly",
+          source: "streak_broken_modal",
+        });
         window.location.href = data.url;
       }
     } catch {

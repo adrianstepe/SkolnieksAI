@@ -1,51 +1,83 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { LATVIAN_EXAM_DATES_2026 } from "@/lib/exams/latvianExams";
 
-const PLANS = [
+type Interval = "monthly" | "annual";
+
+/** Subtext under the CTA: `null` = none; per-interval string or `"countdown"` placeholder. */
+type PlanCtaSub = null | Record<Interval, string | "countdown" | null>;
+
+type PlanRow = {
+  id: "free" | "pro" | "exam";
+  name: string;
+  monthly: string;
+  annual: string;
+  annualMonthly?: string;
+  features: readonly string[];
+  cta: Record<Interval, string>;
+  ctaStyle: "outline" | "primary" | "accent";
+  badge: null | "popular" | "exam";
+  ctaSub: PlanCtaSub;
+};
+
+const PLANS: readonly PlanRow[] = [
   {
-    id: "free",
+    id: "free" as const,
     name: "Bezmaksas",
-    price: "€0",
+    monthly: "€0",
+    annual: "€0",
     features: [
       "Visi priekšmeti no 6.–12. klasei",
       "~3 jautājumi dienā (100 mēnesī)",
       "Atbildes pielāgotas Latvijas mācību programmai",
     ],
-    cta: "Sākt bez maksas",
+    cta: { monthly: "Sākt bez maksas", annual: "Sākt bez maksas" },
     ctaStyle: "outline",
     badge: null,
     ctaSub: null,
   },
   {
-    id: "pro",
+    id: "pro" as const,
     name: "Pro",
-    price: "€5.99",
+    monthly: "€5.99",
+    annual: "€59.99",
+    annualMonthly: "€5.00",
     features: [
       "20 jautājumi dienā (800 mēnesī)",
       "Pilns skaidrojums ar risinājuma soļiem",
       "Ātrākas atbildes, bez gaidīšanas",
       "Pilns izglītības saturs visos priekšmetos",
     ],
-    cta: "Sākt Pro — €5.99/mēn.",
+    cta: {
+      monthly: "Sākt Pro — €5.99/mēn.",
+      annual: "Sākt Pro — €59.99/gadā",
+    },
     ctaStyle: "primary",
     badge: "popular",
-    ctaSub: "Atcelšana jebkurā brīdī.",
+    ctaSub: { monthly: "Atcelšana jebkurā brīdī.", annual: null },
   },
   {
-    id: "exam",
+    id: "exam" as const,
     name: "Premium",
-    price: "€14.99",
+    monthly: "€14.99",
+    annual: "€143.99",
+    annualMonthly: "€12.00",
     features: [
       "Visprecīzākais AI modelis (augstākā atbilžu kvalitāte)",
       "Eksāmenu līmeņa uzdevumu ģenerēšana",
       "Detalizēta soļu-pa-soļim analīze",
       "50 jautājumi dienā — maksimāla sagatavošanās",
     ],
-    cta: "Sākt Premium — €14.99/mēn.",
+    cta: {
+      monthly: "Sākt Premium — €14.99/mēn.",
+      annual: "Sākt Premium — €143.99/gadā",
+    },
     ctaStyle: "accent",
     badge: "exam",
-    ctaSub: "countdown" as const,
+    ctaSub: { monthly: "countdown" as const, annual: "countdown" as const },
   },
 ];
 
@@ -59,7 +91,54 @@ function getDaysToExam(): number | null {
   );
 }
 
+function IntervalToggle({
+  interval,
+  onChange,
+}: {
+  interval: Interval;
+  onChange: (v: Interval) => void;
+}) {
+  return (
+    <div className="flex justify-center mb-12">
+      <div className="relative inline-flex items-center rounded-full bg-surface border border-border p-1">
+        {/* Animated pill background */}
+        <div
+          className="absolute top-1 bottom-1 rounded-full bg-primary transition-all duration-300 ease-out"
+          style={{
+            left: interval === "monthly" ? "4px" : "calc(50% + 0px)",
+            width: "calc(50% - 4px)",
+          }}
+        />
+        <button
+          onClick={() => onChange("monthly")}
+          className={`relative z-10 rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200 ${
+            interval === "monthly"
+              ? "text-white"
+              : "text-white/60 hover:text-white/80"
+          }`}
+        >
+          Mēneša
+        </button>
+        <button
+          onClick={() => onChange("annual")}
+          className={`relative z-10 rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
+            interval === "annual"
+              ? "text-white"
+              : "text-white/60 hover:text-white/80"
+          }`}
+        >
+          Gada
+          <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400 whitespace-nowrap">
+            Ietaupi 2 mēnešus
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function Pricing() {
+  const [interval, setInterval] = useState<Interval>("monthly");
   const daysToExam = getDaysToExam();
 
   return (
@@ -78,16 +157,23 @@ export function Pricing() {
         Izvēlies plānu, kas palīdzēs tev saprast, nevis tikai iegaumēt.
       </p>
 
+      <IntervalToggle interval={interval} onChange={setInterval} />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
         {PLANS.map((plan) => {
           const isPopular = plan.badge === "popular";
           const isExam = plan.badge === "exam";
+          const price = interval === "monthly" ? plan.monthly : plan.annual;
+          const periodLabel = interval === "monthly" ? "/mēn." : "/gadā";
+          const ctaText = plan.cta[interval];
+          const rawCtaSub =
+            plan.ctaSub === null ? null : plan.ctaSub[interval];
           const ctaSub =
-            plan.ctaSub === "countdown"
+            rawCtaSub === "countdown"
               ? daysToExam !== null
                 ? `Līdz eksāmenam: ${daysToExam} dienas`
                 : null
-              : plan.ctaSub;
+              : rawCtaSub;
 
           return (
             <div
@@ -137,7 +223,7 @@ export function Pricing() {
               {isExam && (
                 <div className="absolute -top-4 left-0 right-0 flex justify-center">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F59E0B] px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-[#111827] shadow-lg shadow-[#F59E0B]/40">
-                    🏆 Eksāmenu Tops
+                    Eksāmenu Tops
                   </span>
                 </div>
               )}
@@ -151,12 +237,24 @@ export function Pricing() {
                 {plan.name}
               </h3>
 
-              <div className="flex items-baseline gap-1 mb-8">
+              <div className="flex items-baseline gap-1 mb-2">
                 <span className="text-4xl font-bold text-white">
-                  {plan.price}
+                  {price}
                 </span>
-                <span className="text-white/60">/mēn.</span>
+                <span className="text-white/60">
+                  {plan.id === "free" ? "/mēn." : periodLabel}
+                </span>
               </div>
+
+              {/* Effective monthly cost for annual plans */}
+              {interval === "annual" && "annualMonthly" in plan && plan.annualMonthly && (
+                <p className="text-sm text-emerald-400 font-medium mb-6">
+                  {plan.annualMonthly}/mēn.
+                </p>
+              )}
+              {(interval === "monthly" || !("annualMonthly" in plan) || !plan.annualMonthly) && (
+                <div className="mb-6" />
+              )}
 
               <ul className="space-y-4 mb-10 flex-grow">
                 {plan.features.map((f, i) => (
@@ -184,7 +282,7 @@ export function Pricing() {
                       : "bg-[#F59E0B] hover:bg-[#F59E0B]/90 text-[#111827] shadow-lg shadow-[#F59E0B]/40",
                 ].join(" ")}
               >
-                {plan.cta}
+                {ctaText}
               </Link>
               {ctaSub && (
                 <p className="text-center text-white/50 text-xs mt-2">

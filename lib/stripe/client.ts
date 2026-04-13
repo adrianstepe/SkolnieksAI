@@ -14,16 +14,41 @@ export const stripe: Stripe = new Proxy({} as Stripe, {
   get: (_, prop) => Reflect.get(getStripe(), prop as string),
 });
 
-export function getPriceId(plan: "pro" | "premium"): string {
-  const key = plan === "pro" ? "STRIPE_PRICE_PRO" : "STRIPE_PRICE_PREMIUM";
-  const id = process.env[key] ?? "";
-  return id;
+export type PlanId = "pro" | "premium";
+export type BillingInterval = "monthly" | "annual";
+
+/** Maps plan + billing cadence to server-side Stripe Price ID env var names. */
+const PRICE_ENV_KEYS: Record<PlanId, Record<BillingInterval, string>> = {
+  pro: {
+    monthly: "STRIPE_PRICE_PRO",
+    annual: "STRIPE_PRO_ANNUAL_PRICE_ID",
+  },
+  premium: {
+    monthly: "STRIPE_PRICE_PREMIUM",
+    annual: "STRIPE_PREMIUM_ANNUAL_PRICE_ID",
+  },
+};
+
+/** Resolves the Stripe Price ID for Checkout. Returns "" if the env var is unset. */
+export function getPriceId(plan: PlanId, interval: BillingInterval = "monthly"): string {
+  const key = PRICE_ENV_KEYS[plan][interval];
+  return process.env[key] ?? "";
 }
 
-// Kept for backward-compatibility with any callers that import PRICE_IDS.
+// Backward-compatible accessors; monthly remains the default for legacy imports.
 export const PRICE_IDS = {
-  get pro() { return getPriceId("pro"); },
-  get premium() { return getPriceId("premium"); },
+  get pro() {
+    return getPriceId("pro", "monthly");
+  },
+  get premium() {
+    return getPriceId("premium", "monthly");
+  },
+  annual: {
+    get pro() {
+      return getPriceId("pro", "annual");
+    },
+    get premium() {
+      return getPriceId("premium", "annual");
+    },
+  },
 } as const;
-
-export type PlanId = keyof typeof PRICE_IDS;

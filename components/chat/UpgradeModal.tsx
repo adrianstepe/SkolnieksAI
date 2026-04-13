@@ -12,12 +12,14 @@ interface UpgradeModalProps {
   grade?: number | null;
 }
 
+type Interval = "monthly" | "annual";
+
 const PLANS = [
   {
     id: "free" as const,
     name: "Bezmaksas",
-    price: "€0",
-    period: "/mēn.",
+    monthly: { price: "€0", period: "/mēn." },
+    annual: { price: "€0", period: "/mēn." },
     features: [
       "Visi priekšmeti no 6.–12. klasei",
       "~3 jautājumi dienā (100 mēnesī)",
@@ -29,8 +31,8 @@ const PLANS = [
   {
     id: "pro" as const,
     name: "Pro",
-    price: "€5.99",
-    period: "/mēn.",
+    monthly: { price: "€5.99", period: "/mēn." },
+    annual: { price: "€59.99", period: "/gadā", monthlyEquiv: "€5.00/mēn." },
     features: [
       "20 jautājumi dienā (800 mēnesī)",
       "Pilns skaidrojums ar risinājuma soļiem",
@@ -43,8 +45,8 @@ const PLANS = [
   {
     id: "premium" as const,
     name: "Premium",
-    price: "€14.99",
-    period: "/mēn.",
+    monthly: { price: "€14.99", period: "/mēn." },
+    annual: { price: "€143.99", period: "/gadā", monthlyEquiv: "€12.00/mēn." },
     features: [
       "Viss, kas Pro plānā, plus:",
       "Visprecīzākais AI modelis (augstākā atbilžu kvalitāte)",
@@ -76,11 +78,61 @@ function FeatureText({ text }: { text: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// Interval toggle
+// ---------------------------------------------------------------------------
+
+function IntervalToggle({
+  interval,
+  onChange,
+}: {
+  interval: Interval;
+  onChange: (v: Interval) => void;
+}) {
+  return (
+    <div className="flex justify-center mb-8">
+      <div className="relative inline-flex items-center rounded-full bg-[#F3F4F6] dark:bg-[#1A2033] border border-[#E5E7EB] dark:border-white/7 p-1">
+        <div
+          className="absolute top-1 bottom-1 rounded-full bg-[#2563EB] transition-all duration-300 ease-out"
+          style={{
+            left: interval === "monthly" ? "4px" : "calc(50% + 0px)",
+            width: "calc(50% - 4px)",
+          }}
+        />
+        <button
+          onClick={() => onChange("monthly")}
+          className={`relative z-10 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors duration-200 ${
+            interval === "monthly"
+              ? "text-white"
+              : "text-[#6B7280] dark:text-[#8B95A8] hover:text-[#374151] dark:hover:text-[#E8ECF4]"
+          }`}
+        >
+          Mēneša
+        </button>
+        <button
+          onClick={() => onChange("annual")}
+          className={`relative z-10 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors duration-200 flex items-center gap-1.5 ${
+            interval === "annual"
+              ? "text-white"
+              : "text-[#6B7280] dark:text-[#8B95A8] hover:text-[#374151] dark:hover:text-[#E8ECF4]"
+          }`}
+        >
+          Gada
+          <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-500 dark:text-emerald-400 whitespace-nowrap">
+            -2 mēn.
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Plan card
 // ---------------------------------------------------------------------------
 
 interface PlanCardProps {
   plan: (typeof PLANS)[number];
+  interval: Interval;
   isCurrentPlan: boolean;
   consentPro: boolean;
   onConsentPro: (v: boolean) => void;
@@ -94,6 +146,7 @@ interface PlanCardProps {
 
 function PlanCard({
   plan,
+  interval,
   isCurrentPlan,
   consentPro,
   onConsentPro,
@@ -112,6 +165,19 @@ function PlanCard({
   }
 
   const consent = plan.id === "pro" ? consentPro : consentPremium;
+  const pricing = plan[interval];
+  const monthlyEquiv = "monthlyEquiv" in pricing ? pricing.monthlyEquiv : null;
+
+  const ctaLabel =
+    plan.id === "pro"
+      ? interval === "monthly"
+        ? "Sākt Pro — €5.99/mēn."
+        : "Sākt Pro — €59.99/gadā"
+      : plan.id === "premium"
+        ? interval === "monthly"
+          ? "Sākt Premium — €14.99/mēn."
+          : "Sākt Premium — €143.99/gadā"
+        : "";
 
   return (
     <div
@@ -151,16 +217,25 @@ function PlanCard({
             plan.popular ? "text-[#111827] dark:text-white" : "text-[#111827] dark:text-[#E8ECF4]"
           }`}
         >
-          {plan.price}
+          {pricing.price}
         </span>
         <span
           className={`text-sm font-medium ${
             plan.popular ? "text-[#4B5563] dark:text-[#9CA3AF]" : "text-[#6B7280] dark:text-[#8B95A8]"
           }`}
         >
-          {plan.period}
+          {pricing.period}
         </span>
       </div>
+
+      {/* Effective monthly cost for annual */}
+      {monthlyEquiv ? (
+        <p className="mt-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+          {monthlyEquiv}
+        </p>
+      ) : (
+        <div className="mt-1 h-5" />
+      )}
 
       {/* CTA — directly below price */}
       {plan.id === "free" && (
@@ -196,7 +271,7 @@ function PlanCard({
                 Notiek pāradresēšana...
               </>
             ) : (
-              "Sākt Pro — €5.99/mēn."
+              ctaLabel
             )}
           </button>
         </div>
@@ -221,7 +296,7 @@ function PlanCard({
                 Notiek pāradresēšana...
               </>
             ) : (
-              "Sākt Premium — €14.99/mēn."
+              ctaLabel
             )}
           </button>
         </div>
@@ -317,6 +392,7 @@ function PlanCard({
 export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
   const { getIdToken, profile } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
+  const [interval, setInterval] = useState<Interval>("monthly");
 
   // EU distance selling — Consumer Rights Directive Art. 16(m).
   const [consentPro, setConsentPro] = useState(false);
@@ -344,7 +420,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan, consentTimestamp }),
+        body: JSON.stringify({ plan, interval, consentTimestamp }),
       });
 
       if (!res.ok) {
@@ -353,7 +429,11 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
 
       const data = (await res.json()) as { url: string };
       if (data.url) {
-        await logCheckoutStarted({ plan, source: "upgrade_modal" });
+        await logCheckoutStarted({
+          plan,
+          interval,
+          source: "upgrade_modal",
+        });
         window.location.href = data.url;
       }
     } catch (err) {
@@ -363,6 +443,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
   };
 
   const sharedCardProps = {
+    interval,
     consentPro,
     onConsentPro: setConsentPro,
     consentPremium,
@@ -394,7 +475,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
       {/* Centred content column */}
       <div className="flex min-h-full flex-col items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-10 text-center">
+        <div className="mb-6 text-center">
           {isExamGrade && (
             <span className="mb-4 inline-block rounded-full bg-[#F59E0B]/15 px-3 py-1 text-xs font-semibold text-[#F59E0B]">
               Eksāmeni pēc {examCountdown.daysRemaining} dienām
@@ -404,6 +485,9 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
             Izvēlies savu plānu
           </h1>
         </div>
+
+        {/* Interval toggle */}
+        <IntervalToggle interval={interval} onChange={setInterval} />
 
         {/* Cards — single column on mobile, 3 columns on md+ */}
         <div className="w-full max-w-5xl">

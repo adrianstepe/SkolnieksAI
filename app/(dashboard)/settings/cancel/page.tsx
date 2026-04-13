@@ -10,11 +10,24 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/context/auth-context";
 
-const TIER_INFO: Record<string, { name: string; price: string }> = {
-  pro: { name: "Pro", price: "€5,99/mēn." },
-  premium: { name: "Premium", price: "€14,99/mēn." },
-  school_pro: { name: "School Pro", price: "" },
+const TIER_NAMES: Record<string, string> = {
+  pro: "Pro",
+  premium: "Premium",
+  school_pro: "School Pro",
 };
+
+function subscriptionPriceLabel(
+  tier: string,
+  billingInterval: "monthly" | "annual" | undefined,
+): string {
+  if (tier === "pro") {
+    return billingInterval === "annual" ? "€59,99/gadā" : "€5,99/mēn.";
+  }
+  if (tier === "premium") {
+    return billingInterval === "annual" ? "€143,99/gadā" : "€14,99/mēn.";
+  }
+  return "";
+}
 
 type Step = "summary" | "confirm" | "done";
 
@@ -64,7 +77,10 @@ export default function CancelPage() {
     );
   }
 
-  const tierInfo = TIER_INFO[profile.tier] ?? { name: profile.tier, price: "" };
+  const tierInfo = {
+    name: TIER_NAMES[profile.tier] ?? profile.tier,
+    price: subscriptionPriceLabel(profile.tier, profile.billingInterval),
+  };
 
   const handleConfirm = async () => {
     setSubmitting(true);

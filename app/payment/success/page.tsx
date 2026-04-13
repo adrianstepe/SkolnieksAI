@@ -2,10 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { logPurchase, type PaidPlanId } from "@/lib/analytics/revenue";
+import {
+  logPurchase,
+  type PaidPlanId,
+  type RevenueBillingInterval,
+} from "@/lib/analytics/revenue";
 
 function parsePlan(param: string | null): PaidPlanId | null {
   return param === "pro" || param === "premium" ? param : null;
+}
+
+function parseInterval(param: string | null): RevenueBillingInterval {
+  return param === "annual" ? "annual" : "monthly";
 }
 
 export default function PaymentSuccessPage() {
@@ -17,6 +25,7 @@ export default function PaymentSuccessPage() {
     let active = true;
     const sessionId = searchParams.get("session_id");
     const plan = parsePlan(searchParams.get("plan"));
+    const interval = parseInterval(searchParams.get("interval"));
 
     if (sessionId && plan && typeof window !== "undefined") {
       const storageKey = `analytics_purchase_${sessionId}`;
@@ -25,7 +34,7 @@ export default function PaymentSuccessPage() {
       if (!sessionStorage.getItem(storageKey)) {
         sessionStorage.setItem(storageKey, "1");
         void (async () => {
-          await logPurchase({ sessionId, plan });
+          await logPurchase({ sessionId, plan, interval });
           if (!active) return;
         })();
       }
