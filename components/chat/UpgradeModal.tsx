@@ -32,7 +32,7 @@ const PLANS = [
     id: "pro" as const,
     name: "Pro",
     monthly: { price: "€5.99", period: "/mēn." },
-    annual: { price: "€59.99", period: "/gadā", monthlyEquiv: "€5.00/mēn." },
+    annual: { price: "€59.99", period: "/gadā", monthlyEquiv: "€4.99/mēn." },
     features: [
       "20 jautājumi dienā (800 mēnesī)",
       "Pilns skaidrojums ar risinājuma soļiem",
@@ -46,7 +46,7 @@ const PLANS = [
     id: "premium" as const,
     name: "Premium",
     monthly: { price: "€14.99", period: "/mēn." },
-    annual: { price: "€143.99", period: "/gadā", monthlyEquiv: "€12.00/mēn." },
+    annual: { price: "€143.99", period: "/gadā", monthlyEquiv: "€11.99/mēn." },
     features: [
       "Viss, kas Pro plānā, plus:",
       "Visprecīzākais AI modelis (augstākā atbilžu kvalitāte)",
