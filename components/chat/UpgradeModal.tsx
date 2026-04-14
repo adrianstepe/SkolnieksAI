@@ -3,8 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/context/auth-context";
+import type { UserTier } from "@/lib/context/auth-context";
 import { logCheckoutStarted } from "@/lib/analytics/revenue";
 import { getExamCountdown } from "@/lib/exams/latvianExams";
+
+const TIER_RANK: Record<string, number> = { free: 0, pro: 1, premium: 2, school_pro: 3 };
 
 interface UpgradeModalProps {
   onClose: () => void;
@@ -133,7 +136,7 @@ function IntervalToggle({
 interface PlanCardProps {
   plan: (typeof PLANS)[number];
   interval: Interval;
-  isCurrentPlan: boolean;
+  currentTier: UserTier;
   consentPro: boolean;
   onConsentPro: (v: boolean) => void;
   consentPremium: boolean;
@@ -147,7 +150,7 @@ interface PlanCardProps {
 function PlanCard({
   plan,
   interval,
-  isCurrentPlan,
+  currentTier,
   consentPro,
   onConsentPro,
   consentPremium,
@@ -158,6 +161,13 @@ function PlanCard({
   examCountdown,
 }: PlanCardProps) {
   const [showWarning, setShowWarning] = useState(false);
+
+  const isCurrentPlan = plan.id === currentTier || (plan.id === "free" && currentTier === "free");
+  const isDowngrade =
+    !isCurrentPlan &&
+    (TIER_RANK[plan.id] ?? 0) < (TIER_RANK[currentTier] ?? 0);
+  const ctaState: "current" | "downgrade" | "upgrade" =
+    isCurrentPlan ? "current" : isDowngrade ? "downgrade" : "upgrade";
 
   function triggerWarning() {
     setShowWarning(true);
@@ -206,7 +216,7 @@ function PlanCard({
       >
         {plan.name}
       </h3>
-      {plan.id === "free" && isCurrentPlan && (
+      {isCurrentPlan && (
         <p className="mt-0.5 text-xs text-[#6B7280] dark:text-[#8B95A8]">Tavs pašreizējais plāns</p>
       )}
 
@@ -240,65 +250,83 @@ function PlanCard({
       {/* CTA — directly below price */}
       {plan.id === "free" && (
         <button
-          onClick={isCurrentPlan ? undefined : onClose}
-          disabled={isCurrentPlan}
+          onClick={ctaState === "upgrade" ? onClose : undefined}
+          disabled={ctaState !== "upgrade"}
           className={`mt-4 w-full rounded-xl py-3 text-sm font-bold transition-all ${
-            isCurrentPlan
-              ? "bg-transparent border border-[#374151] text-[#6B7280] cursor-not-allowed opacity-60"
-              : "bg-transparent border border-[#374151] text-[#6B7280] hover:border-[#6B7280] hover:bg-[#F1F5F9] dark:hover:bg-[#1A2033]"
+            ctaState === "upgrade"
+              ? "bg-transparent border border-[#374151] text-[#6B7280] hover:border-[#6B7280] hover:bg-[#F1F5F9] dark:hover:bg-[#1A2033]"
+              : "bg-transparent border border-[#2D3748] text-[#4B5563] dark:text-[#6B7280] cursor-not-allowed opacity-50 select-none"
           }`}
         >
-          {isCurrentPlan ? "Tavs pašreizējais plāns" : "Sākt bez maksas"}
+          {ctaState === "current" ? "Tavs pašreizējais plāns" : "Bezmaksas plāns"}
         </button>
       )}
       {plan.id === "pro" && (
         <div className="relative mt-4">
-          {showWarning && (
+          {ctaState === "upgrade" && showWarning && (
             <div className="absolute -top-8 left-0 right-0 flex justify-center pointer-events-none z-10">
               <span className="rounded-md border border-orange-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-orange-800 shadow-md dark:border-[#374151] dark:bg-[#1A2033] dark:text-[#FBBF24]">
                 Vispirms apstipriniet zemāk
               </span>
             </div>
           )}
-          <button
-            onClick={() => { if (!consentPro) { triggerWarning(); return; } onCheckout("pro"); }}
-            disabled={loading !== null}
-            className={`w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#2563EB] text-white hover:bg-blue-700 shadow-lg shadow-[#2563EB]/30 hover:shadow-xl hover:-translate-y-0.5 ${!consentPro ? "opacity-50" : ""}`}
-          >
-            {loading === "pro" ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                Notiek pāradresēšana...
-              </>
-            ) : (
-              ctaLabel
-            )}
-          </button>
+          {ctaState === "upgrade" ? (
+            <button
+              onClick={() => { if (!consentPro) { triggerWarning(); return; } onCheckout("pro"); }}
+              disabled={loading !== null}
+              className={`w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#2563EB] text-white hover:bg-blue-700 shadow-lg shadow-[#2563EB]/30 hover:shadow-xl hover:-translate-y-0.5 ${!consentPro ? "opacity-50" : ""}`}
+            >
+              {loading === "pro" ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Notiek pāradresēšana...
+                </>
+              ) : (
+                ctaLabel
+              )}
+            </button>
+          ) : (
+            <button
+              disabled
+              className="w-full rounded-xl py-3 text-sm font-bold bg-transparent border border-[#2D3748] text-[#4B5563] dark:text-[#6B7280] cursor-not-allowed opacity-50 select-none"
+            >
+              {ctaState === "current" ? "Tavs pašreizējais plāns" : "Pro plāns"}
+            </button>
+          )}
         </div>
       )}
       {plan.id === "premium" && (
         <div className="relative mt-4">
-          {showWarning && (
+          {ctaState === "upgrade" && showWarning && (
             <div className="absolute -top-8 left-0 right-0 flex justify-center pointer-events-none z-10">
               <span className="rounded-md border border-orange-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-orange-800 shadow-md dark:border-[#374151] dark:bg-[#1A2033] dark:text-[#FBBF24]">
                 Vispirms apstipriniet zemāk
               </span>
             </div>
           )}
-          <button
-            onClick={() => { if (!consentPremium) { triggerWarning(); return; } onCheckout("premium"); }}
-            disabled={loading !== null}
-            className={`w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#F59E0B] text-[#111827] hover:bg-[#F59E0B]/90 shadow-md hover:shadow-lg hover:-translate-y-0.5 ${!consentPremium ? "opacity-50" : ""}`}
-          >
-            {loading === "premium" ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#111827]/30 border-t-[#111827]" />
-                Notiek pāradresēšana...
-              </>
-            ) : (
-              ctaLabel
-            )}
-          </button>
+          {ctaState === "upgrade" ? (
+            <button
+              onClick={() => { if (!consentPremium) { triggerWarning(); return; } onCheckout("premium"); }}
+              disabled={loading !== null}
+              className={`w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 bg-[#F59E0B] text-[#111827] hover:bg-[#F59E0B]/90 shadow-md hover:shadow-lg hover:-translate-y-0.5 ${!consentPremium ? "opacity-50" : ""}`}
+            >
+              {loading === "premium" ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#111827]/30 border-t-[#111827]" />
+                  Notiek pāradresēšana...
+                </>
+              ) : (
+                ctaLabel
+              )}
+            </button>
+          ) : (
+            <button
+              disabled
+              className="w-full rounded-xl py-3 text-sm font-bold bg-transparent border border-[#2D3748] text-[#4B5563] dark:text-[#6B7280] cursor-not-allowed opacity-50 select-none"
+            >
+              {ctaState === "current" ? "Tavs pašreizējais plāns" : "Premium plāns"}
+            </button>
+          )}
         </div>
       )}
 
@@ -327,8 +355,8 @@ function PlanCard({
         ))}
       </ul>
 
-      {/* Consent — pinned to bottom for paid plans */}
-      {(plan.id === "pro" || plan.id === "premium") && (
+      {/* Consent — only shown when upgrading to this plan */}
+      {(plan.id === "pro" || plan.id === "premium") && ctaState === "upgrade" && (
         <div className="mt-auto pt-5">
           <label
             className={`flex items-start gap-2.5 cursor-pointer transition-all duration-150 ${
@@ -401,8 +429,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
   const examCountdown = grade != null ? getExamCountdown(grade) : null;
   const isExamGrade = examCountdown !== null;
 
-  // Detect free tier: no active paid subscription
-  const isFreeTier = !profile?.tier || profile.tier === "free";
+  const currentTier: UserTier = profile?.tier ?? "free";
 
   const handleCheckout = async (plan: "pro" | "premium") => {
     const consent = plan === "pro" ? consentPro : consentPremium;
@@ -444,6 +471,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
 
   const sharedCardProps = {
     interval,
+    currentTier,
     consentPro,
     onConsentPro: setConsentPro,
     consentPremium,
@@ -496,7 +524,6 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
               <PlanCard
                 key={plan.id}
                 plan={plan}
-                isCurrentPlan={plan.id === "free" && isFreeTier}
                 {...sharedCardProps}
               />
             ))}

@@ -565,6 +565,9 @@ export function ChatContainer() {
 
   const displayName = profile?.displayName ?? user?.displayName ?? user?.email?.split("@")[0];
   const firstName = displayName?.split(" ")[0] ?? "Skolnieks";
+  const greeting = /[aāeē]$/i.test(firstName) ? "Sveika" : /[sš]$/i.test(firstName) ? "Sveiks" : "Sveiki";
+  // Vocative case: male names drop the final -s or -š (Adrians→Adrian, Jānis→Jāni, Mārtiņš→Mārtiņ)
+  const greetingName = /[sš]$/i.test(firstName) ? firstName.slice(0, -1) : firstName;
 
   const hasMessages = messages.length > 0;
   const sidebarWidth = sidebarCollapsed ? "lg:ml-16" : "lg:ml-64";
@@ -701,15 +704,12 @@ export function ChatContainer() {
           <>
             {!hasMessages && !loadingChat ? (
               /* Empty state: centered greeting + floating input + chips */
-              <div className="flex-1 flex flex-col items-center justify-center bg-[#F9FAFB] dark:bg-[#0B0E14] px-4">
+              <div className="flex-1 flex flex-col items-center justify-end pb-32 bg-[#F9FAFB] dark:bg-[#0B0E14] px-4">
                 {/* Greeting */}
-                <div className="text-center mb-5 w-full max-w-2xl animate-fade-in">
+                <div className="text-center mb-4 w-full max-w-2xl animate-fade-in">
                   <h1 className="font-[family-name:var(--font-sora)] text-[28px] font-semibold text-[#111827] dark:text-[#E8ECF4] tracking-tight">
-                    Sveiki, {firstName}
+                    {greeting}, {greetingName}
                   </h1>
-                  <p className="text-sm text-[#6B7280] dark:text-[#8B95A8] mt-2">
-                    Ko šodien gribam saprast?
-                  </p>
                 </div>
 
                 <p className="text-sm text-text-muted text-center mb-5 animate-fade-in">
