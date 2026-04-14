@@ -5,6 +5,7 @@ import "./globals.css";
 import "katex/dist/katex.min.css";
 import { SettingsProvider } from "@/lib/context/settings-context";
 import { AuthProvider } from "@/lib/context/auth-context";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -62,7 +63,10 @@ export default async function RootLayout({
     >
       <body className="h-full bg-[#F9FAFB] dark:bg-[#0F1117] font-sans text-[#111827] dark:text-[#E8ECF4]">
         <AuthProvider>
-          <SettingsProvider>{children}</SettingsProvider>
+          <SettingsProvider>
+            {children}
+            <SpeedInsights />
+          </SettingsProvider>
         </AuthProvider>
       </body>
     </html>
