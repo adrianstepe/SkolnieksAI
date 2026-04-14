@@ -1,0 +1,15 @@
+node_modules
+skolnieksai-env
+.next
+.git
+data/*.pdf
+scripts
+docs
+playwright-report
+test-results
+tests
+.claude
+SkolnieksAI_DB
+Skola2030
+*.log
+.env*

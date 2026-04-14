@@ -6,7 +6,7 @@
  * Re-generate the JSON by running: python scripts/fetch_viis.py
  */
 
-import viisData from '../../data/viis-subjects.json'
+import viisData from './viis-subjects.json'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
