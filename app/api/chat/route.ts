@@ -6,6 +6,7 @@ import { verifyAuthToken } from "@/lib/firebase/auth";
 import { adminDb } from "@/lib/firebase/admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { evaluateAndUpdateStreak } from "@/lib/firebase/streak";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 /** Free tier: ~250,000 tokens/month ≈ 100 questions */
 const FREE_TOKEN_BUDGET = 250_000;
@@ -77,6 +78,20 @@ export async function POST(request: NextRequest) {
   const decoded = await verifyAuthToken(request);
   if (!decoded) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // --- Burst rate limiting: 5 requests per 60-second window per UID ---
+  // Uses node-redis (REDIS_URL). Fails open if Redis is unavailable so a
+  // Redis outage never blocks legitimate users. Firestore daily caps backstop.
+  const rl = await checkRateLimit(decoded.uid, 5, 60);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "rate_limit_exceeded", retryAfter: rl.retryAfter },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rl.retryAfter) },
+      }
+    );
   }
 
   // --- Validate body before reserving a usage slot ---

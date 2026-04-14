@@ -16,8 +16,6 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.87.0",
     "@stripe/stripe-js": "^8.11.0",
-    "@upstash/ratelimit": "^2.0.8",
-    "@upstash/redis": "^1.37.0",
     "@vercel/speed-insights": "^2.0.0",
     "chromadb": "^1.9.2",
     "firebase": "^12.11.0",
@@ -32,6 +30,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
+    "redis": "^5.12.1",
     "rehype-highlight": "^7.0.2",
     "rehype-katex": "^7.0.1",
     "remark-breaks": "^4.0.0",
@@ -42,6 +41,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pdf-parse": "^1.1.4",
