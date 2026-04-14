@@ -31,7 +31,7 @@ const PLANS: readonly PlanRow[] = [
     annual: "€0",
     features: [
       "Visi priekšmeti no 6.–12. klasei",
-      "~3 jautājumi dienā (100 mēnesī)",
+      "15 jautājumi dienā (60 mēnesī)",
       "Atbildes pielāgotas Latvijas mācību programmai",
     ],
     cta: { monthly: "Sākt bez maksas", annual: "Sākt bez maksas" },
@@ -46,7 +46,7 @@ const PLANS: readonly PlanRow[] = [
     annual: "€59.99",
     annualMonthly: "€4.99",
     features: [
-      "20 jautājumi dienā (800 mēnesī)",
+      "40 jautājumi dienā",
       "Pilns skaidrojums ar risinājuma soļiem",
       "Ātrākas atbildes, bez gaidīšanas",
       "Pilns izglītības saturs visos priekšmetos",
@@ -69,7 +69,7 @@ const PLANS: readonly PlanRow[] = [
       "Visprecīzākais AI modelis (augstākā atbilžu kvalitāte)",
       "Eksāmenu līmeņa uzdevumu ģenerēšana",
       "Detalizēta soļu-pa-soļim analīze",
-      "50 jautājumi dienā — maksimāla sagatavošanās",
+      "80 jautājumi dienā — maksimāla sagatavošanās",
     ],
     cta: {
       monthly: "Sākt Premium — €14.99/mēn.",

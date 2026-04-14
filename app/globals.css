@@ -378,9 +378,16 @@ code, pre { font-family: var(--font-mono); }
   overflow-x: auto;
   overflow-y: hidden;
   max-width: 100%;
+  margin: 1rem 0;
 }
 .katex {
   font-size: 1em; /* prevent KaTeX from rendering too large on mobile */
+  line-height: 1.8;
+}
+
+/* Inline math mid-sentence: prevent line squishing */
+.prose-content p:has(.katex) {
+  line-height: 2;
 }
 
 /* ── Markdown tables ── */

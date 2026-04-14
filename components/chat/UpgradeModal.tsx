@@ -25,7 +25,7 @@ const PLANS = [
     annual: { price: "€0", period: "/mēn." },
     features: [
       "Visi priekšmeti no 6.–12. klasei",
-      "~3 jautājumi dienā (100 mēnesī)",
+      "15 jautājumi dienā (60 mēnesī)",
       "Atbildes pielāgotas Latvijas mācību programmai",
     ],
     accent: "muted",
@@ -37,7 +37,7 @@ const PLANS = [
     monthly: { price: "€5.99", period: "/mēn." },
     annual: { price: "€59.99", period: "/gadā", monthlyEquiv: "€4.99/mēn." },
     features: [
-      "20 jautājumi dienā (800 mēnesī)",
+      "40 jautājumi dienā",
       "Pilns skaidrojums ar risinājuma soļiem",
       "Ātrākas atbildes, bez gaidīšanas",
       "Pilns izglītības saturs visos priekšmetos",
@@ -55,7 +55,7 @@ const PLANS = [
       "Visprecīzākais AI modelis (augstākā atbilžu kvalitāte)",
       "Eksāmenu līmeņa uzdevumu ģenerēšana",
       "Detalizēta soļu-pa-soļim analīze",
-      "50 jautājumi dienā — maksimāla sagatavošanās",
+      "80 jautājumi dienā — maksimāla sagatavošanās",
     ],
     accent: "accent",
     popular: false,

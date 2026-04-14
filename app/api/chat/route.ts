@@ -13,6 +13,9 @@ const FREE_TOKEN_BUDGET = 250_000;
 const PRO_TOKEN_BUDGET = 2_000_000;
 const PREMIUM_TOKEN_BUDGET = 4_000_000;
 
+/** Monthly query count hard cap (matches the "X jautājumi šomēnes" display in the UI) */
+const FREE_MONTHLY_QUERY_LIMIT = 60;
+
 /** Daily hard limits (queries per calendar day UTC) */
 const FREE_DAILY_LIMIT = 15;
 const PRO_DAILY_LIMIT = 40;
@@ -69,6 +72,7 @@ type TxnDenied = {
   reason:
     | "user_not_found"
     | "token_budget_exceeded"
+    | "monthly_query_limit_exceeded"
     | "daily_limit_exceeded";
   dailyLimit?: number;
 };
@@ -152,6 +156,15 @@ export async function POST(request: NextRequest) {
         return { ok: false, reason: "token_budget_exceeded" } satisfies TxnDenied;
       }
 
+      // --- Monthly query count hard cap (free tier only) ---
+      // Enforces the "X jautājumi šomēnes" limit shown in the UI.
+      if (tier === "free") {
+        const monthlyQueryCount = (usageData.queryCount as number) ?? 0;
+        if (monthlyQueryCount >= FREE_MONTHLY_QUERY_LIMIT) {
+          return { ok: false, reason: "monthly_query_limit_exceeded" } satisfies TxnDenied;
+        }
+      }
+
       // --- Daily hard limit ---
       const storedDailyDate = usageData.dailyDate as string | undefined;
       const currentDailyCount =
@@ -192,6 +205,11 @@ export async function POST(request: NextRequest) {
       case "user_not_found":
         return NextResponse.json({ error: "user_not_found" }, { status: 404 });
       case "token_budget_exceeded":
+        return NextResponse.json(
+          { error: "token_budget_exceeded", upgrade_url: "/pricing" },
+          { status: 429 },
+        );
+      case "monthly_query_limit_exceeded":
         return NextResponse.json(
           { error: "token_budget_exceeded", upgrade_url: "/pricing" },
           { status: 429 },

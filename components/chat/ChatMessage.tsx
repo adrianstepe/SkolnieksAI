@@ -345,7 +345,7 @@ export function ChatMessage({
 
               {parsed && parsed.answer && (
                 <>
-                  <div className="markdown-prose break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_p]:mb-2 [&_p:last-child]:mb-0 [&_code]:font-mono [&_code]:text-sm [&_code]:bg-[#F9FAFB] dark:[&_code]:bg-[#0F1117] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mt-3 [&_h2]:mb-1.5 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-2.5 [&_h3]:mb-1 [&_h1:first-child]:mt-0 [&_h2:first-child]:mt-0 [&_h3:first-child]:mt-0 [&_blockquote]:border-l-2 [&_blockquote]:border-[#4F8EF7] [&_blockquote]:pl-3 [&_blockquote]:my-2 [&_blockquote]:text-[#6B7280] dark:[&_blockquote]:text-[#8B95A8] [&_blockquote]:italic [&_hr]:my-3 [&_hr]:border-[#E5E7EB] dark:[&_hr]:border-white/10 prose-table:w-full">
+                  <div className="markdown-prose prose-content py-1 break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2 [&_li]:mb-1 [&_strong]:font-semibold [&_p]:mb-3 [&_p:last-child]:mb-0 [&_code]:font-mono [&_code]:text-sm [&_code]:bg-[#F9FAFB] dark:[&_code]:bg-[#0F1117] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mt-3 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-2.5 [&_h3]:mb-1.5 [&_h1:first-child]:mt-0 [&_h2:first-child]:mt-0 [&_h3:first-child]:mt-0 [&_blockquote]:border-l-2 [&_blockquote]:border-[#4F8EF7] [&_blockquote]:pl-3 [&_blockquote]:my-2 [&_blockquote]:text-[#6B7280] dark:[&_blockquote]:text-[#8B95A8] [&_blockquote]:italic [&_hr]:my-3 [&_hr]:border-[#E5E7EB] dark:[&_hr]:border-white/10 prose-table:w-full">
                     <AssistantMessageContent answer={parsed.answer} />
                   </div>
 
@@ -386,7 +386,7 @@ export function TypingIndicator({ subject }: { subject?: string }) {
   const accentColor = getSubjectColor(subject);
 
   useEffect(() => {
-    const timer = setTimeout(() => setPhase(2), 1500);
+    const timer = setTimeout(() => setPhase(2), 5000);
     return () => clearTimeout(timer);
   }, []);
 
