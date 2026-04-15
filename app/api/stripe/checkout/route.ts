@@ -161,10 +161,6 @@ export async function POST(request: NextRequest) {
   // Apply affiliate discount coupon if one was found
   if (stripeCouponId) {
     sessionParams.discounts = [{ coupon: stripeCouponId }];
-    // When using discounts, allow_promotion_codes must be false
-    sessionParams.allow_promotion_codes = false;
-  } else {
-    sessionParams.allow_promotion_codes = true;
   }
 
   if (existingCustomerId) {

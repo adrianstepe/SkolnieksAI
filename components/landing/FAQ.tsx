@@ -6,8 +6,8 @@ import { ChevronDown } from "lucide-react";
 
 const FAQS = [
   {
-    q: "Vai SkolnieksAI izdarīs manu mājas darbu?",
-    a: "Nē. SkolnieksAI palīdz saprast — izskaidro, dod piemērus, palīdz domāt. Mēs nekad nedarīsim darbu tavā vietā.",
+    q: "Vai SkolnieksAI palīdzēs ar mājas darbiem?",
+    a: "Jā! SkolnieksAI var palīdzēt ar mājas darbiem — izskaidro uzdevumus, dod piemērus un palīdz saprast, kā nonākt pie atbildes. Mērķis ir, lai tu pats saprastu vielu, nevis tikai iegūtu atbildi.",
   },
   {
     q: "Kādus priekšmetus atbalsta?",
