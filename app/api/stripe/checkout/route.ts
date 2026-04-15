@@ -95,36 +95,56 @@ export async function POST(request: NextRequest) {
   }
 
   // Check if user already has a Stripe customer ID
-  const userDoc = await userRef.get();
-  const userData = userDoc.exists
-    ? (userDoc.data() as Record<string, unknown>)
-    : {};
+  let userData: Record<string, unknown> = {};
+  try {
+    const userDoc = await userRef.get();
+    userData = userDoc.exists ? (userDoc.data() as Record<string, unknown>) : {};
+  } catch (err) {
+    console.error("[stripe/checkout] Failed to fetch user doc:", err);
+    return NextResponse.json({ error: "user_lookup_failed" }, { status: 500 });
+  }
   const existingCustomerId = userData.stripeCustomerId as string | undefined;
 
   // Resolve affiliate code: prefer the one passed explicitly, fall back to what's stored on the user
   const resolvedAffiliateCode =
     (affiliateCode ?? (userData.affiliateCode as string | undefined))?.toUpperCase().trim() ?? null;
 
-  // Look up the affiliate code and get its Stripe coupon ID
+  // Look up the affiliate code and get its Stripe coupon ID.
+  // Non-fatal: a missing/invalid code must never block a paid upgrade.
   let stripeCouponId: string | null = null;
   if (resolvedAffiliateCode) {
-    const codeSnap = await adminDb.collection("affiliateCodes").doc(resolvedAffiliateCode).get();
-    if (codeSnap.exists) {
-      const codeData = codeSnap.data() as Record<string, unknown>;
-      if (codeData.active && codeData.stripeCouponId) {
-        stripeCouponId = codeData.stripeCouponId as string;
+    try {
+      const codeSnap = await adminDb.collection("affiliateCodes").doc(resolvedAffiliateCode).get();
+      if (codeSnap.exists) {
+        const codeData = codeSnap.data() as Record<string, unknown>;
+        if (codeData.active && codeData.stripeCouponId) {
+          stripeCouponId = codeData.stripeCouponId as string;
+        }
       }
+    } catch (err) {
+      // Degrade gracefully — continue without a discount rather than blocking checkout
+      console.error("[stripe/checkout] Affiliate code lookup failed (proceeding without discount):", err);
     }
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  // NEXT_PUBLIC_APP_URL must be set in production. The localhost fallback is
+  // only valid for local dev; Stripe live mode rejects non-HTTPS callback URLs.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) {
+    const isLocal = process.env.NODE_ENV === "development";
+    if (!isLocal) {
+      console.error("[stripe/checkout] NEXT_PUBLIC_APP_URL is not set — cannot build valid callback URLs for Stripe");
+      return NextResponse.json({ error: "app_url_not_configured" }, { status: 500 });
+    }
+  }
+  const resolvedAppUrl = appUrl ?? "http://localhost:3000";
 
   const sessionParams: Record<string, unknown> = {
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${appUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}&interval=${interval}`,
-    cancel_url: `${appUrl}/payment/cancel?plan=${encodeURIComponent(plan)}&interval=${encodeURIComponent(interval)}`,
+    success_url: `${resolvedAppUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}&interval=${interval}`,
+    cancel_url: `${resolvedAppUrl}/payment/cancel?plan=${encodeURIComponent(plan)}&interval=${encodeURIComponent(interval)}`,
     metadata: {
       firebaseUid: decoded.uid,
       plan,
