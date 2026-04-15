@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/context/auth-context";
 import type { UserTier } from "@/lib/context/auth-context";
@@ -92,7 +92,7 @@ function IntervalToggle({
   onChange: (v: Interval) => void;
 }) {
   return (
-    <div className="flex justify-center mb-8">
+    <div className="flex justify-center mb-3">
       <div className="relative grid grid-cols-2 items-center rounded-full bg-[#F3F4F6] dark:bg-[#1A2033] border border-[#E5E7EB] dark:border-white/7 p-1 w-72">
         <div
           className="absolute top-1 bottom-1 rounded-full bg-[#2563EB] transition-all duration-300 ease-out"
@@ -191,7 +191,7 @@ function PlanCard({
 
   return (
     <div
-      className={`relative flex flex-col rounded-2xl p-6 lg:p-8 transition-all duration-300 ${
+      className={`relative flex flex-col rounded-2xl p-4 transition-all duration-300 ${
         plan.popular
           ? "border-2 border-[#2563EB] bg-gradient-to-b from-[#EFF6FF] to-white shadow-xl shadow-[#2563EB]/20 dark:from-[#1E2A45] dark:to-[#141C33] dark:shadow-[#2563EB]/20"
           : "border border-[#E5E7EB] shadow-md bg-white dark:border-white/7 dark:bg-[#1A2033]/50"
@@ -331,7 +331,7 @@ function PlanCard({
       )}
 
       {/* Feature list — below CTA */}
-      <ul className="mt-4 space-y-3">
+      <ul className="mt-3 space-y-2">
         {plan.features.map((feature) => (
           <li
             key={feature}
@@ -431,7 +431,7 @@ interface PromoCodeInputProps {
 
 function PromoCodeInput({ value, onChange, status, discountPercent, creatorName }: PromoCodeInputProps) {
   return (
-    <div className="flex flex-col items-center gap-2 mb-6">
+    <div className="flex flex-col items-center gap-2">
       <div className="flex gap-2 w-full max-w-xs">
         <input
           type="text"
@@ -469,7 +469,7 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
   const [consentPremium, setConsentPremium] = useState(false);
 
   // Affiliate promo code
-  const [promoCode, setPromoCode] = useState("");
+  const [promoCode, setPromoCode] = useState(profile?.affiliateCode ?? "");
   const [promoStatus, setPromoStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
   const [promoDiscount, setPromoDiscount] = useState<number | undefined>(undefined);
   const [promoCreator, setPromoCreator] = useState<string | undefined>(undefined);
@@ -497,6 +497,15 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
       }
     }, 500);
   };
+
+  // Auto-validate affiliate code from profile on mount / when profile loads
+  useEffect(() => {
+    const code = profile?.affiliateCode;
+    if (code && promoStatus === "idle") {
+      handlePromoChange(code);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.affiliateCode]);
 
   const examCountdown = grade != null ? getExamCountdown(grade) : null;
   const isExamGrade = examCountdown !== null;
@@ -578,15 +587,15 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
       </button>
 
       {/* Centred content column */}
-      <div className="flex min-h-full flex-col items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
+      <div className="flex min-h-full flex-col items-center justify-center px-4 py-6 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-6 text-center">
+        <div className="mb-2 text-center">
           {isExamGrade && (
-            <span className="mb-4 inline-block rounded-full bg-[#F59E0B]/15 px-3 py-1 text-xs font-semibold text-[#F59E0B]">
+            <span className="mb-2 inline-block rounded-full bg-[#F59E0B]/15 px-3 py-1 text-xs font-semibold text-[#F59E0B]">
               Eksāmeni pēc {examCountdown.daysRemaining} dienām
             </span>
           )}
-          <h1 className="text-3xl font-bold text-[#111827] dark:text-[#E8ECF4] sm:text-4xl">
+          <h1 className="text-2xl font-bold text-[#111827] dark:text-[#E8ECF4] sm:text-3xl">
             Izvēlies savu plānu
           </h1>
         </div>
@@ -594,18 +603,9 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
         {/* Interval toggle */}
         <IntervalToggle interval={interval} onChange={setInterval} />
 
-        {/* Affiliate promo code */}
-        <PromoCodeInput
-          value={promoCode}
-          onChange={handlePromoChange}
-          status={promoStatus}
-          discountPercent={promoDiscount}
-          creatorName={promoCreator}
-        />
-
         {/* Cards — single column on mobile, 3 columns on md+ */}
         <div className="w-full max-w-5xl">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {PLANS.map((plan) => (
               <PlanCard
                 key={plan.id}
@@ -616,8 +616,19 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
           </div>
         </div>
 
+        {/* Affiliate promo code — below cards */}
+        <div className="mt-4">
+          <PromoCodeInput
+            value={promoCode}
+            onChange={handlePromoChange}
+            status={promoStatus}
+            discountPercent={promoDiscount}
+            creatorName={promoCreator}
+          />
+        </div>
+
         {/* Footer */}
-        <p className="mt-10 pb-8 text-center text-xs text-[#6B7280] dark:text-[#8B95A8] leading-relaxed">
+        <p className="mt-3 pb-4 text-center text-xs text-[#6B7280] dark:text-[#8B95A8] leading-relaxed">
           Droši maksājumi ar Stripe. ·{" "}
           <Link href="/terms" className="underline hover:text-[#374151] dark:hover:text-[#8B95A8]">
             Lietošanas noteikumi
