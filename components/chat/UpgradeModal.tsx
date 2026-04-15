@@ -537,6 +537,8 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
       });
 
       if (!res.ok) {
+        const errBody = await res.json().catch(() => ({})) as Record<string, unknown>;
+        console.error("[checkout] server error:", res.status, errBody);
         throw new Error("Nevarēja izveidot maksājumu sesiju");
       }
 
