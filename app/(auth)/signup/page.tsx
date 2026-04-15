@@ -91,6 +91,26 @@ export default function SignupPage() {
         ...(birthYear !== "" ? { birthYear: birthYear as number } : {}),
       }),
     });
+
+    // Credit the referrer: try peer referral first, then affiliate code
+    if (inviteCode) {
+      const redeemRes = await fetch("/api/referral/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ referralCode: inviteCode }),
+      });
+      // If not a peer code, try it as an affiliate promo code
+      if (!redeemRes.ok) {
+        const redeemData = (await redeemRes.json().catch(() => ({}))) as { error?: string };
+        if (redeemData.error === "invalid_referral_code") {
+          await fetch("/api/affiliate/validate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ code: inviteCode }),
+          });
+        }
+      }
+    }
   };
 
   // ---------------------------------------------------------------------------

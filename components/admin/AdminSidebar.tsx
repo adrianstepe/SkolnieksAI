@@ -6,6 +6,7 @@ import {
   FileText,
   Settings,
   Activity,
+  Tag,
 } from "lucide-react";
 import AdminLogoutButton from "./AdminLogoutButton";
 
@@ -29,6 +30,11 @@ const NAV_ITEMS = [
     label: "Payments",
     href: "/admin-dashboard/payments",
     icon: CreditCard,
+  },
+  {
+    label: "Affiliates",
+    href: "/admin-dashboard/affiliates",
+    icon: Tag,
   },
   {
     label: "Activity Logs",

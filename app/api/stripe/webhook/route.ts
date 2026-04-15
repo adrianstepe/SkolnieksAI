@@ -4,6 +4,58 @@ import { FieldValue, type DocumentReference } from "firebase-admin/firestore";
 import { stripe } from "@/lib/stripe/client";
 import { adminDb } from "@/lib/firebase/admin";
 
+/**
+ * Records an affiliate commission when a checkout is completed.
+ * Writes a conversion document and updates totals on the affiliate code.
+ */
+async function recordAffiliateConversion({
+  affiliateCode,
+  firebaseUid,
+  plan,
+  interval,
+  stripeSessionId,
+  amountTotal,
+}: {
+  affiliateCode: string;
+  firebaseUid: string;
+  plan: string;
+  interval: string;
+  stripeSessionId: string;
+  amountTotal: number;
+}): Promise<void> {
+  try {
+    const codeRef = adminDb.collection("affiliateCodes").doc(affiliateCode);
+    const codeSnap = await codeRef.get();
+    if (!codeSnap.exists) return;
+
+    const codeData = codeSnap.data() as Record<string, unknown>;
+    const commissionPercent = (codeData.commissionPercent as number) ?? 0;
+    const commissionCents = Math.round((amountTotal * commissionPercent) / 100);
+
+    const conversion = {
+      uid: firebaseUid,
+      plan,
+      interval,
+      stripeSessionId,
+      amountCents: amountTotal,
+      commissionCents,
+      convertedAt: new Date().toISOString(),
+    };
+
+    await Promise.all([
+      codeRef.collection("conversions").doc(stripeSessionId).set(conversion),
+      codeRef.update({
+        totalUses: FieldValue.increment(1),
+        totalRevenueCents: FieldValue.increment(amountTotal),
+        totalCommissionCents: FieldValue.increment(commissionCents),
+      }),
+    ]);
+  } catch (err) {
+    // Non-fatal — commission tracking should never block the webhook response
+    console.error("[webhook] affiliate commission recording failed:", err);
+  }
+}
+
 /** Zeros the current calendar month usage doc (same shape as `invoice.paid`). */
 async function resetCurrentMonthUsage(userRef: DocumentReference): Promise<void> {
   const now = new Date();
@@ -104,6 +156,19 @@ export async function POST(request: NextRequest) {
       if (interval === "annual") {
         await resetCurrentMonthUsage(userRef);
         await userRef.update({ paymentFailed: false });
+      }
+
+      // Record affiliate commission if an affiliate code was used
+      const affiliateCode = session.metadata?.affiliateCode;
+      if (affiliateCode) {
+        await recordAffiliateConversion({
+          affiliateCode,
+          firebaseUid,
+          plan,
+          interval,
+          stripeSessionId: session.id,
+          amountTotal: session.amount_total ?? 0,
+        });
       }
 
       break;

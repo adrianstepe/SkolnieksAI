@@ -417,6 +417,48 @@ function PlanCard({
 // Full-screen pricing page
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Promo code widget (affiliate codes)
+// ---------------------------------------------------------------------------
+
+interface PromoCodeInputProps {
+  value: string;
+  onChange: (v: string) => void;
+  status: "idle" | "checking" | "valid" | "invalid";
+  discountPercent?: number;
+  creatorName?: string;
+}
+
+function PromoCodeInput({ value, onChange, status, discountPercent, creatorName }: PromoCodeInputProps) {
+  return (
+    <div className="flex flex-col items-center gap-2 mb-6">
+      <div className="flex gap-2 w-full max-w-xs">
+        <input
+          type="text"
+          maxLength={20}
+          value={value}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+          placeholder="Promo kods (neobligāts)"
+          className="flex-1 rounded-xl border border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#1A2033] px-3 py-2 text-sm text-[#111827] dark:text-[#E8ECF4] placeholder:text-[#9CA3AF] dark:placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/40"
+        />
+        {status === "checking" && (
+          <div className="flex items-center px-3">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#2563EB]/30 border-t-[#2563EB]" />
+          </div>
+        )}
+      </div>
+      {status === "valid" && discountPercent != null && (
+        <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+          {creatorName ? `${creatorName} kods — ` : ""}{discountPercent}% atlaide pirmajam maksājumam!
+        </p>
+      )}
+      {status === "invalid" && value.length > 0 && (
+        <p className="text-xs text-red-500 dark:text-red-400">Kods nav derīgs</p>
+      )}
+    </div>
+  );
+}
+
 export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
   const { getIdToken, profile } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
@@ -425,6 +467,36 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
   // EU distance selling — Consumer Rights Directive Art. 16(m).
   const [consentPro, setConsentPro] = useState(false);
   const [consentPremium, setConsentPremium] = useState(false);
+
+  // Affiliate promo code
+  const [promoCode, setPromoCode] = useState("");
+  const [promoStatus, setPromoStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+  const [promoDiscount, setPromoDiscount] = useState<number | undefined>(undefined);
+  const [promoCreator, setPromoCreator] = useState<string | undefined>(undefined);
+  const promoDebounceRef = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  const handlePromoChange = (val: string) => {
+    setPromoCode(val);
+    if (promoDebounceRef[0]) clearTimeout(promoDebounceRef[0]);
+    if (!val) { setPromoStatus("idle"); setPromoDiscount(undefined); return; }
+    setPromoStatus("checking");
+    promoDebounceRef[0] = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/affiliate/validate?code=${encodeURIComponent(val)}`);
+        const data = (await res.json()) as { valid: boolean; discountPercent?: number; creatorName?: string };
+        if (data.valid) {
+          setPromoStatus("valid");
+          setPromoDiscount(data.discountPercent);
+          setPromoCreator(data.creatorName);
+        } else {
+          setPromoStatus("invalid");
+          setPromoDiscount(undefined);
+        }
+      } catch {
+        setPromoStatus("idle");
+      }
+    }, 500);
+  };
 
   const examCountdown = grade != null ? getExamCountdown(grade) : null;
   const isExamGrade = examCountdown !== null;
@@ -447,7 +519,12 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan, interval, consentTimestamp }),
+        body: JSON.stringify({
+          plan,
+          interval,
+          consentTimestamp,
+          ...(promoStatus === "valid" && promoCode ? { affiliateCode: promoCode } : {}),
+        }),
       });
 
       if (!res.ok) {
@@ -516,6 +593,15 @@ export function UpgradeModal({ onClose, grade }: UpgradeModalProps) {
 
         {/* Interval toggle */}
         <IntervalToggle interval={interval} onChange={setInterval} />
+
+        {/* Affiliate promo code */}
+        <PromoCodeInput
+          value={promoCode}
+          onChange={handlePromoChange}
+          status={promoStatus}
+          discountPercent={promoDiscount}
+          creatorName={promoCreator}
+        />
 
         {/* Cards — single column on mobile, 3 columns on md+ */}
         <div className="w-full max-w-5xl">
