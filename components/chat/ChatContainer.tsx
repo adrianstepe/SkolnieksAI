@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getAnalytics, isSupported, logEvent } from "firebase/analytics";
 import { app, logAnalyticsEvent } from "@/lib/firebase/client";
@@ -301,11 +302,12 @@ export function ChatContainer() {
   }, [showUpgrade]);
 
   const handleSend = useCallback(
-    async (text: string) => {
+    async (text: string, imageAttachment?: { base64: string; mimeType: string }) => {
       const userMessage: Message = {
         id: `user-${Date.now()}`,
         role: "user",
         content: text,
+        ...(imageAttachment ? { imageBase64: imageAttachment.base64, imageMimeType: imageAttachment.mimeType } : {}),
       };
 
       let subjectForAnalytics = subject;
@@ -356,6 +358,7 @@ export function ChatContainer() {
             model: settings.aiModel,
             conversationId: conversationId ?? undefined,
             conversationHistory: history,
+            ...(imageAttachment ? { imageBase64: imageAttachment.base64, imageMimeType: imageAttachment.mimeType } : {}),
           }),
         });
 
@@ -372,6 +375,12 @@ export function ChatContainer() {
           if (error.error === "rate_limit_exceeded") {
             const mins = (error.minutesRemaining as number) ?? 180;
             throw new Error(`RATE_LIMITED:${mins}`);
+          }
+          if (error.error === "image_daily_limit_exceeded") {
+            throw new Error(`IMAGE_UPLOAD_LIMIT:${(error.limit as number) ?? 3}`);
+          }
+          if (error.error === "image_upload_requires_pro") {
+            throw new Error("IMAGE_REQUIRES_PRO");
           }
           throw new Error((error.error as string) || `HTTP ${response.status}`);
         }
@@ -483,6 +492,8 @@ export function ChatContainer() {
         const isBudgetExceeded = msg === "BUDGET_EXCEEDED";
         const isDailyLimitExceeded = msg === "DAILY_LIMIT_EXCEEDED";
         const isRateLimited = msg.startsWith("RATE_LIMITED:");
+        const isImageUploadLimit = msg.startsWith("IMAGE_UPLOAD_LIMIT:");
+        const isImageRequiresPro = msg === "IMAGE_REQUIRES_PRO";
 
         if (isBudgetExceeded || isDailyLimitExceeded) {
           openUpgrade();
@@ -511,6 +522,18 @@ export function ChatContainer() {
             message: `Pārāk daudz jautājumu īsā laikā. Pagaidi ${timeStr} un mēģini vēlreiz.`,
             type: "rate_limit",
           });
+        } else if (isImageUploadLimit) {
+          const limit = parseInt(msg.split(":")[1] ?? "3", 10);
+          setSystemError({
+            message: `Šodien esi izmantojis attēlu analīzes limitu (${limit}). Atgriezies rīt vai uzlabo plānu!`,
+            type: "billing",
+          });
+        } else if (isImageRequiresPro) {
+          openUpgrade();
+          setSystemError({
+            message: "Attēlu augšupielāde ir pieejama tikai Pro un Premium lietotājiem.",
+            type: "billing",
+          });
         } else {
           setSystemError({
             message: `Nevarēja izveidot savienojumu. Lūdzu, mēģini vēlreiz.`,
@@ -535,6 +558,7 @@ export function ChatContainer() {
       openUpgrade,
     ],
   );
+
 
   const handleOnboardingComplete = async () => {
     try {
@@ -774,6 +798,7 @@ export function ChatContainer() {
                     pendingPrompt={pendingPrompt}
                     onPromptConsumed={() => setPendingPrompt("")}
                     floating
+                    conversationId={conversationId ?? undefined}
                   />
                 </div>
 
@@ -911,6 +936,7 @@ export function ChatContainer() {
                   onStop={handleStop}
                   pendingPrompt={pendingPrompt}
                   onPromptConsumed={() => setPendingPrompt("")}
+                  conversationId={conversationId ?? undefined}
                 />
               </>
             )}

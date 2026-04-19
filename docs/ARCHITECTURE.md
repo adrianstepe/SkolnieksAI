@@ -1,6 +1,8 @@
 # Architecture — SkolnieksAI
 
 > **UI:** April 2026 — simplified chat chrome: personalised empty-state greeting (Sora, first name), 2×2 chip grid, muted sidebar labels, no topbar progress bar or exam countdown.
+>
+> **Grading:** April 2026 — rubric grading is a standalone page at `/grading` (not embedded in chat). The page is tier-gated (Premium / school_pro). The navbar shows a "Vērtējums" link pointing there. Chat image upload (Plus menu → Attēls) is available to all tiers and goes through `/api/chat` with `imageBase64` + `imageMimeType` fields, bypassing RAG and using Claude vision directly.
 
 ## System Overview
 

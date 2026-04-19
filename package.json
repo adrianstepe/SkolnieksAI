@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "ingest": "npx tsx scripts/ingest.ts",
-    "seed": "npx tsx scripts/seed.ts",
+    "seed": "npx tsx --env-file .env.local scripts/seed.ts",
     "eval:rag": "npx tsx scripts/eval-rag.ts"
   },
   "dependencies": {
@@ -43,12 +43,16 @@
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
     "@types/pdf-parse": "^1.1.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.0",
+    "jsdom": "^29.0.2",
     "tailwindcss": "^4",
     "tsx": "^4.19.2",
     "typescript": "^5",

@@ -161,3 +161,64 @@ export function chatStream(
 
   return { stream: generate(), getUsage: () => usage };
 }
+
+// ---------------------------------------------------------------------------
+// Vision grading (non-streaming)
+// ---------------------------------------------------------------------------
+
+export interface GradeImageParams {
+  imageBase64: string;
+  imageMimeType: 'image/jpeg' | 'image/png' | 'image/webp';
+  systemPrompt: string;
+  userText: string;     // "Problēma: X. Klase: Y. Priekšmets: Z."
+  maxTokens?: number;
+}
+
+export interface GradeImageResult {
+  content: string;      // raw Claude text (JSON string)
+  usage: StreamUsage;
+}
+
+/**
+ * Grades a student solution image using Claude vision (non-streaming).
+ * Images are sent as base64 and are never stored.
+ */
+export async function gradeImage(params: GradeImageParams): Promise<GradeImageResult> {
+  const { imageBase64, imageMimeType, systemPrompt, userText, maxTokens = 1200 } = params;
+
+  const response = await anthropicClient.messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: maxTokens,
+    temperature: 0,       // deterministic grading
+    system: systemPrompt,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: imageMimeType,
+              data: imageBase64,
+            },
+          },
+          {
+            type: 'text',
+            text: userText,
+          },
+        ],
+      },
+    ],
+  });
+
+  const textBlock = response.content.find((b) => b.type === 'text');
+  return {
+    content: textBlock?.type === 'text' ? textBlock.text : '',
+    usage: {
+      prompt_tokens: response.usage.input_tokens,
+      completion_tokens: response.usage.output_tokens,
+      total_tokens: response.usage.input_tokens + response.usage.output_tokens,
+    },
+  };
+}

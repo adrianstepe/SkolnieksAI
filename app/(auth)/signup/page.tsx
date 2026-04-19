@@ -87,7 +87,6 @@ export default function SignupPage() {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        ...(inviteCode ? { inviteCode } : {}),
         ...(birthYear !== "" ? { birthYear: birthYear as number } : {}),
       }),
     });

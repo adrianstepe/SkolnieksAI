@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import Anthropic from "@anthropic-ai/sdk";
 import { runRagChainStream } from "@/lib/rag/chain";
 import type { ChatMessage } from "@/lib/ai/deepseek";
+import { CLAUDE_MODEL } from "@/lib/ai/deepseek";
 import { verifyAuthToken } from "@/lib/firebase/auth";
 import { adminDb } from "@/lib/firebase/admin";
 import { FieldValue } from "firebase-admin/firestore";
@@ -39,6 +41,15 @@ function getDailyLimitForTier(tier: string): number {
   }
 }
 
+function getImageLimitForTier(tier: string): number | undefined {
+  switch (tier) {
+    case "pro": return 3;
+    case "premium":
+    case "school_pro": return 10;
+    default: return undefined;
+  }
+}
+
 function getWebSourcesForTier(tier: string): number {
   switch (tier) {
     case "pro": return 6;
@@ -48,8 +59,11 @@ function getWebSourcesForTier(tier: string): number {
   }
 }
 
+const ALLOWED_IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_IMAGE_BASE64_CHARS = Math.ceil((5 * 1024 * 1024 * 4) / 3); // ~5 MB binary → base64
+
 const ChatRequestSchema = z.object({
-  message: z.string().min(1).max(2000),
+  message: z.string().max(2000).default(""),
   subject: z.string().min(1),
   grade: z.number().int().min(1).max(12),
   model: z.enum(["deepseek", "claude"]).optional().default("deepseek"),
@@ -63,6 +77,8 @@ const ChatRequestSchema = z.object({
     )
     .max(6)
     .optional(),
+  imageBase64: z.string().max(MAX_IMAGE_BASE64_CHARS).optional(),
+  imageMimeType: z.string().optional(),
 });
 
 // Discriminated union returned from the usage transaction
@@ -73,8 +89,10 @@ type TxnDenied = {
     | "user_not_found"
     | "token_budget_exceeded"
     | "monthly_query_limit_exceeded"
-    | "daily_limit_exceeded";
+    | "daily_limit_exceeded"
+    | "image_daily_limit_exceeded";
   dailyLimit?: number;
+  imageLimit?: number;
 };
 
 export async function POST(request: NextRequest) {
@@ -174,12 +192,29 @@ export async function POST(request: NextRequest) {
         return { ok: false, reason: "daily_limit_exceeded", dailyLimit } satisfies TxnDenied;
       }
 
+      // --- Daily image upload limit ---
+      const imgLimit = getImageLimitForTier(tier);
+      const imgDailyDate = usageData.imageDailyDate as string | undefined;
+      const imgDailyCount =
+        imgDailyDate === today ? ((usageData.imageDailyCount as number) ?? 0) : 0;
+      if (parsed.data.imageBase64 && imgLimit !== undefined && imgDailyCount >= imgLimit) {
+        return {
+          ok: false,
+          reason: "image_daily_limit_exceeded",
+          imageLimit: imgLimit,
+        } satisfies TxnDenied;
+      }
+
       // --- Reserve the slot: write updated counters atomically ---
       // Short-term rate limiting (5 req/min sliding window) is now handled at
       // the edge by Upstash Redis in middleware.ts. Only business-logic limits
       // (daily cap, monthly budget) are tracked here in Firestore.
       const newDailyCount =
         storedDailyDate === today ? currentDailyCount + 1 : 1;
+      const newImgDailyCount =
+        parsed.data.imageBase64 && imgLimit !== undefined
+          ? imgDailyDate === today ? imgDailyCount + 1 : 1
+          : null;
 
       txn.set(
         usageRef,
@@ -188,6 +223,9 @@ export async function POST(request: NextRequest) {
           lastQueryAt: now.toISOString(),
           dailyDate: today,
           dailyCount: newDailyCount,
+          ...(newImgDailyCount !== null
+            ? { imageDailyDate: today, imageDailyCount: newImgDailyCount }
+            : {}),
         },
         { merge: true },
       );
@@ -219,6 +257,11 @@ export async function POST(request: NextRequest) {
           { error: "daily_limit_exceeded", limit: txnResult.dailyLimit },
           { status: 429 },
         );
+      case "image_daily_limit_exceeded":
+        return NextResponse.json(
+          { error: "image_daily_limit_exceeded", limit: txnResult.imageLimit },
+          { status: 429 },
+        );
     }
   }
 
@@ -231,8 +274,18 @@ export async function POST(request: NextRequest) {
     console.error("Streak update failed:", err),
   );
 
-  const { subject, grade, model, conversationId } = parsed.data;
+  const { subject, grade, model, conversationId, imageBase64, imageMimeType } = parsed.data;
   let { conversationHistory } = parsed.data;
+
+  // Image upload is a Pro/Premium feature
+  if (imageBase64 && tier === "free") {
+    return NextResponse.json({ error: "image_upload_requires_pro" }, { status: 403 });
+  }
+
+  // Validate image MIME type if provided
+  if (imageBase64 && imageMimeType && !ALLOWED_IMAGE_MIME.has(imageMimeType)) {
+    return NextResponse.json({ error: "unsupported_image_mime_type" }, { status: 400 });
+  }
 
   // Prompt injection is mitigated via strict system instructions in the LLM prompt,
   // not by stripping user input here (regex-based HTML removal breaks valid inputs
@@ -310,9 +363,9 @@ export async function POST(request: NextRequest) {
       updatedAt: now.toISOString(),
     });
   } else {
-    // Create new conversation — title from first ~40 chars of message
-    const title =
-      message.length > 40 ? message.slice(0, 37) + "..." : message;
+    // Create new conversation — title from first ~40 chars of message (fallback for image-only)
+    const titleSource = message.trim() || (imageBase64 ? "📎 Attēls" : "Saruna");
+    const title = titleSource.length > 40 ? titleSource.slice(0, 37) + "..." : titleSource;
     const convRef = await convCollection.add({
       userId: decoded.uid,
       title,
@@ -332,7 +385,8 @@ export async function POST(request: NextRequest) {
 
   await messagesCollection.add({
     role: "user",
-    content: message,
+    content: message || (imageBase64 ? "📎 Attēls" : ""),
+    ...(imageBase64 ? { hasImage: true } : {}),
     createdAt: now.toISOString(),
   });
 
@@ -350,6 +404,73 @@ export async function POST(request: NextRequest) {
       let fullAssistantContent = "";
 
       try {
+        if (imageBase64 && imageMimeType) {
+          // Vision path: use Claude directly with image content block (no RAG)
+          const anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? "" });
+          const historyMessages = (conversationHistory ?? []).map((m) => ({
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          }));
+          const visionStream = anthropicClient.messages.stream({
+            model: CLAUDE_MODEL,
+            max_tokens: maxTokens,
+            system: `Tu esi SkolnieksAI — Latvijas mācību palīgs. Atbildi latviski. Palīdzi skolēnam saprast attēlā redzamo mācību vielu vai uzdevumu. Esi skaidrs un pedagoģisks.`,
+            messages: [
+              ...historyMessages,
+              {
+                role: "user" as const,
+                content: [
+                  {
+                    type: "image" as const,
+                    source: {
+                      type: "base64" as const,
+                      media_type: imageMimeType as "image/jpeg" | "image/png" | "image/webp",
+                      data: imageBase64,
+                    },
+                  },
+                  ...(message ? [{ type: "text" as const, text: message }] : []),
+                ],
+              },
+            ],
+          });
+
+          for await (const event of visionStream) {
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
+              fullAssistantContent += event.delta.text;
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ type: "chunk", content: event.delta.text })}\n\n`),
+              );
+            }
+          }
+
+          const finalMsg = await visionStream.finalMessage();
+          const inputTokens = finalMsg.usage.input_tokens;
+          const outputTokens = finalMsg.usage.output_tokens;
+
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ type: "sources", chunks: [], webSources: [], usedWebSearch: false })}\n\n`),
+          );
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ type: "done", tokensUsed: inputTokens + outputTokens, ai_generated: true, ai_model: "claude-sonnet-4.6" })}\n\n`),
+          );
+
+          await usageRef.set(
+            { inputTokens: FieldValue.increment(inputTokens), outputTokens: FieldValue.increment(outputTokens) },
+            { merge: true },
+          );
+
+          if (fullAssistantContent) {
+            await messagesCollection.add({
+              role: "assistant",
+              content: fullAssistantContent,
+              tokens: { input: inputTokens, output: outputTokens },
+              createdAt: new Date().toISOString(),
+            });
+          }
+        } else {
         // GDPR: Verified — no PII sent to LLM providers. Only query + curriculum context + conversation history.
         const ragStream = runRagChainStream({
           query: message,
@@ -422,6 +543,7 @@ export async function POST(request: NextRequest) {
             }
           }
         }
+        } // end else (no image)
       } catch (err) {
         const errorData = JSON.stringify({
           type: "error",

@@ -189,6 +189,9 @@ export interface Message {
     favicon: string;
   }>;
   usedWebSearch?: boolean;
+  /** Optional image attached by the user */
+  imageBase64?: string;
+  imageMimeType?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -289,11 +292,13 @@ export function ChatMessage({
   subject,
   conversationId,
   userId,
+  onFollowUp,
 }: {
   message: Message;
   subject?: string;
   conversationId?: string | null;
   userId?: string | null;
+  onFollowUp?: (prompt: string) => void;
 }) {
   const isUser = message.role === "user";
   const parsed = isUser ? null : parseThinking(message.content);
@@ -331,9 +336,19 @@ export function ChatMessage({
           }
         >
           {isUser ? (
-            <p className="whitespace-pre-wrap break-words">
-              {message.content}
-            </p>
+            <div className="space-y-2">
+              {message.imageBase64 && message.imageMimeType && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={`data:${message.imageMimeType};base64,${message.imageBase64}`}
+                  alt="Pievienotais attēls"
+                  className="max-h-48 max-w-full rounded-lg object-contain"
+                />
+              )}
+              {message.content && message.content !== "📎" && (
+                <p className="whitespace-pre-wrap break-words">{message.content}</p>
+              )}
+            </div>
           ) : (
             <>
               {parsed && (parsed.isThinking || parsed.thinking) && (

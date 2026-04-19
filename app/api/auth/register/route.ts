@@ -7,7 +7,6 @@ import { DEFAULT_STREAK_FIELDS } from "@/lib/firebase/streak";
 
 const RegisterSchema = z.object({
   grade: z.number().int().min(6).max(12).optional(),
-  inviteCode: z.string().max(20).optional(),
   birthYear: z.number().int().min(2006).max(2026).optional(),
 });
 
@@ -32,7 +31,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { grade, inviteCode, birthYear } = parsed.data;
+  const { grade, birthYear } = parsed.data;
   const userRef = adminDb.collection("users").doc(decoded.uid);
   const existing = await userRef.get();
 
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
     grade: grade ?? null,
     createdAt: now.toISOString(),
     referralCode: generateReferralCode(),
-    referredBy: inviteCode ?? null,
+    referredBy: null,
     // Age fields — written once at signup, read-only thereafter (see Firestore rules)
     birthYear: resolvedBirthYear,
     isMinor,
