@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 // §3 Firestore data model types
 
 export interface MultipleChoiceQuestion {
@@ -75,3 +77,29 @@ export interface QuizAnswerResponse {
   isComplete: boolean;
   score?: number;
 }
+
+// LLM response validation schema (used in lib/quiz/generate.ts)
+const MultipleChoiceLLMSchema = z.object({
+  type: z.literal("multiple_choice"),
+  question: z.string().min(1),
+  choices: z.array(z.string()).length(4),
+  correctIndex: z.number().int().min(0).max(3),
+  explanation: z.string().min(1),
+  wrongExplanations: z.record(z.string()),
+});
+
+const OpenEndedLLMSchema = z.object({
+  type: z.literal("open_ended"),
+  question: z.string().min(1),
+  correctAnswer: z.string().min(1),
+  explanation: z.string().min(1),
+});
+
+export const QuizGenerationResponseSchema = z.object({
+  questions: z
+    .array(z.discriminatedUnion("type", [MultipleChoiceLLMSchema, OpenEndedLLMSchema]))
+    .min(1)
+    .max(5),
+});
+
+export type QuizGenerationResponse = z.infer<typeof QuizGenerationResponseSchema>;
