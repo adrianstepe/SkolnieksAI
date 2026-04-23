@@ -718,14 +718,20 @@ export function ChatContainer() {
           </div>
         )}
 
-        {/* Sticky Premium CTA Banner */}
-        {!isPremium && usage && usage.budgetPercentUsed > 50 && (
-          <div className="animate-fade-up flex items-center justify-center bg-[#2563EB]/10 dark:bg-[#4F8EF7]/10 border-b border-[#2563EB]/20 dark:border-[#4F8EF7]/20 px-5 py-2.5 text-sm shadow-sm shrink-0">
-            <span className="text-[#111827] dark:text-[#E8ECF4] text-center">
-              Tev atlikuši <strong className="text-[#2563EB] dark:text-[#4F8EF7]">{Math.max(0, 60 - (usage.queriesCount ?? 0))}</strong> jautājumi šomēnes.
-            </span>
-          </div>
-        )}
+        {/* Sticky daily-limit banner — shown when ≤5 questions remain today */}
+        {(() => {
+          if (isPremium || !usage) return null;
+          const FREE_DAILY_LIMIT = 15;
+          const dailyRemaining = Math.max(0, FREE_DAILY_LIMIT - (usage.dailyCount ?? 0));
+          if (dailyRemaining > 5) return null;
+          return (
+            <div className="animate-fade-up flex items-center justify-center bg-[#2563EB]/10 dark:bg-[#4F8EF7]/10 border-b border-[#2563EB]/20 dark:border-[#4F8EF7]/20 px-5 py-2.5 text-sm shadow-sm shrink-0">
+              <span className="text-[#111827] dark:text-[#E8ECF4] text-center">
+                Tev atlikuši <strong className="text-[#2563EB] dark:text-[#4F8EF7]">{dailyRemaining}</strong> jautājumi šodien.
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Content area */}
         {activeTab === "learn" ? (

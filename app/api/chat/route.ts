@@ -136,8 +136,8 @@ export async function POST(request: NextRequest) {
   }
 
   const now = new Date();
-  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const today = now.toISOString().slice(0, 10); // YYYY-MM-DD UTC — matches streak.ts todayUTC()
+  const yearMonth = today.slice(0, 7);           // YYYY-MM
 
   const userRef = adminDb.collection("users").doc(decoded.uid);
   const usageRef = userRef.collection("usage").doc(yearMonth);

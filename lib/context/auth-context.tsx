@@ -41,6 +41,10 @@ export interface UsageInfo {
   tokenBudget: number;
   queriesCount: number;
   budgetPercentUsed: number;
+  /** Questions sent today (UTC). Resets to 0 when dailyDate !== today. */
+  dailyCount: number;
+  /** The UTC calendar date (YYYY-MM-DD) for which dailyCount was computed. */
+  dailyDate: string;
 }
 
 interface AuthContextValue {

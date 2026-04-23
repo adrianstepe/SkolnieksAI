@@ -29,9 +29,9 @@ export async function GET(request: NextRequest) {
 
   const userRef = adminDb.collection("users").doc(decoded.uid);
 
-  // Get current month usage
-  const now = new Date();
-  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  // Get current month usage — use UTC to stay consistent with chat/route.ts
+  const todayISO = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
+  const yearMonth = todayISO.slice(0, 7);                 // YYYY-MM
 
   // Fetch both documents concurrently to save time
   const [userDoc, usageDoc] = await Promise.all([
@@ -62,16 +62,22 @@ export async function GET(request: NextRequest) {
   };
 
   const usageData = usageDoc.exists
-    ? (usageDoc.data() as Record<string, number>)
-    : { inputTokens: 0, outputTokens: 0, queryCount: 0 };
+    ? (usageDoc.data() as Record<string, unknown>)
+    : {} as Record<string, unknown>;
 
   const tokensUsed =
-    (usageData.inputTokens ?? 0) + (usageData.outputTokens ?? 0);
+    ((usageData.inputTokens as number) ?? 0) + ((usageData.outputTokens as number) ?? 0);
   const tokenBudget = getBudgetForTier(tier);
   const budgetPercentUsed = Math.min(
     100,
     Math.round((tokensUsed / tokenBudget) * 100),
   );
+
+  // Expose daily count and date so the client can compute questions remaining today
+  // without having to know whether a UTC-day boundary has been crossed.
+  const storedDailyDate = (usageData.dailyDate as string) ?? null;
+  const dailyCount =
+    storedDailyDate === todayISO ? ((usageData.dailyCount as number) ?? 0) : 0;
 
   return NextResponse.json({
     user: {
@@ -90,8 +96,10 @@ export async function GET(request: NextRequest) {
     usage: {
       tokensUsed,
       tokenBudget,
-      queriesCount: usageData.queryCount ?? 0,
+      queriesCount: (usageData.queryCount as number) ?? 0,
       budgetPercentUsed,
+      dailyCount,
+      dailyDate: todayISO,
     },
   });
 }

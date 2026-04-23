@@ -79,7 +79,7 @@ function applySecurityHeaders(response: NextResponse, nonce: string): void {
   );
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Defense-in-depth against CVE-2025-29927
   if (request.headers.get("x-middleware-subrequest")) {
     return new NextResponse(null, { status: 400 });

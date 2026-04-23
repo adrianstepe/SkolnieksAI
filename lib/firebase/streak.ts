@@ -65,7 +65,21 @@ export async function evaluateAndUpdateStreak(
 
     const data = snap.data() as Record<string, unknown>;
 
-    const lastActiveDate = (data.lastActiveDate as string) ?? null;
+    // Firestore Timestamps (from older writes) must be coerced to a YYYY-MM-DD
+    // string before any string comparison. If coercion fails, treat as null so the
+    // first-activity branch fires instead of producing NaN in calendarDaysDiff.
+    const rawLastActive = data.lastActiveDate;
+    let lastActiveDate: string | null = null;
+    if (typeof rawLastActive === "string" && rawLastActive.length === 10) {
+      lastActiveDate = rawLastActive;
+    } else if (
+      rawLastActive !== null &&
+      rawLastActive !== undefined &&
+      typeof (rawLastActive as { toDate?: unknown }).toDate === "function"
+    ) {
+      lastActiveDate = (rawLastActive as { toDate(): Date }).toDate().toISOString().slice(0, 10);
+    }
+
     let currentStreak = (data.currentStreak as number) ?? 0;
     let longestStreak = (data.longestStreak as number) ?? 0;
     let streakFreeze = (data.streakFreeze as boolean) ?? false;

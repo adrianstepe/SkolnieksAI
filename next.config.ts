@@ -11,9 +11,6 @@ const commonSecurityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -25,7 +22,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       // All routes: non-CSP security headers.
-      // CSP is set per-request by middleware.ts (needs a fresh nonce each time).
+      // CSP is set per-request by proxy.ts (needs a fresh nonce each time).
       {
         source: "/(.*)",
         headers: [...commonSecurityHeaders],
@@ -37,7 +34,6 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
       {
@@ -45,7 +41,6 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
     ];

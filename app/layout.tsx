@@ -34,13 +34,25 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "SkolnieksAI \u2014 Tavs m\u0101c\u012Bbu pal\u012Bgs",
+  metadataBase: new URL("https://skolnieksai.lv"),
+  title: "SkolnieksAI — AI mācību palīgs skolniekam",
   description:
-    "AI m\u0101c\u012Bbu pal\u012Bgs, kas balst\u012Bts uz Latvijas Skola2030 m\u0101c\u012Bbu programmu. Pal\u012Bdz saprast, nevis dara m\u0101jas darbus tav\u0101 viet\u0101.",
+    "AI palīgs, kas palīdz sagatavoties centralizētajiem eksāmeniem. Uzdod jautājumus, saņem skaidrojumus latviešu valodā.",
+  keywords: ["skolnieks", "AI", "eksāmens", "mācības", "centralizētais eksāmens", "skolnieksai"],
   icons: {
-    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111827'/><text y='72' x='50' text-anchor='middle' font-size='65' font-family='sans-serif' fill='white' font-weight='700'>S</text><circle cx='68' cy='32' r='10' fill='%232563EB'/></svg>",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico" },
+    ],
   },
-  // EU AI Act Art. 50 — machine-readable disclosure of AI-generated content
+  openGraph: {
+    title: "SkolnieksAI — AI mācību palīgs skolniekam",
+    description:
+      "AI palīgs, kas palīdz sagatavoties centralizētajiem eksāmeniem. Uzdod jautājumus, saņem skaidrojumus latviešu valodā.",
+    url: "https://skolnieksai.lv",
+    type: "website",
+  },
+  // EU AI Act Art. 50 � machine-readable disclosure of AI-generated content
   other: {
     "ai-generated-content":
       "This platform uses AI to generate educational responses. AI model providers: DeepSeek, Anthropic Claude.",
