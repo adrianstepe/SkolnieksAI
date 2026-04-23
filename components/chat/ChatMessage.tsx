@@ -8,6 +8,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeHighlight from "rehype-highlight";
 import { SourcesBubble } from "@/components/SourcesBubble";
+import { QuizMeButton } from "./QuizMeButton";
 import { useStreamingMarkdown } from "@/hooks/useStreamingMarkdown";
 import { MathErrorBoundary } from "@/components/chat/MathErrorBoundary";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -293,12 +294,18 @@ export function ChatMessage({
   conversationId,
   userId,
   onFollowUp,
+  isLastAssistantMessage,
+  onQuizOpen,
+  quizSlot,
 }: {
   message: Message;
   subject?: string;
   conversationId?: string | null;
   userId?: string | null;
   onFollowUp?: (prompt: string) => void;
+  isLastAssistantMessage?: boolean;
+  onQuizOpen?: (messageId: string) => void;
+  quizSlot?: React.ReactNode;
 }) {
   const isUser = message.role === "user";
   const parsed = isUser ? null : parseThinking(message.content);
@@ -376,7 +383,7 @@ export function ChatMessage({
 
         {/* EU AI Act label + feedback row */}
         {!isUser && (
-          <div className="flex items-center gap-2 px-1">
+          <div className="flex items-center gap-2 px-1 flex-wrap">
             <p
               className="text-[10px] text-[#9CA3AF] dark:text-[#4B5563]"
               title="Šī atbilde ir ģenerēta ar mākslīgo intelektu"
@@ -388,8 +395,14 @@ export function ChatMessage({
               conversationId={conversationId ?? null}
               userId={userId ?? null}
             />
+            {isLastAssistantMessage && (
+              <QuizMeButton onClick={() => onQuizOpen?.(message.id)} />
+            )}
           </div>
         )}
+
+        {/* Quiz panel rendered inline below the message */}
+        {quizSlot}
 
       </div>
     </div>

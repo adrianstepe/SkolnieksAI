@@ -67,3 +67,10 @@ __pycache__/
 # Playwright
 playwright-report/
 test-results/
+
+# Personal notes — not for version control
+/ForMe/
+
+# Project meta files — not for version control
+QUICKSTART.md
+README.md

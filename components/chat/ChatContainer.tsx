@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { getAnalytics, isSupported, logEvent } from "firebase/analytics";
 import { app, logAnalyticsEvent } from "@/lib/firebase/client";
 import { ChatMessage, TypingIndicator, type Message } from "./ChatMessage";
+import { QuizPanel } from "./QuizPanel";
 import { ChatInput } from "./ChatInput";
 import { Sidebar, type RecentChat } from "./Sidebar";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
@@ -96,6 +97,9 @@ export function ChatContainer() {
 
   // Inline exam upgrade banner — shown once per session after a relevant response
   const [showExamBanner, setShowExamBanner] = useState(false);
+
+  // Quiz Me state: which message has an active quiz panel open
+  const [activeQuizForMessageId, setActiveQuizForMessageId] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     setShowUpgrade(readUpgradeOpenFromLocation());
@@ -832,18 +836,65 @@ export function ChatContainer() {
                       <ChatSkeleton />
                     ) : (
                       <>
-                        {messages.map((msg) => {
-                          // Suppress the empty assistant placeholder while loading — TypingIndicator renders instead
-                          if (
-                            isLoading &&
-                            msg.role === "assistant" &&
-                            msg.content === "" &&
-                            msg.id === messages[messages.length - 1]?.id
-                          ) {
-                            return null;
-                          }
-                          return <ChatMessage key={msg.id} message={msg} subject={subject} conversationId={conversationId} userId={user?.uid ?? null} />;
-                        })}
+                        {(() => {
+                          // Last non-empty assistant message (only shown when not actively streaming)
+                          const lastAssistantId = !isLoading
+                            ? [...messages].reverse().find(
+                                (m) => m.role === "assistant" && m.content !== "",
+                              )?.id ?? null
+                            : null;
+
+                          return messages.map((msg) => {
+                            // Suppress the empty assistant placeholder while loading — TypingIndicator renders instead
+                            if (
+                              isLoading &&
+                              msg.role === "assistant" &&
+                              msg.content === "" &&
+                              msg.id === messages[messages.length - 1]?.id
+                            ) {
+                              return null;
+                            }
+
+                            const isLastAssistant =
+                              msg.role === "assistant" &&
+                              msg.id === lastAssistantId;
+
+                            const quizSlot =
+                              isLastAssistant &&
+                              activeQuizForMessageId === msg.id &&
+                              conversationId ? (
+                                <QuizPanel
+                                  key={`quiz-${msg.id}`}
+                                  messageId={msg.id}
+                                  conversationId={conversationId}
+                                  getIdToken={getIdToken}
+                                  onClose={() => setActiveQuizForMessageId(null)}
+                                  accentColor={
+                                    msg.role === "assistant"
+                                      ? `var(--color-subj-${subject}, var(--color-primary))`
+                                      : "var(--color-primary)"
+                                  }
+                                />
+                              ) : undefined;
+
+                            return (
+                              <ChatMessage
+                                key={msg.id}
+                                message={msg}
+                                subject={subject}
+                                conversationId={conversationId}
+                                userId={user?.uid ?? null}
+                                isLastAssistantMessage={isLastAssistant}
+                                onQuizOpen={(id) =>
+                                  setActiveQuizForMessageId(
+                                    activeQuizForMessageId === id ? null : id,
+                                  )
+                                }
+                                quizSlot={quizSlot}
+                              />
+                            );
+                          });
+                        })()}
 
                         {isLoading && (() => {
                           const last = messages[messages.length - 1];
