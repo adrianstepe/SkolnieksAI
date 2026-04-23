@@ -39,12 +39,6 @@ export const metadata: Metadata = {
   description:
     "AI palīgs, kas palīdz sagatavoties centralizētajiem eksāmeniem. Uzdod jautājumus, saņem skaidrojumus latviešu valodā.",
   keywords: ["skolnieks", "AI", "eksāmens", "mācības", "centralizētais eksāmens", "skolnieksai"],
-  icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico" },
-    ],
-  },
   openGraph: {
     title: "SkolnieksAI — AI mācību palīgs skolniekam",
     description:

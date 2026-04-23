@@ -56,7 +56,7 @@ Labdien,
 Jūsu bērns ${childName} (dzimšanas gads: ${birthYear}) vēlas reģistrēties SkolnieksAI — mācību palīglīdzeklī Latvijas skolu skolēniem.
 
 Par SkolnieksAI:
-SkolnieksAI ir mākslīgā intelekta balstīts mācību asistents, kas palīdz Latvijas skolēniem saprast mācību vielu latviešu valodā. Platforma ir balstīta uz Latvijas mācību programmu (Skola2030) un nodrošina drošu, izglītojošu saturu.
+SkolnieksAI ir mākslīgā intelekta balstīts mācību asistents, kas palīdz Latvijas skolēniem saprast mācību vielu latviešu valodā un sagatavoties centralizētajiem eksāmeniem. Platforma nodrošina drošu, izglītojošu saturu.
 
 Datu aizsardzība:
 • Visi lietotāja dati tiek glabāti ES serverī (Firebase europe-west1)

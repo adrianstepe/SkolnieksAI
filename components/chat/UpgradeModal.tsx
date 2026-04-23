@@ -26,7 +26,7 @@ const PLANS = [
     features: [
       "Visi priekšmeti no 6.–12. klasei",
       "15 jautājumi dienā (60 mēnesī)",
-      "Atbildes pielāgotas Latvijas mācību programmai",
+      "Atbildes pielāgotas Latvijas skolas kursam",
     ],
     accent: "muted",
     popular: false,

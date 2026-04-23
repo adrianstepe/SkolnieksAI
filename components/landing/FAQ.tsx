@@ -19,7 +19,7 @@ const FAQS = [
   },
   {
     q: "Kāda ir atšķirība no ChatGPT?",
-    a: "ChatGPT nezina Latvijas mācību programmu. SkolnieksAI atbild latviski un zina tieši to, ko tev māca skolā.",
+    a: "ChatGPT neatbild latviski un nezina, ko tev māca skolā. SkolnieksAI atbild latviski un zina tieši to, ko tev māca skolā.",
   },
 ];
 

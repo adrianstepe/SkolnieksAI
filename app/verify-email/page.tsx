@@ -151,7 +151,7 @@ export default function VerifyEmailPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-text-muted">
-          SkolnieksAI · Skola2030 programma
+          SkolnieksAI · AI mācību palīgs
         </p>
       </div>
     </div>
